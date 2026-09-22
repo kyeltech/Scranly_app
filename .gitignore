@@ -41,6 +41,14 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
+# Use yarn — don't commit npm's lockfile
+package-lock.json
+
+# Local env
+.env
+.env.local
+.env*.local
+
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
