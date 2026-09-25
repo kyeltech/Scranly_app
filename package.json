@@ -5,6 +5,9 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
+    "mobile:android": "\"$ANDROID_HOME/emulator/emulator\" -avd Pixel_10",
+    "mobile:ios": "xcrun simctl boot \"iPhone 17\" 2>/dev/null; open -a Simulator",
+    "kill-metro": "lsof -ti tcp:8081 | xargs kill -9 2>/dev/null || true",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
