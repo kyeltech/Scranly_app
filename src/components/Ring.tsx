@@ -45,6 +45,7 @@ export default function Ring({
         return (
           <Circle
             key={i}
+            testID="ring-arc"
             cx={centre}
             cy={centre}
             r={radius}
