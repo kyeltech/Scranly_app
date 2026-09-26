@@ -9,9 +9,8 @@ import type {ImageSourcePropType} from 'react-native';
  *   2. `palettes.light` / `palettes.dark` — everything else, read through
  *      `useTheme()` so the app follows the phone's appearance setting.
  *
- * These mirror the design system at
- * https://claude.ai/artifact/HrQY1B8RcEUdSJhUAETPAi — if you change a value
- * here, change it there too.
+ * These mirror the published design system — if you change a value here,
+ * change it there too.
  */
 
 /** Fixed, theme-independent. Lime is lime in both themes. */
@@ -63,7 +62,9 @@ export type Palette = {
   chipOnBg: string;
   chipOnText: string;
   /** How the day is going against the budget. */
-  status: {under: string; close: string; over: string};
+  status: {under: string; close: string; over: string;
+    /** The spent lap of the ring, under the overflow arc. */
+    overSoft: string};
   /** Macro colours on the app background: ring segments and macro bars. */
   macro: {protein: string; carbs: string; fat: string; fibre: string};
   /** Drop shadow under the two action buttons. Flat in dark; surfaces lift instead. */
@@ -103,7 +104,7 @@ export const palettes: Record<ThemeName, Palette> = {
     track: '#EEF1E6',
     chipOnBg: '#16281F',
     chipOnText: '#FFFFFF',
-    status: {under: '#2F7D4F', close: '#A8731A', over: '#B23F36'},
+    status: {under: '#2F7D4F', close: '#A8731A', over: '#B23F36', overSoft: '#EDC9C6'},
     macro: {
       protein: '#1F6F8B',
       carbs: '#A8731A',
@@ -132,7 +133,7 @@ export const palettes: Record<ThemeName, Palette> = {
     track: '#243024',
     chipOnBg: '#EAF0E4',
     chipOnText: '#10160F',
-    status: {under: '#6AC78A', close: '#E7B34A', over: '#E4726A'},
+    status: {under: '#6AC78A', close: '#E7B34A', over: '#E4726A', overSoft: '#4A2422'},
     macro: {
       protein: '#5FB6D4',
       carbs: '#E0A94A',
