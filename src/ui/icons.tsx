@@ -1,12 +1,12 @@
 import React from 'react';
-import Svg, {Circle, Path} from 'react-native-svg';
+import Svg, {Circle, Path, Rect} from 'react-native-svg';
 
-type P = {colour: string; size?: number};
+type P = {colour: string; size?: number; testID?: string};
 
 const stroke = (d: string, w: number) =>
-  function Icon({colour, size = 18}: P) {
+  function Icon({colour, size = 18, testID}: P) {
     return (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Svg width={size} height={size} viewBox="0 0 24 24" testID={testID}>
         <Path
           d={d}
           fill="none"
@@ -30,6 +30,37 @@ export const Barcode = stroke(
   'M4 7V5.5A1.5 1.5 0 015.5 4H7M17 4h1.5A1.5 1.5 0 0120 5.5V7M20 17v1.5a1.5 1.5 0 01-1.5 1.5H17M7 20H5.5A1.5 1.5 0 014 18.5V17M8 9v6M11.5 9v6M15.5 9v6',
   2,
 );
+/**
+ * The scan button on Today. Not the same glyph as `Barcode`, which is the
+ * corner-brackets one inside the add-food search field — the design uses a
+ * scanner here and a target there, and they are doing different jobs.
+ */
+export function Scanner({colour, size = 19, testID}: P) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" testID={testID}>
+      <Rect
+        x={3}
+        y={7}
+        width={18}
+        height={12}
+        rx={2}
+        fill="none"
+        stroke={colour}
+        strokeWidth={2.4}
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M7 7V5h10v2"
+        fill="none"
+        stroke={colour}
+        strokeWidth={2.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export const Camera = stroke('M3 8a2 2 0 012-2h3l1.5-2h5L19 6h0a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z', 2);
 
 export function SearchGlass({colour, size = 18}: P) {

@@ -51,5 +51,9 @@ describe('Today', () => {
 
     expect(screen.getByText('Scan')).toBeTruthy();
     expect(screen.getByText('Log food')).toBeTruthy();
+    // The design puts a glyph on each: at arm's length the shapes are what
+    // you aim at, not the words.
+    expect(screen.getByTestId('icon-scan')).toBeTruthy();
+    expect(screen.getByTestId('icon-log-food')).toBeTruthy();
   });
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Ring from '../components/Ring';
-import {Cog} from '../ui/icons';
+import {Cog, Plus, Scanner} from '../ui/icons';
 import {MINUS, withThousands} from '../lib/format';
 import {Screen} from '../ui';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
@@ -163,17 +163,19 @@ export default function Today({
         )}
       </ScrollView>
 
-      <View style={[styles.actions, {backgroundColor: t.bg, borderTopColor: t.line}]}>
+      <View style={[styles.actions, {backgroundColor: t.bg}]}>
         <Pressable
           onPress={onScan}
           accessibilityRole="button"
           style={[styles.button, {backgroundColor: t.chipOnBg}]}>
+          <Scanner colour={brand.lime} size={19} testID="icon-scan" />
           <Text style={[type_.bodyStrong, {color: t.chipOnText}]}>Scan</Text>
         </Pressable>
         <Pressable
           onPress={onLogFood}
           accessibilityRole="button"
           style={[styles.button, {backgroundColor: brand.lime}]}>
+          <Plus colour={brand.onLime} size={19} testID="icon-log-food" />
           <Text style={[type_.bodyStrong, {color: brand.onLime}]}>Log food</Text>
         </Pressable>
       </View>
@@ -241,13 +243,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   button: {
     flex: 1,
     height: 54,
     borderRadius: radius.pill,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
 });
