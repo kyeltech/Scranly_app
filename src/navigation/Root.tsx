@@ -22,7 +22,7 @@ import Settings from '../screens/Settings';
 import {dailyPlan} from '../domain/targets';
 import type {Goal, Profile} from '../domain/targets';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {aNormalDay, september, septemberStartsOn} from '../fixtures/days';
+import {aNormalDay, dayMarks} from '../fixtures/days';
 import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
@@ -175,10 +175,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
           options={{presentation: 'transparentModal', animation: 'fade'}}>
           {({navigation}: Props<'DayPicker'>) => (
             <DayPicker
-              month="September 2026"
-              days={september}
-              startsOn={septemberStartsOn}
-              selected={25}
+              marks={dayMarks(new Date())}
               onSelect={navigation.goBack}
               onToday={navigation.goBack}
             />

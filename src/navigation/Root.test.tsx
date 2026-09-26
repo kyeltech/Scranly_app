@@ -80,7 +80,11 @@ describe('every control lands where it was designed to', () => {
 
     await fireEvent.press(screen.getByLabelText('Pick a day'));
 
-    expect(screen.getByText('September 2026')).toBeTruthy();
+    // The month is worked out from the clock, so assert the shape, not a month.
+    const now = new Date();
+    const label = now.toLocaleString('en-GB', {month: 'long', year: 'numeric'});
+    expect(screen.getByText(label)).toBeTruthy();
+    expect(screen.getByLabelText(`${now.getDate()} ${label}`)).toBeTruthy();
     expect(screen.getByText('Back to today')).toBeTruthy();
   });
 

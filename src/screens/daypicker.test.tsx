@@ -2,34 +2,40 @@ import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react-native';
 import DayPicker from './DayPicker';
 import Today from './Today';
-import {aFreshDay, anOverBudgetDay, aPastDay, september, septemberStartsOn} from '../fixtures/days';
+import {aFreshDay, anOverBudgetDay, aPastDay, dayMarks} from '../fixtures/days';
 
 describe('Picking a day', () => {
-  const picker = (onSelect?: (date: number) => void) => (
-    <DayPicker
-      month="September 2026"
-      days={september}
-      startsOn={septemberStartsOn}
-      selected={25}
-      onSelect={onSelect}
-    />
+  // A fixed Saturday, so the grid does not drift with the wall clock.
+  const today = new Date(2026, 8, 26);
+  const marks = dayMarks(today);
+
+  const picker = (onSelect?: (iso: string) => void) => (
+    <DayPicker today={today} marks={marks} onSelect={onSelect} />
   );
+
+  it('works the month out rather than drawing one', async () => {
+    await render(picker());
+
+    expect(screen.getByText('September 2026')).toBeTruthy();
+    // 30 days, and no 31st invented.
+    expect(screen.getByLabelText('30 September 2026')).toBeTruthy();
+    expect(screen.queryByLabelText('31 September 2026')).toBeNull();
+  });
 
   it('names every dot, so reading the month never depends on telling colours apart', async () => {
     await render(picker());
 
-    expect(screen.getByText('September 2026')).toBeTruthy();
     expect(screen.getByText('Under')).toBeTruthy();
     expect(screen.getByText('Over')).toBeTruthy();
     expect(screen.getByText('Nothing logged')).toBeTruthy();
   });
 
-  it('hands back the day tapped', async () => {
+  it('hands back the ISO date tapped, not a bare day number', async () => {
     const onSelect = jest.fn();
     await render(picker(onSelect));
 
     await fireEvent.press(screen.getByLabelText('12 September 2026'));
-    expect(onSelect).toHaveBeenCalledWith(12);
+    expect(onSelect).toHaveBeenCalledWith('2026-09-12');
   });
 
   it('will not open a day that has not happened', async () => {
@@ -38,6 +44,43 @@ describe('Picking a day', () => {
 
     await fireEvent.press(screen.getByLabelText('29 September 2026'));
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('goes back a month, and finds that month’s own length and shape', async () => {
+    await render(picker());
+
+    await fireEvent.press(screen.getByLabelText('Previous month'));
+    expect(screen.getByText('August 2026')).toBeTruthy();
+    expect(screen.getByLabelText('31 August 2026')).toBeTruthy();
+
+    // February is the one that catches a hardcoded grid out.
+    for (let i = 0; i < 6; i++) {
+      await fireEvent.press(screen.getByLabelText('Previous month'));
+    }
+    expect(screen.getByText('February 2026')).toBeTruthy();
+    expect(screen.getByLabelText('28 February 2026')).toBeTruthy();
+    expect(screen.queryByLabelText('29 February 2026')).toBeNull();
+  });
+
+  it('rolls the year over going back past January', async () => {
+    await render(picker());
+
+    for (let i = 0; i < 9; i++) {
+      await fireEvent.press(screen.getByLabelText('Previous month'));
+    }
+    expect(screen.getByText('December 2025')).toBeTruthy();
+  });
+
+  it('comes forward again, but not past the month it is in', async () => {
+    await render(picker());
+
+    await fireEvent.press(screen.getByLabelText('Previous month'));
+    await fireEvent.press(screen.getByLabelText('Next month'));
+    expect(screen.getByText('September 2026')).toBeTruthy();
+
+    // A diary has no future, so forward stops here.
+    await fireEvent.press(screen.getByLabelText('Next month'));
+    expect(screen.getByText('September 2026')).toBeTruthy();
   });
 });
 
