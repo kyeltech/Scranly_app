@@ -161,7 +161,13 @@ export default function Today({
               <TrendUp colour={day.weekNote.under ? t.status.under : t.status.over} size={15} />
               <Text style={[styles.weekLabel, {color: t.text}]}>
                 This week you are{' '}
-                <Text style={styles.weekFigure}>
+                {/* The figure carries the colour, not the sentence: the whole
+                    point of the pill is the one word 'under' or 'over'. */}
+                <Text
+                  style={[
+                    styles.weekFigure,
+                    {color: day.weekNote.under ? t.status.under : t.status.over},
+                  ]}>
                   {`${withThousands(day.weekNote.kcal)} ${day.weekNote.under ? 'under' : 'over'}`}
                 </Text>
               </Text>
