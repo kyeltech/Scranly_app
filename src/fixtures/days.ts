@@ -1,4 +1,5 @@
-import type {MonthDay} from '../screens/DayPicker';
+import {isoDate} from '../domain/calendar';
+import type {DayMark} from '../domain/calendar';
 import type {DayView} from '../domain/day';
 
 /** A normal day, two thirds through the budget. The board the design was approved on. */
@@ -81,33 +82,21 @@ export const aPastDay: DayView = {
 };
 
 /**
- * A month of days, for the day picker. The dots are how each day went; the
- * 26th on is not here yet. Stands in for a query over the local store.
+ * How the last few weeks went, keyed by ISO date. Derived from a day rather
+ * than typed out for one month, so the picker is right in October too — and
+ * so a test can hand it a fixed day.
+ *
+ * Stands in for a query over the diary.
  */
-export const september: MonthDay[] = [
-  ...[1, 2, 3].map(date => ({date, mark: 'under' as const})),
-  {date: 4, mark: 'over' as const},
-  {date: 5, mark: 'under' as const},
-  {date: 6, mark: 'under' as const},
-  {date: 7, mark: 'empty' as const},
-  {date: 8, mark: 'under' as const},
-  {date: 9, mark: 'under' as const},
-  {date: 10, mark: 'over' as const},
-  {date: 11, mark: 'under' as const},
-  {date: 12, mark: 'under' as const},
-  {date: 13, mark: 'under' as const},
-  {date: 14, mark: 'empty' as const},
-  {date: 15, mark: 'under' as const},
-  {date: 16, mark: 'over' as const},
-  ...[17, 18, 19, 20].map(date => ({date, mark: 'under' as const})),
-  {date: 21, mark: 'empty' as const},
-  ...[22, 23, 24, 25].map(date => ({date, mark: 'under' as const})),
-  ...[26, 27, 28, 29, 30].map(date => ({
-    date,
-    mark: 'empty' as const,
-    future: true,
-  })),
-];
-
-/** 1 September 2026 is a Tuesday, so the grid starts one cell in. */
-export const septemberStartsOn = 1;
+export function dayMarks(today: Date, weeks = 6): Record<string, DayMark> {
+  const marks: Record<string, DayMark> = {};
+  for (let back = 0; back < weeks * 7; back++) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - back);
+    const weekday = d.getDay();
+    // Sundays are the days he does not log; every fourth day or so goes over.
+    const mark: DayMark =
+      weekday === 0 ? 'empty' : back % 6 === 3 ? 'over' : 'under';
+    marks[isoDate(d.getFullYear(), d.getMonth(), d.getDate())] = mark;
+  }
+  return marks;
+}

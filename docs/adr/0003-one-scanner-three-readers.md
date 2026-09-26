@@ -58,3 +58,6 @@ shutter, every result sheet — is real. Choosing a camera library replaces one 
 - **The camera library.** Kyel's call, and a native dependency. Until then, `subjects.tsx`.
 - **The `Custom` horizon chip** on the Goal boards has no screen behind it. Every tappable control
   is supposed to have one, so either a date picker gets designed or the chip comes off.
+- **Whether the day picker should go forward at all.** It stops at the month containing today,
+  on the grounds that a food diary has no future. If planning ahead is ever a feature, that stops
+  being true.
