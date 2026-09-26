@@ -1,6 +1,6 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Button, Header, Note, Progress} from '../ui';
+import {Button, Header, Note, Progress, Screen, TextAction} from '../ui';
 import {withThousands} from '../lib/format';
 import {radius, spacing, type as type_, useTheme} from '../theme';
 import type {Targets as TargetValues} from '../domain/targets';
@@ -10,26 +10,28 @@ export default function Targets({
   weightKg,
   onBack,
   onDone,
+  onAdjust,
 }: {
   targets: TargetValues;
   weightKg: number;
   onBack?: () => void;
   onDone?: () => void;
+  onAdjust?: () => void;
 }) {
   const t = useTheme();
   const kcal = targets.kcal;
   const rows = [
-    {label: 'Protein', grams: targets.proteinG, pct: Math.round((targets.proteinG * 4 * 100) / kcal), colour: t.macro.protein},
-    {label: 'Carbs', grams: targets.carbsG, pct: Math.round((targets.carbsG * 4 * 100) / kcal), colour: t.macro.carbs},
-    {label: 'Fat', grams: targets.fatG, pct: Math.round((targets.fatG * 9 * 100) / kcal), colour: t.macro.fat},
+    {label: 'Protein', grams: targets.proteinG, pct: Math.round((targets.proteinG * 4 * 100) / kcal), colour: t.macroBar.protein},
+    {label: 'Carbs', grams: targets.carbsG, pct: Math.round((targets.carbsG * 4 * 100) / kcal), colour: t.macroBar.carbs},
+    {label: 'Fat', grams: targets.fatG, pct: Math.round((targets.fatG * 9 * 100) / kcal), colour: t.macroBar.fat},
   ];
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header title="" overline="STEP 4 OF 4" onBack={onBack} />
       <Progress step={4} of={4} />
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={[type_.title, {color: t.text}]}>Your daily targets</Text>
+        <Text style={[type_.stepTitle, {color: t.text}]}>Your daily targets</Text>
         <Text style={[styles.lede, {color: t.textMuted}]}>
           {`At ${weightKg.toFixed(1)} kg, for the goal and date you set.`}
         </Text>
@@ -79,8 +81,9 @@ export default function Targets({
       </ScrollView>
       <View style={styles.actions}>
         <Button label="Start logging" onPress={onDone} />
+        <TextAction label="Set them myself instead" onPress={onAdjust} />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -98,5 +101,10 @@ const styles = StyleSheet.create({
   fill: {height: 6},
   fibreNote: {marginTop: 6},
   note: {marginTop: 16},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 30, paddingTop: spacing.sm},
+  actions: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 12,
+    paddingTop: spacing.sm,
+    gap: 18,
+  },
 });

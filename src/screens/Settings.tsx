@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
-import {Header} from '../ui';
+import {Header, Screen} from '../ui';
 import {ChevronRight} from '../ui/icons';
 import {brand, spacing, type as type_, useTheme} from '../theme';
 
@@ -53,7 +53,7 @@ export default function Settings({onBack}: {onBack?: () => void}) {
   const [countExercise, setCountExercise] = useState(false);
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header title="Settings" onBack={onBack} />
       <ScrollView contentContainerStyle={styles.body}>
         {SECTIONS.map(section => (
@@ -98,7 +98,7 @@ export default function Settings({onBack}: {onBack?: () => void}) {
           your diary on. That is the whole business model.
         </Text>
       </ScrollView>
-    </View>
+    </Screen>
   );
 }
 

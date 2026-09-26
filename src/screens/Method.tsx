@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Button, Header, Note, Progress} from '../ui';
+import {Button, Header, Note, Progress, Screen} from '../ui';
 import {Check} from '../ui/icons';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
 
@@ -32,11 +32,11 @@ export default function Method({
   const [chosen, setChosen] = useState<MethodKey>('bodyweight');
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header title="" overline="STEP 3 OF 4" onBack={onBack} />
       <Progress step={3} of={4} />
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={[type_.title, {color: t.text}]}>
+        <Text style={[type_.stepTitle, {color: t.text}]}>
           How should the targets be worked out?
         </Text>
         <Text style={[styles.lede, {color: t.textMuted}]}>
@@ -77,7 +77,7 @@ export default function Method({
         })}
 
         <View style={styles.note}>
-          <Note tone="quiet">
+          <Note tone="caveat">
             Either way these are a starting guess. After two weeks of logging,
             Scranly compares them against your actual weight trend and offers to
             adjust — that beats both formulas.
@@ -87,7 +87,7 @@ export default function Method({
       <View style={styles.actions}>
         <Button label="See my targets" onPress={() => onContinue?.(chosen)} />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -111,5 +111,5 @@ const styles = StyleSheet.create({
   what: {...type_.caption, lineHeight: 20, marginTop: 8},
   why: {...type_.caption, lineHeight: 18, marginTop: 8, opacity: 0.75},
   note: {marginTop: 18},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 30, paddingTop: spacing.sm},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
 });

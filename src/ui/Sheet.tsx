@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.lg,
     paddingTop: 14,
-    paddingBottom: 30,
+    paddingBottom: 14,
   },
   grab: {width: 38, height: 4, borderRadius: 99, alignSelf: 'center', marginBottom: 16},
 });

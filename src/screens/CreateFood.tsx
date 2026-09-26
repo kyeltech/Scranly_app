@@ -1,6 +1,6 @@
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Button, Field, Header} from '../ui';
+import {Button, Field, Header, Screen} from '../ui';
 import {Barcode, ChevronRight} from '../ui/icons';
 import {brand, spacing, type as type_, useTheme} from '../theme';
 
@@ -15,7 +15,7 @@ export default function CreateFood({
 }) {
   const t = useTheme();
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header title="Create a food" onBack={onBack} />
       <ScrollView contentContainerStyle={styles.body}>
         <Pressable
@@ -61,7 +61,7 @@ export default function CreateFood({
       <View style={styles.actions}>
         <Button label="Save food" onPress={onSave} />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -89,5 +89,5 @@ const styles = StyleSheet.create({
   row: {flexDirection: 'row', gap: 10, marginTop: 14},
   legend: {marginTop: 22},
   note: {...type_.caption, lineHeight: 18, marginTop: 16},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 30, paddingTop: spacing.sm},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
 });

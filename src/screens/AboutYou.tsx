@@ -1,6 +1,14 @@
 import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Button, Field, Header, Progress, Segmented} from '../ui';
+import {
+  Button,
+  ChoiceField,
+  Field,
+  Header,
+  Progress,
+  Screen,
+  Segmented,
+} from '../ui';
 import {Check} from '../ui/icons';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
 import type {Activity, Profile} from '../domain/targets';
@@ -23,13 +31,22 @@ export default function AboutYou({
 }) {
   const t = useTheme();
   const [activity, setActivity] = useState<Activity>(profile.activity);
+  const [sex, setSex] = useState(profile.sex);
+  const [age, setAge] = useState(String(profile.ageYears));
+  const [height, setHeight] = useState(String(profile.heightCm));
+  const [weight, setWeight] = useState(profile.weightKg.toFixed(1));
+
+  const asNumber = (text: string, fallback: number) => {
+    const n = Number.parseFloat(text);
+    return Number.isFinite(n) ? n : fallback;
+  };
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header title="" overline="STEP 1 OF 4" onBack={onBack} />
       <Progress step={1} of={4} />
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={[type_.title, {color: t.text}]}>About you</Text>
+        <Text style={[type_.stepTitle, {color: t.text}]}>About you</Text>
         <Text style={[styles.lede, {color: t.textMuted}]}>
           Used once, to work out what your body needs. It never leaves your phone.
         </Text>
@@ -39,14 +56,32 @@ export default function AboutYou({
         </View>
 
         <View style={styles.row}>
-          <Field label="SEX" value={profile.sex === 'male' ? 'Male' : 'Female'} />
-          <Field label="AGE" value={String(profile.ageYears)} suffix="years" />
+          <ChoiceField
+            label="SEX"
+            value={sex === 'male' ? 'Male' : 'Female'}
+            onPress={() => setSex(sex === 'male' ? 'female' : 'male')}
+          />
+          <Field
+            label="AGE"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+            suffix="years"
+          />
         </View>
         <View style={styles.row}>
-          <Field label="HEIGHT" value={String(profile.heightCm)} suffix="cm" />
+          <Field
+            label="HEIGHT"
+            value={height}
+            onChangeText={setHeight}
+            keyboardType="numeric"
+            suffix="cm"
+          />
           <Field
             label="WEIGHT TODAY"
-            value={profile.weightKg.toFixed(1)}
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="decimal-pad"
             suffix="kg"
           />
         </View>
@@ -84,10 +119,19 @@ export default function AboutYou({
       <View style={styles.actions}>
         <Button
           label="Continue"
-          onPress={() => onContinue?.({...profile, activity})}
+          onPress={() =>
+            onContinue?.({
+              ...profile,
+              sex,
+              activity,
+              ageYears: asNumber(age, profile.ageYears),
+              heightCm: asNumber(height, profile.heightCm),
+              weightKg: asNumber(weight, profile.weightKg),
+            })
+          }
         />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -115,5 +159,5 @@ const styles = StyleSheet.create({
   tickOn: {backgroundColor: brand.lime},
   tickOff: {borderWidth: 1.5},
   levelText: {flex: 1},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 30, paddingTop: spacing.sm},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
 });
