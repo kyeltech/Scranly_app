@@ -106,3 +106,69 @@ describe('every control lands where it was designed to', () => {
     expect(screen.getByText(/Fit the whole nutrition table/)).toBeTruthy();
   });
 });
+
+/**
+ * The loop, not just the screen. The first version of these walks asserted the
+ * day picker opened and stopped there — so a picker whose dates were wired to
+ * `goBack` and changed nothing passed every test while being useless on a phone.
+ */
+describe('picking a day changes the day', () => {
+  const openPicker = async () => {
+    await render(<Root initialRoute="Today" />);
+    await fireEvent.press(screen.getByLabelText('Pick a day'));
+  };
+
+  /** The label the picker gives a date in the month it is showing. */
+  const dateLabel = (date: number) => {
+    const now = new Date();
+    const month = now.toLocaleString('en-GB', {month: 'long', year: 'numeric'});
+    return `${date} ${month}`;
+  };
+
+  it('shows the day that was tapped, not the day it opened on', async () => {
+    await openPicker();
+
+    // The 2nd is safely in the past whatever today is.
+    await fireEvent.press(screen.getByLabelText(dateLabel(2)));
+
+    // The picker has closed and Today is showing that date.
+    expect(screen.queryByText('Back to today')).toBeNull();
+    expect(screen.getByText(/^2 \w+$/)).toBeTruthy();
+    expect(screen.getByText('Logged that day')).toBeTruthy();
+  });
+
+  it('steps to the day either side from a past day', async () => {
+    await openPicker();
+    await fireEvent.press(screen.getByLabelText(dateLabel(10)));
+
+    expect(screen.getByText(/^10 \w+$/)).toBeTruthy();
+
+    await fireEvent.press(screen.getByText(/^‹ /));
+    expect(screen.getByText(/^9 \w+$/)).toBeTruthy();
+
+    await fireEvent.press(screen.getByText(/›$/));
+    expect(screen.getByText(/^10 \w+$/)).toBeTruthy();
+  });
+
+  it('comes back to today from a past day', async () => {
+    await openPicker();
+    await fireEvent.press(screen.getByLabelText(dateLabel(5)));
+    expect(screen.getByText('Logged that day')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Today'));
+
+    // Today carries no date line and offers the week, not a way back.
+    expect(screen.getByText('Logged today')).toBeTruthy();
+    expect(screen.getByText('Week')).toBeTruthy();
+  });
+
+  it('agrees with its own dots: a day the month shows as over opens as over', async () => {
+    await openPicker();
+    // The marks put an over day three days back from today.
+    const over = new Date();
+    over.setDate(over.getDate() - 3);
+
+    await fireEvent.press(screen.getByLabelText(dateLabel(over.getDate())));
+    expect(screen.getByText('kcal over')).toBeTruthy();
+  });
+});
