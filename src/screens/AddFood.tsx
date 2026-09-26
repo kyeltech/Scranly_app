@@ -11,7 +11,7 @@ import {Button, Screen, useActionBarInset} from '../ui';
 import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons';
 import {withThousands} from '../lib/format';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
-import {recentFoods, searchFoods} from '../fixtures/foods';
+import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
 import type {FoodItem} from '../fixtures/foods';
 
 const FILTERS = ['Recent', 'Frequent', 'My foods', 'Meals'];
@@ -32,13 +32,15 @@ export default function AddFood({
   const t = useTheme();
   const barInset = useActionBarInset();
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState(FILTERS[0]);
   const [picked, setPicked] = useState<string[]>([]);
 
   const searching = query.trim().length > 0;
   const rows = useMemo(
-    () => (searching ? searchFoods(query) : recentFoods),
-    [query, searching],
+    () => (searching ? searchFoods(query) : foodsFor(filter)),
+    [query, searching, filter],
   );
+  const copy = FILTER_COPY[filter] ?? FILTER_COPY.Recent;
   const chosen = useMemo(
     () => [...recentFoods, ...searchFoods(query)].filter(f => picked.includes(f.id)),
     [picked, query],
@@ -110,22 +112,28 @@ export default function AddFood({
 
       {searching ? null : (
         <View style={styles.filters}>
-          {FILTERS.map((filter, i) => (
-            <View
-              key={filter}
-              style={[
-                styles.filter,
-                {backgroundColor: i === 0 ? t.chipOnBg : t.fill},
-              ]}>
-              <Text
+          {FILTERS.map(name => {
+            const on = name === filter;
+            return (
+              <Pressable
+                key={name}
+                onPress={() => setFilter(name)}
+                accessibilityRole="button"
+                accessibilityState={{selected: on}}
                 style={[
-                  styles.filterLabel,
-                  {color: i === 0 ? t.chipOnText : t.text},
+                  styles.filter,
+                  {backgroundColor: on ? t.chipOnBg : t.fill},
                 ]}>
-                {filter}
-              </Text>
-            </View>
-          ))}
+                <Text
+                  style={[
+                    styles.filterLabel,
+                    {color: on ? t.chipOnText : t.text},
+                  ]}>
+                  {name}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
@@ -134,7 +142,7 @@ export default function AddFood({
         keyboardShouldPersistTaps="handled">
         <View style={styles.listHead}>
           <Text style={[type_.label, {color: t.textMuted}]}>
-            {searching ? `${rows.length} RESULTS` : 'EATEN THIS WEEK'}
+            {searching ? `${rows.length} RESULTS` : copy.head}
           </Text>
           {searching ? (
             <Text style={[type_.caption, {color: t.textMuted}]}>Yours first</Text>
@@ -149,7 +157,9 @@ export default function AddFood({
 
         {rows.length === 0 ? (
           <Text style={[styles.none, {color: t.textMuted}]}>
-            {`Nothing matches “${query.trim()}”. Create it once and it is yours from now on.`}
+            {searching
+              ? `Nothing matches “${query.trim()}”. Create it once and it is yours from now on.`
+              : copy.empty ?? 'Nothing here yet.'}
           </Text>
         ) : null}
 
