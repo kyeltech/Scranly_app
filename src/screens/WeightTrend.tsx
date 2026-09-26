@@ -1,7 +1,7 @@
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Svg, {Circle, Line} from 'react-native-svg';
-import {Button, Header} from '../ui';
+import {Button, Header, Screen} from '../ui';
 import {Check} from '../ui/icons';
 import TrendChart from '../components/TrendChart';
 import {trend} from '../domain/weight';
@@ -30,13 +30,13 @@ export default function WeightTrend({
   const tone = summary.onTrack ? t.status.under : t.status.close;
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header
         title="Weight"
         onBack={onBack}
         right={
           <Pressable onPress={onAdd} accessibilityRole="button">
-            <Text style={[type_.bodyStrong, {color: t.status.under}]}>Add</Text>
+            <Text style={[type_.bodyStrong, {color: t.text}]}>Add</Text>
           </Pressable>
         }
       />
@@ -62,7 +62,7 @@ export default function WeightTrend({
         <View
           style={[
             styles.verdict,
-            {backgroundColor: summary.onTrack ? t.fill : t.status.overSoft},
+            {backgroundColor: summary.onTrack ? t.verdict.ok : t.verdict.fast},
           ]}>
           <View style={styles.verdictHead}>
             <View style={[styles.badge, {backgroundColor: tone}]}>
@@ -83,7 +83,7 @@ export default function WeightTrend({
       <View style={styles.actions}>
         <Button label="Change the goal" variant="ghost" onPress={onChangeGoal} />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -159,5 +159,5 @@ const styles = StyleSheet.create({
   },
   verdictLine: {...type_.body, marginTop: 10},
   verdictDetail: {...type_.caption, lineHeight: 19, marginTop: 6},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 30},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12},
 });

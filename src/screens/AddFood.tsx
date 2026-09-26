@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {Button} from '../ui';
+import {Button, Screen} from '../ui';
 import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons';
 import {withThousands} from '../lib/format';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
@@ -50,7 +50,7 @@ export default function AddFood({
     );
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <View style={styles.head}>
         {searching ? null : (
           <Pressable
@@ -102,7 +102,7 @@ export default function AddFood({
         </View>
         {searching ? (
           <Pressable onPress={() => setQuery('')} accessibilityRole="button">
-            <Text style={[type_.bodyStrong, {color: t.status.under}]}>Cancel</Text>
+            <Text style={[type_.bodyStrong, {color: t.text}]}>Cancel</Text>
           </Pressable>
         ) : null}
       </View>
@@ -137,7 +137,7 @@ export default function AddFood({
             <Text style={[type_.caption, {color: t.textMuted}]}>Yours first</Text>
           ) : (
             <Pressable onPress={onCreate} accessibilityRole="button">
-              <Text style={[type_.bodyStrong, {color: t.status.under}]}>
+              <Text style={[type_.bodyStrong, {color: t.text}]}>
                 Create a food
               </Text>
             </Pressable>
@@ -194,7 +194,7 @@ export default function AddFood({
           />
         </View>
       ) : null}
-    </View>
+    </Screen>
   );
 }
 
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: spacing.lg,
-    paddingBottom: 30,
+    paddingBottom: 12,
     paddingTop: spacing.sm,
   },
 });

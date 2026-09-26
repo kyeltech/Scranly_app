@@ -1,13 +1,13 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {Button} from '../ui';
+import {Button, Screen, TextAction} from '../ui';
 import {Mark} from '../ui/icons';
 import {spacing, type as type_, useTheme} from '../theme';
 
 export default function Welcome({onStart}: {onStart?: () => void}) {
   const t = useTheme();
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <View style={styles.body}>
         <Mark colour={t.text} />
         <Text style={[type_.brand, styles.word, {color: t.text}]}>Scranly</Text>
@@ -15,8 +15,8 @@ export default function Welcome({onStart}: {onStart?: () => void}) {
           EAT. LOG. DONE.
         </Text>
         <Text style={[styles.pitch, {color: t.text}]}>
-          A food diary that costs nothing and sells nothing. No adverts, no
-          subscription, no premium tier waiting behind a screen.
+          A food diary that will make Day very rich, and Ezekiel very happy. Plenty adverts, Plenty
+          subscription, we want youer money, we want everything.
         </Text>
         <Text style={[styles.small, {color: t.textMuted}]}>
           Setting up takes about a minute. You can change any of it later.
@@ -24,11 +24,9 @@ export default function Welcome({onStart}: {onStart?: () => void}) {
       </View>
       <View style={styles.actions}>
         <Button label="Set up my targets" onPress={onStart} />
-        <Text style={[styles.invite, {color: t.status.under}]}>
-          I have an invite code
-        </Text>
+        <TextAction label="I have an invite code" />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -39,6 +37,5 @@ const styles = StyleSheet.create({
   tag: {marginTop: 6},
   pitch: {...type_.body, fontSize: 16, lineHeight: 24, marginTop: 26},
   small: {...type_.caption, marginTop: 14},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 44, gap: spacing.lg},
-  invite: {...type_.bodyStrong, textAlign: 'center'},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 20, gap: spacing.lg},
 });

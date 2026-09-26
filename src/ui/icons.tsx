@@ -67,3 +67,13 @@ export function Mark({colour, size = 72}: P) {
     </Svg>
   );
 }
+
+export function Info({colour, size = 15}: P) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={9} fill="none" stroke={colour} strokeWidth={2.4} />
+      <Path d="M12 8v5" stroke={colour} strokeWidth={2.4} strokeLinecap="round" />
+      <Path d="M12 16h.01" stroke={colour} strokeWidth={2.4} strokeLinecap="round" />
+    </Svg>
+  );
+}

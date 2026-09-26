@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {Button, Header, Note} from '../ui';
+import {Button, Header, Panel, Screen} from '../ui';
 import {Camera, ChevronRight, Plus} from '../ui/icons';
 import {radius, spacing, type as type_, useTheme} from '../theme';
 
@@ -24,7 +24,7 @@ export default function WeighIn({
   const step = (by: number) => setKg(current => Math.round((current + by) * 10) / 10);
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <Header
         title="Weigh-in"
         onBack={onBack}
@@ -57,11 +57,11 @@ export default function WeighIn({
       </Text>
 
       <View style={styles.note}>
-        <Note>
+        <Panel label="WHY IT MATTERS">
           Weigh at the same time each day — first thing, after the loo, before
           you eat or drink. Food and water move the scale by more than a day’s
           fat loss, so only a consistent routine makes the trend mean anything.
-        </Note>
+        </Panel>
       </View>
 
       <Pressable
@@ -80,7 +80,7 @@ export default function WeighIn({
       <View style={styles.actions}>
         <Button label={`Save ${kg.toFixed(1)} kg`} onPress={() => onSave?.(kg)} />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -130,6 +130,6 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: 'auto',
     paddingHorizontal: spacing.lg,
-    paddingBottom: 30,
+    paddingBottom: 12,
   },
 });

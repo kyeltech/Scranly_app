@@ -82,5 +82,5 @@ package-lock.json
 !.yarn/sdks
 !.yarn/versions
 
-# Local agent settings, never committed
+# Local agent tool settings, never committed
 .claude/

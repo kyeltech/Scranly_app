@@ -108,6 +108,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
               weightKg={profile.weightKg}
               onBack={navigation.goBack}
               onDone={() => navigation.reset({index: 0, routes: [{name: 'Today'}]})}
+              onAdjust={() => navigation.navigate('Method')}
             />
           )}
         </Stack.Screen>

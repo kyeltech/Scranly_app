@@ -12,6 +12,9 @@ describe('Weigh-in', () => {
     );
 
     expect(screen.getByText('79.6')).toBeTruthy();
+    // The design titles this block rather than flagging it with an info icon:
+    // it is how to weigh yourself, not a caveat about a number.
+    expect(screen.getByText('WHY IT MATTERS')).toBeTruthy();
     expect(screen.getByText(/same time each day/)).toBeTruthy();
     expect(screen.getByText('Yesterday 79.5 · 7-day average 79.8')).toBeTruthy();
   });

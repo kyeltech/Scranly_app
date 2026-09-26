@@ -58,6 +58,16 @@ export type Palette = {
   fill: string;
   /** The unfilled part of the calorie ring and of the macro bars. */
   track: string;
+  /**
+   * The warm caveat block — the one that admits a number is a guess.
+   * Its own pair, because it must not read as an error or as a success.
+   */
+  caveat: {bg: string; text: string};
+  /**
+   * The two verdict cards: a pace that can be held, and one that cannot.
+   * The goal screen and the trend summary both sit on these.
+   */
+  verdict: {ok: string; fast: string};
   /** A selected chip or segment. */
   chipOnBg: string;
   chipOnText: string;
@@ -65,8 +75,13 @@ export type Palette = {
   status: {under: string; close: string; over: string;
     /** The spent lap of the ring, under the overflow arc. */
     overSoft: string};
-  /** Macro colours on the app background: ring segments and macro bars. */
+  /** Macro colours where they sit beside text and must hold 4.5:1. */
   macro: {protein: string; carbs: string; fat: string; fibre: string};
+  /**
+   * Macro colours for bars and arcs. Lighter than `macro`, because a filled
+   * shape only needs 3:1, not the 4.5:1 a label does.
+   */
+  macroBar: {protein: string; carbs: string; fat: string; fibre: string};
   /** Drop shadow under the two action buttons. Flat in dark; surfaces lift instead. */
   buttonShadow: {
     shadowColor: string;
@@ -102,6 +117,8 @@ export const palettes: Record<ThemeName, Palette> = {
     textFaint: '#B6C0B0',
     fill: '#F3F6EC',
     track: '#EEF1E6',
+    caveat: {bg: '#F7F3E6', text: '#7A6330'},
+    verdict: {ok: '#EAF5DF', fast: '#FBECEB'},
     chipOnBg: '#16281F',
     chipOnText: '#FFFFFF',
     status: {under: '#2F7D4F', close: '#A8731A', over: '#B23F36', overSoft: '#EDC9C6'},
@@ -110,6 +127,12 @@ export const palettes: Record<ThemeName, Palette> = {
       carbs: '#A8731A',
       fat: '#6D5399',
       fibre: '#4B7A3F',
+    },
+    macroBar: {
+      protein: '#9ac4d2',
+      carbs: '#e0d1b7',
+      fat: '#B096DB',
+      fibre: '#8CC47C',
     },
     buttonShadow: {
       shadowColor: '#16281F',
@@ -131,10 +154,18 @@ export const palettes: Record<ThemeName, Palette> = {
     textFaint: '#55654F',
     fill: '#1E281E',
     track: '#243024',
+    caveat: {bg: '#2A2416', text: '#D6BD86'},
+    verdict: {ok: '#1B2A17', fast: '#2E1A19'},
     chipOnBg: '#EAF0E4',
     chipOnText: '#10160F',
     status: {under: '#6AC78A', close: '#E7B34A', over: '#E4726A', overSoft: '#4A2422'},
     macro: {
+      protein: '#5FB6D4',
+      carbs: '#E0A94A',
+      fat: '#B096DB',
+      fibre: '#8CC47C',
+    },
+    macroBar: {
       protein: '#5FB6D4',
       carbs: '#E0A94A',
       fat: '#B096DB',
@@ -297,6 +328,13 @@ export const type = {
   brand: {fontFamily: fonts.display, fontSize: 38, letterSpacing: -1},
   brandSmall: {fontFamily: fonts.display, fontSize: 24, letterSpacing: -0.5},
   title: {fontFamily: fonts.display, fontSize: 24, letterSpacing: -0.5},
+  /** An onboarding step's question. Bigger than a screen title, because it is the screen. */
+  stepTitle: {
+    fontFamily: fonts.display,
+    fontSize: 27,
+    letterSpacing: -0.8,
+    lineHeight: 31,
+  },
   screenTitle: {fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.4},
   sectionTitle: {fontFamily: fonts.display, fontSize: 17, letterSpacing: -0.2},
   tag: {fontFamily: fonts.bodyStrong, fontSize: 11, letterSpacing: 5},

@@ -1,5 +1,6 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Close} from '../ui/icons';
 import {brand, radius, spacing, type as type_} from '../theme';
 
@@ -19,9 +20,10 @@ export default function CameraStub({
   children?: React.ReactNode;
   onClose?: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <View style={styles.camera}>
-      <View style={styles.top}>
+      <View style={[styles.top, {paddingTop: insets.top + spacing.md}]}>
         <Pressable
           onPress={onClose}
           accessibilityRole="button"

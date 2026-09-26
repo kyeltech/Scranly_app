@@ -3,6 +3,7 @@ import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Ring from '../components/Ring';
 import {Cog} from '../ui/icons';
 import {MINUS, withThousands} from '../lib/format';
+import {Screen} from '../ui';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
 import type {Palette} from '../theme';
 import type {DayView, MacroKey} from '../domain/day';
@@ -16,7 +17,7 @@ type Props = {
   onSettings?: () => void;
 };
 
-const MACRO_COLOUR: Record<MacroKey, keyof Palette['macro']> = {
+const MACRO_COLOUR: Record<MacroKey, keyof Palette['macroBar']> = {
   protein: 'protein',
   carbs: 'carbs',
   fat: 'fat',
@@ -63,7 +64,7 @@ export default function Today({
     : [{colour: brand.lime, fraction: day.kcalEaten / day.kcalTarget}];
 
   return (
-    <View style={[styles.screen, {backgroundColor: t.bg}]}>
+    <Screen>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -125,7 +126,7 @@ export default function Today({
                       styles.macroFill,
                       {
                         width: `${filled * 100}%`,
-                        backgroundColor: t.macro[MACRO_COLOUR[macro.key]],
+                        backgroundColor: t.macroBar[MACRO_COLOUR[macro.key]],
                       },
                     ]}
                   />
@@ -176,7 +177,7 @@ export default function Today({
           <Text style={[type_.bodyStrong, {color: brand.onLime}]}>Log food</Text>
         </Pressable>
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: 26,
+    paddingBottom: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   button: {
