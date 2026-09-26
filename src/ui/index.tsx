@@ -129,7 +129,23 @@ export function Segmented({
   );
 }
 
-/** A labelled input. Typing into it is the point — see AboutYou and Goal. */
+/**
+ * The three shapes the boards use for an input box. They differ because the
+ * screens do: a weight you read at a glance is not a macro you tap in.
+ *
+ *   stat    50 high, value 17 semibold — About you, Goal
+ *   form    48 high, value 16 regular — Create a food's name, brand, serving
+ *   compact 46 high, value 16 regular — Create a food's three macros
+ */
+const FIELD_SHAPE = {
+  stat: {height: 50, radius: 13, pad: 14, value: 17, weight: '600' as const, suffix: 14},
+  form: {height: 48, radius: 13, pad: 14, value: 16, weight: '400' as const, suffix: 14},
+  compact: {height: 46, radius: 12, pad: 12, value: 16, weight: '400' as const, suffix: 13},
+};
+
+export type FieldShape = keyof typeof FIELD_SHAPE;
+
+/** A labelled input. Typing into it is the point — see AboutYou and CreateFood. */
 export function Field({
   label,
   value,
@@ -137,6 +153,8 @@ export function Field({
   suffix,
   placeholder,
   keyboardType = 'default',
+  shape = 'stat',
+  emphasis = false,
   style,
 }: {
   label: string;
@@ -145,13 +163,27 @@ export function Field({
   suffix?: string;
   placeholder?: string;
   keyboardType?: 'default' | 'numeric' | 'decimal-pad';
+  shape?: FieldShape;
+  /** The one field the screen cannot do without — a lime ring round it. */
+  emphasis?: boolean;
   style?: ViewStyle;
 }) {
   const t = useTheme();
+  const box = FIELD_SHAPE[shape];
   return (
     <View style={[styles.field, style]}>
       <Text style={[type_.label, {color: t.textMuted}]}>{label}</Text>
-      <View style={[styles.fieldBox, {backgroundColor: t.fill}]}>
+      <View
+        style={[
+          styles.fieldBox,
+          {
+            height: box.height,
+            borderRadius: box.radius,
+            paddingHorizontal: box.pad,
+            backgroundColor: emphasis ? t.verdict.ok : t.fill,
+          },
+          emphasis ? {borderWidth: 2, borderColor: brand.lime} : null,
+        ]}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -159,10 +191,19 @@ export function Field({
           placeholderTextColor={t.textFaint}
           keyboardType={keyboardType}
           accessibilityLabel={label}
-          style={[styles.fieldValue, {color: t.text}]}
+          style={[
+            styles.fieldValue,
+            {
+              color: t.text,
+              fontSize: box.value,
+              fontWeight: emphasis ? '700' : box.weight,
+            },
+          ]}
         />
         {suffix ? (
-          <Text style={[type_.caption, {color: t.textMuted}]}>{suffix}</Text>
+          <Text style={[type_.caption, {fontSize: box.suffix, color: t.textMuted}]}>
+            {suffix}
+          </Text>
         ) : null}
       </View>
     </View>
@@ -189,8 +230,26 @@ export function ChoiceField({
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={[styles.fieldBox, {backgroundColor: t.fill}]}>
-        <Text style={[styles.fieldValue, {color: t.text}]}>{value}</Text>
+        style={[
+          styles.fieldBox,
+          {
+            height: FIELD_SHAPE.stat.height,
+            borderRadius: FIELD_SHAPE.stat.radius,
+            paddingHorizontal: FIELD_SHAPE.stat.pad,
+            backgroundColor: t.fill,
+          },
+        ]}>
+        <Text
+          style={[
+            styles.fieldValue,
+            {
+              color: t.text,
+              fontSize: FIELD_SHAPE.stat.value,
+              fontWeight: FIELD_SHAPE.stat.weight,
+            },
+          ]}>
+          {value}
+        </Text>
       </Pressable>
     </View>
   );
@@ -300,15 +359,8 @@ export const styles = StyleSheet.create({
   },
   segmentLabel: {...type_.caption, fontWeight: '600'},
   field: {flex: 1},
-  fieldBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 50,
-    marginTop: 6,
-    paddingHorizontal: 14,
-    borderRadius: 13,
-  },
-  fieldValue: {...type_.body, flex: 1, fontWeight: '600'},
+  fieldBox: {flexDirection: 'row', alignItems: 'center', marginTop: 6},
+  fieldValue: {...type_.body, flex: 1},
   note: {
     flexDirection: 'row',
     alignItems: 'flex-start',

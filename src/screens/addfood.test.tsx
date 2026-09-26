@@ -74,4 +74,41 @@ describe('Create a food', () => {
     expect(screen.getByText('Scan the label instead')).toBeTruthy();
     expect(screen.getByText(/Only a name and the calories are required/)).toBeTruthy();
   });
+
+  it('lets every field be typed into, and hands back what was typed', async () => {
+    const onSave = jest.fn();
+    await render(<CreateFood onSave={onSave} />);
+
+    await fireEvent.changeText(screen.getByLabelText('NAME'), 'Mum’s jollof rice');
+    await fireEvent.changeText(screen.getByLabelText('BRAND'), 'Homemade');
+    await fireEvent.changeText(screen.getByLabelText('SERVING'), '250');
+    await fireEvent.changeText(screen.getByLabelText('CALORIES'), '418');
+    await fireEvent.changeText(screen.getByLabelText('PROTEIN'), '9.4');
+    await fireEvent.changeText(screen.getByLabelText('CARBS'), '76.0');
+    await fireEvent.changeText(screen.getByLabelText('FAT'), '8.2');
+    await fireEvent.press(screen.getByText('Save food'));
+
+    expect(onSave).toHaveBeenCalledWith({
+      name: 'Mum’s jollof rice',
+      brand: 'Homemade',
+      servingG: '250',
+      kcal: '418',
+      proteinG: '9.4',
+      carbsG: '76.0',
+      fatG: '8.2',
+    });
+  });
+
+  it('saves with the macros left blank, because the note promises that', async () => {
+    const onSave = jest.fn();
+    await render(<CreateFood onSave={onSave} />);
+
+    await fireEvent.changeText(screen.getByLabelText('NAME'), 'Leftovers');
+    await fireEvent.changeText(screen.getByLabelText('CALORIES'), '300');
+    await fireEvent.press(screen.getByText('Save food'));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({name: 'Leftovers', kcal: '300', proteinG: ''}),
+    );
+  });
 });
