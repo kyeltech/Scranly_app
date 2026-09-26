@@ -3,7 +3,7 @@ import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Ring from '../components/Ring';
 import {Cog, Plus, Scanner} from '../ui/icons';
 import {MINUS, withThousands} from '../lib/format';
-import {Screen} from '../ui';
+import {Screen, useActionBarInset} from '../ui';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
 import type {Palette} from '../theme';
 import type {DayView, MacroKey} from '../domain/day';
@@ -35,6 +35,7 @@ export default function Today({
   onSettings,
 }: Props) {
   const t = useTheme();
+  const barInset = useActionBarInset();
   const over = day.kcalRemaining < 0;
   const empty = day.foods.length === 0;
 
@@ -64,9 +65,9 @@ export default function Today({
     : [{colour: brand.lime, fraction: day.kcalEaten / day.kcalTarget}];
 
   return (
-    <Screen>
+    <Screen insetBottom={false}>
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={{paddingBottom: 106 + barInset}}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={[type_.sectionTitle, {color: t.text}]}>{day.dayLabel}</Text>
@@ -163,13 +164,21 @@ export default function Today({
         )}
       </ScrollView>
 
-      <View style={[styles.actions, {backgroundColor: t.bg}]}>
+      <View
+        style={[styles.actions, {backgroundColor: t.bg, paddingBottom: barInset}]}>
         <Pressable
           onPress={onScan}
           accessibilityRole="button"
-          style={[styles.button, {backgroundColor: t.chipOnBg}]}>
+          style={[
+            styles.button,
+            styles.secondary,
+            {
+              backgroundColor: t.secondaryButton.bg,
+              borderColor: t.secondaryButton.border,
+            },
+          ]}>
           <Scanner colour={brand.lime} size={19} testID="icon-scan" />
-          <Text style={[type_.bodyStrong, {color: t.chipOnText}]}>Scan</Text>
+          <Text style={[type_.bodyStrong, {color: t.secondaryButton.fg}]}>Scan</Text>
         </Pressable>
         <Pressable
           onPress={onLogFood}
@@ -185,7 +194,6 @@ export default function Today({
 
 const styles = StyleSheet.create({
   screen: {flex: 1},
-  scroll: {paddingBottom: 120},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -242,8 +250,8 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: 12,
   },
+  secondary: {borderWidth: 1},
   button: {
     flex: 1,
     height: 54,

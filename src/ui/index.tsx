@@ -10,22 +10,39 @@ import {ChevronLeft, Info} from './icons';
  * draws under the status bar or the home indicator — the header row is the
  * navigation on Today, and behind the notch it cannot be tapped at all.
  */
-export function Screen({children}: {children: React.ReactNode}) {
+export function Screen({
+  children,
+  insetBottom = true,
+}: {
+  children: React.ReactNode;
+  /**
+   * False when the screen's action bar is absolutely positioned over its
+   * content, as Today's is. Absolute children are not reliably held inside
+   * their parent's padding, so that screen clears the home indicator itself
+   * with `useActionBarInset` — padding here as well would double it.
+   */
+  insetBottom?: boolean;
+}) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const bottom = insetBottom ? insets.bottom : 0;
   return (
     <View
       style={[
         styles.screen,
-        {
-          backgroundColor: t.bg,
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        },
+        {backgroundColor: t.bg, paddingTop: insets.top, paddingBottom: bottom},
       ]}>
       {children}
     </View>
   );
+}
+
+/**
+ * How much an action bar pinned to the bottom must pad below itself: the home
+ * indicator where there is one, and the design's own 12 where there is not.
+ */
+export function useActionBarInset() {
+  return Math.max(useSafeAreaInsets().bottom, 12);
 }
 
 /** The screen's title row: a round back button, a title, and an optional right slot. */
@@ -78,9 +95,17 @@ export function Button({
 }) {
   const t = useTheme();
   const bg =
-    variant === 'primary' ? brand.lime : variant === 'ink' ? t.chipOnBg : t.fill;
+    variant === 'primary'
+      ? brand.lime
+      : variant === 'ink'
+      ? t.secondaryButton.bg
+      : t.fill;
   const fg =
-    variant === 'primary' ? brand.onLime : variant === 'ink' ? t.chipOnText : t.text;
+    variant === 'primary'
+      ? brand.onLime
+      : variant === 'ink'
+      ? t.secondaryButton.fg
+      : t.text;
   return (
     <Pressable
       onPress={onPress}

@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {Button, Screen} from '../ui';
+import {Button, Screen, useActionBarInset} from '../ui';
 import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons';
 import {withThousands} from '../lib/format';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
@@ -30,6 +30,7 @@ export default function AddFood({
   onAdd?: (items: FoodItem[]) => void;
 }) {
   const t = useTheme();
+  const barInset = useActionBarInset();
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
 
@@ -50,7 +51,7 @@ export default function AddFood({
     );
 
   return (
-    <Screen>
+    <Screen insetBottom={false}>
       <View style={styles.head}>
         {searching ? null : (
           <Pressable
@@ -128,7 +129,9 @@ export default function AddFood({
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.list, {paddingBottom: 106 + barInset}]}
+        keyboardShouldPersistTaps="handled">
         <View style={styles.listHead}>
           <Text style={[type_.label, {color: t.textMuted}]}>
             {searching ? `${rows.length} RESULTS` : 'EATEN THIS WEEK'}
@@ -186,7 +189,7 @@ export default function AddFood({
       </ScrollView>
 
       {picked.length > 0 ? (
-        <View style={styles.actions}>
+        <View style={[styles.actions, {paddingBottom: barInset}]}>
           <Button
             label={`Add ${picked.length} ${picked.length === 1 ? 'item' : 'items'}`}
             sub={`${withThousands(total)} kcal`}
@@ -254,7 +257,7 @@ const styles = StyleSheet.create({
   filters: {flexDirection: 'row', gap: 8, paddingHorizontal: spacing.lg, marginTop: 18},
   filter: {paddingHorizontal: 15, paddingVertical: 8, borderRadius: radius.pill},
   filterLabel: {...type_.caption, fontWeight: '600'},
-  list: {paddingHorizontal: spacing.lg, paddingTop: 18, paddingBottom: 120},
+  list: {paddingHorizontal: spacing.lg, paddingTop: 18},
   listHead: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -285,7 +288,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: spacing.lg,
-    paddingBottom: 12,
     paddingTop: spacing.sm,
   },
 });

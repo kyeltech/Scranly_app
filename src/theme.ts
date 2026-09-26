@@ -71,6 +71,14 @@ export type Palette = {
   /** A selected chip or segment. */
   chipOnBg: string;
   chipOnText: string;
+  /**
+   * The quiet half of the two-button bar — Scan, beside Log food. It has its
+   * own pair because a selected chip inverts between themes and this must not:
+   * inverting it would put a white slab next to the lime one.
+   *
+   * `border` equals `bg` in the light theme, where the design draws no edge.
+   */
+  secondaryButton: {bg: string; fg: string; border: string};
   /** How the day is going against the budget. */
   status: {under: string; close: string; over: string;
     /** The spent lap of the ring, under the overflow arc. */
@@ -121,6 +129,7 @@ export const palettes: Record<ThemeName, Palette> = {
     verdict: {ok: '#EAF5DF', fast: '#FBECEB'},
     chipOnBg: '#16281F',
     chipOnText: '#FFFFFF',
+    secondaryButton: {bg: '#16281F', fg: '#FFFFFF', border: '#16281F'},
     status: {under: '#2F7D4F', close: '#A8731A', over: '#B23F36', overSoft: '#EDC9C6'},
     macro: {
       protein: '#1F6F8B',
@@ -158,6 +167,7 @@ export const palettes: Record<ThemeName, Palette> = {
     verdict: {ok: '#1B2A17', fast: '#2E1A19'},
     chipOnBg: '#EAF0E4',
     chipOnText: '#10160F',
+    secondaryButton: {bg: '#1A231A', fg: '#EAF0E4', border: '#2C382C'},
     status: {under: '#6AC78A', close: '#E7B34A', over: '#E4726A', overSoft: '#4A2422'},
     macro: {
       protein: '#5FB6D4',
