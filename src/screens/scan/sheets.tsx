@@ -284,8 +284,8 @@ export function PlateResultSheet({
 
       <View style={styles.caveat}>
         <Note tone="caveat" icon={<Info colour={t.status.close} size={15} />}>
-          A photograph cannot weigh anything. These are estimates from size on
-          the plate — correct the ones that matter and leave the rest.
+          A photo cannot see weight. These portions are a starting guess —
+          correct one and Scranly remembers it for next time.
         </Note>
       </View>
 
@@ -300,7 +300,7 @@ export function PlateResultSheet({
                 <Text style={[type_.bodyStrong, {color: t.text}]}>{item.name}</Text>
                 {item.leastSure ? (
                   <Text style={[styles.flag, {color: t.status.close, backgroundColor: t.caveat.bg}]}>
-                    LEAST SURE
+                    NOT SURE
                   </Text>
                 ) : null}
               </View>

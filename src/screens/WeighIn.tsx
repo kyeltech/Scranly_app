@@ -8,6 +8,7 @@ export default function WeighIn({
   startKg,
   yesterdayKg,
   averageKg,
+  date,
   onBack,
   onPhoto,
   onSave,
@@ -15,6 +16,8 @@ export default function WeighIn({
   startKg: number;
   yesterdayKg: number;
   averageKg: number;
+  /** Which day is being weighed: 'Tue 25 Sep'. */
+  date: string;
   onBack?: () => void;
   onPhoto?: () => void;
   onSave?: (kg: number) => void;
@@ -28,7 +31,7 @@ export default function WeighIn({
       <Header
         title="Weigh-in"
         onBack={onBack}
-        right={<Text style={[type_.caption, {color: t.textMuted}]}>Today</Text>}
+        right={<Text style={[type_.caption, {color: t.textMuted}]}>{date}</Text>}
       />
 
       <View style={styles.figureWrap}>

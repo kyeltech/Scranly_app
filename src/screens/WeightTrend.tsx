@@ -4,8 +4,9 @@ import Svg, {Circle, Line} from 'react-native-svg';
 import {Button, Header, Screen} from '../ui';
 import {Check} from '../ui/icons';
 import TrendChart from '../components/TrendChart';
-import {trend} from '../domain/weight';
+import {trend, weekByWeek} from '../domain/weight';
 import type {Reading} from '../domain/weight';
+import {MINUS} from '../lib/format';
 import {radius, spacing, type as type_, useTheme} from '../theme';
 
 export default function WeightTrend({
@@ -27,6 +28,7 @@ export default function WeightTrend({
 }) {
   const t = useTheme();
   const summary = trend(readings, goalKg, weeksRemaining);
+  const weeks = weekByWeek(readings);
   const tone = summary.onTrack ? t.status.under : t.status.close;
 
   return (
@@ -79,6 +81,39 @@ export default function WeightTrend({
             {`At this pace you reach ${goalKg.toFixed(1)} kg around ${goalDate}. Judged on the 7-day average, so a heavy Sunday will not change it.`}
           </Text>
         </View>
+
+        {/*
+          The chart shows the shape; this shows the arithmetic. Week averages,
+          not week-end readings: two single mornings compared measure what you
+          drank, not what you lost.
+        */}
+        <Text style={[type_.label, styles.weeksHead, {color: t.textMuted}]}>
+          WEEK BY WEEK
+        </Text>
+        {weeks.map(week => (
+          <View key={week.label} style={[styles.weekRow, {borderBottomColor: t.line}]}>
+            <Text style={[styles.weekLabel, {color: t.text}]}>{week.label}</Text>
+            <Text style={[styles.weekAverage, {color: t.textMuted}]}>
+              {`${week.averageKg.toFixed(1)} kg`}
+            </Text>
+            <Text
+              style={[
+                styles.weekChange,
+                {
+                  color:
+                    week.changeKg === undefined
+                      ? t.textFaint
+                      : week.changeKg <= 0
+                      ? t.status.under
+                      : t.status.over,
+                },
+              ]}>
+              {week.changeKg === undefined
+                ? '—'
+                : `${week.changeKg <= 0 ? MINUS : '+'} ${Math.abs(week.changeKg).toFixed(1)}`}
+            </Text>
+          </View>
+        ))}
       </ScrollView>
       <View style={styles.actions}>
         <Button label="Change the goal" variant="ghost" onPress={onChangeGoal} />
@@ -146,6 +181,17 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  weeksHead: {marginTop: 22},
+  weekRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 9,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  weekLabel: {...type_.body, fontSize: 14, flex: 1},
+  weekAverage: {...type_.body, fontSize: 14},
+  weekChange: {...type_.bodyStrong, fontSize: 14, width: 62, textAlign: 'right'},
   stat: {flex: 1},
   statValue: {marginTop: 3},
   verdict: {borderRadius: 16, padding: 16, marginTop: 18},
