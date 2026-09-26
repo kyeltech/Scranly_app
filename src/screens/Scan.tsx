@@ -131,9 +131,11 @@ export default function Scan({
             ? 'Point at the barcode — it reads on its own'
             : stage === 'looking'
             ? 'Barcode read'
+            : stage === 'found'
+            ? 'Matched in Open Food Facts'
             : undefined
         }
-        hintDot={stage === 'looking'}
+        hintDot={stage === 'looking' || stage === 'found'}
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
         footnote={aiming ? 'No barcode? Switch to Plate' : undefined}

@@ -111,9 +111,9 @@ describe('Scan — plate', () => {
 
     expect(screen.getByText('Four things on the plate')).toBeTruthy();
     expect(screen.getByText('about 150 g')).toBeTruthy();
-    expect(screen.getByText(/A photograph cannot weigh anything/)).toBeTruthy();
+    expect(screen.getByText(/A photo cannot see weight/)).toBeTruthy();
     // Oil is invisible in a photo, and the sheet admits which line it trusts least.
-    expect(screen.getByText('LEAST SURE')).toBeTruthy();
+    expect(screen.getByText('NOT SURE')).toBeTruthy();
     expect(screen.getByText('Add 4 items to lunch')).toBeTruthy();
     expect(screen.getByText('Something it missed')).toBeTruthy();
   });

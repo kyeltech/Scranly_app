@@ -197,6 +197,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
               startKg={todaysReading}
               yesterdayKg={yesterdaysReading}
               averageKg={79.8}
+              date="Fri 25 Sep"
               onBack={navigation.goBack}
               onPhoto={() => navigation.navigate('ScalePhoto')}
               onSave={navigation.goBack}

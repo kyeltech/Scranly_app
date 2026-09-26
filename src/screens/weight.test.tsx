@@ -8,7 +8,12 @@ import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
 describe('Weigh-in', () => {
   it('gives the routine that makes a trend mean anything', async () => {
     await render(
-      <WeighIn startKg={todaysReading} yesterdayKg={yesterdaysReading} averageKg={79.8} />,
+      <WeighIn
+        startKg={todaysReading}
+        yesterdayKg={yesterdaysReading}
+        averageKg={79.8}
+        date="Fri 25 Sep"
+      />,
     );
 
     expect(screen.getByText('79.6')).toBeTruthy();
@@ -26,6 +31,7 @@ describe('Weigh-in', () => {
         startKg={todaysReading}
         yesterdayKg={yesterdaysReading}
         averageKg={79.8}
+        date="Fri 25 Sep"
         onSave={onSave}
       />,
     );
@@ -84,5 +90,25 @@ describe('Settings', () => {
   it('names the absence of an upgrade screen, because nobody notices an absence', async () => {
     await render(<Settings />);
     expect(screen.getByText(/That is the whole business model/)).toBeTruthy();
+  });
+});
+
+describe('Week by week on the trend screen', () => {
+  it('lists the last four weeks with each week’s change', async () => {
+    await render(
+      <WeightTrend
+        readings={fourWeeks}
+        goalKg={75}
+        weeksRemaining={13}
+        goalDate="24 November"
+      />,
+    );
+
+    expect(screen.getByText('WEEK BY WEEK')).toBeTruthy();
+    expect(screen.getByText('This week')).toBeTruthy();
+    expect(screen.getByText('Last week')).toBeTruthy();
+    expect(screen.getByText('3 weeks ago')).toBeTruthy();
+    // A dash, not a zero: there is no week behind the oldest one.
+    expect(screen.getByText('—')).toBeTruthy();
   });
 });

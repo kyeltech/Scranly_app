@@ -57,3 +57,46 @@ export function trend(
     weeksRemaining,
   };
 }
+
+export type Week = {
+  /** 'This week', 'Last week', '2 weeks ago'. */
+  label: string;
+  /** That week's 7-day average — the only weight worth comparing. */
+  averageKg: number;
+  /**
+   * Change on the week before. Negative is loss. Undefined on the oldest week
+   * shown, because there is nothing behind it to compare against — and an
+   * invented zero there would read as a week of no progress.
+   */
+  changeKg?: number;
+};
+
+/**
+ * The last few weeks, newest first. Week averages rather than week-end readings:
+ * comparing two single mornings measures what you drank, not what you lost.
+ */
+export function weekByWeek(readings: Reading[], weeks = 4): Week[] {
+  const sorted = [...readings].sort((a, b) => a.dayIndex - b.dayIndex);
+  if (!sorted.length) {
+    return [];
+  }
+  const last = sorted[sorted.length - 1].dayIndex;
+  const first = sorted[0].dayIndex;
+
+  const averages: number[] = [];
+  for (let i = 0; i < weeks; i++) {
+    const end = last - i * 7;
+    // Only a full week counts. A part-week average is not comparable.
+    if (end - 6 < first) {
+      break;
+    }
+    averages.push(sevenDayAverage(sorted, end));
+  }
+
+  return averages.map((averageKg, i) => ({
+    label: i === 0 ? 'This week' : i === 1 ? 'Last week' : `${i} weeks ago`,
+    averageKg,
+    changeKg:
+      i + 1 < averages.length ? averageKg - averages[i + 1] : undefined,
+  }));
+}
