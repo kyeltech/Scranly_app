@@ -11,7 +11,9 @@ import TargetsScreen from '../screens/Targets';
 import Today from '../screens/Today';
 import AddFood from '../screens/AddFood';
 import CreateFood from '../screens/CreateFood';
-import ScanResult from '../screens/ScanResult';
+import Scan from '../screens/Scan';
+import ScalePhoto from '../screens/ScalePhoto';
+import DayPicker from '../screens/DayPicker';
 import PortionEdit from '../screens/PortionEdit';
 import WeighIn from '../screens/WeighIn';
 import WeightTrend from '../screens/WeightTrend';
@@ -20,9 +22,11 @@ import Settings from '../screens/Settings';
 import {dailyPlan} from '../domain/targets';
 import type {Goal, Profile} from '../domain/targets';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {aNormalDay} from '../fixtures/days';
+import {aNormalDay, september, septemberStartsOn} from '../fixtures/days';
 import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
 import {useThemeName} from '../theme';
+import type {Mode} from '../components/Viewfinder';
+import type {ScanStage} from '../screens/Scan';
 
 export type RootParams = {
   Welcome: undefined;
@@ -33,9 +37,12 @@ export type RootParams = {
   Today: undefined;
   AddFood: undefined;
   CreateFood: undefined;
-  Scan: {state?: 'looking' | 'found' | 'nomatch'} | undefined;
+  /** One screen, three readers. `missing` walks the unhappy barcode path. */
+  Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean} | undefined;
   Portion: undefined;
+  DayPicker: undefined;
   WeighIn: undefined;
+  ScalePhoto: undefined;
   Weight: undefined;
   Settings: undefined;
 };
@@ -117,9 +124,11 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
           {({navigation}: Props<'Today'>) => (
             <Today
               day={aNormalDay}
-              onScan={() => navigation.navigate('Scan', {state: 'found'})}
+              onScan={() => navigation.navigate('Scan')}
               onLogFood={() => navigation.navigate('AddFood')}
               onWeek={() => navigation.navigate('Weight')}
+              onDay={() => navigation.navigate('DayPicker')}
+              onEdit={() => navigation.navigate('AddFood')}
               onSettings={() => navigation.navigate('Settings')}
             />
           )}
@@ -129,7 +138,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
           {({navigation}: Props<'AddFood'>) => (
             <AddFood
               onBack={navigation.goBack}
-              onScan={() => navigation.navigate('Scan', {state: 'found'})}
+              onScan={() => navigation.navigate('Scan')}
               onCreate={() => navigation.navigate('CreateFood')}
               onAdd={navigation.goBack}
             />
@@ -140,7 +149,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
           {({navigation}: Props<'CreateFood'>) => (
             <CreateFood
               onBack={navigation.goBack}
-              onScanLabel={() => navigation.navigate('Scan', {state: 'nomatch'})}
+              onScanLabel={() => navigation.navigate('Scan', {mode: 'label'})}
               onSave={navigation.goBack}
             />
           )}
@@ -148,12 +157,30 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
 
         <Stack.Screen name="Scan" options={{presentation: 'fullScreenModal'}}>
           {({navigation, route}: Props<'Scan'>) => (
-            <ScanResult
-              state={route.params?.state ?? 'found'}
+            <Scan
+              mode={route.params?.mode}
+              stage={route.params?.stage}
+              missing={route.params?.missing}
               onClose={navigation.goBack}
               onAdd={navigation.goBack}
-              onRetry={navigation.goBack}
-              onAddFromLabel={() => navigation.navigate('CreateFood')}
+              onCreateFromLabel={() => navigation.navigate('CreateFood')}
+              onWeighPortion={() => navigation.navigate('Portion')}
+            />
+          )}
+        </Stack.Screen>
+
+        {/* Over Today, not instead of it: you are picking a day to look at. */}
+        <Stack.Screen
+          name="DayPicker"
+          options={{presentation: 'transparentModal', animation: 'fade'}}>
+          {({navigation}: Props<'DayPicker'>) => (
+            <DayPicker
+              month="September 2026"
+              days={september}
+              startsOn={septemberStartsOn}
+              selected={25}
+              onSelect={navigation.goBack}
+              onToday={navigation.goBack}
             />
           )}
         </Stack.Screen>
@@ -171,7 +198,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
               yesterdayKg={yesterdaysReading}
               averageKg={79.8}
               onBack={navigation.goBack}
-              onPhoto={() => navigation.navigate('Scan', {state: 'found'})}
+              onPhoto={() => navigation.navigate('ScalePhoto')}
               onSave={navigation.goBack}
             />
           )}
@@ -187,6 +214,19 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
               onBack={navigation.goBack}
               onAdd={() => navigation.navigate('WeighIn')}
               onChangeGoal={() => navigation.navigate('Goal')}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen name="ScalePhoto" options={{presentation: 'fullScreenModal'}}>
+          {({navigation}: Props<'ScalePhoto'>) => (
+            <ScalePhoto
+              reading={todaysReading}
+              yesterdayKg={yesterdaysReading}
+              averageKg={79.8}
+              onClose={navigation.goBack}
+              onSave={navigation.goBack}
+              onFix={navigation.goBack}
             />
           )}
         </Stack.Screen>

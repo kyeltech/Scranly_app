@@ -1,7 +1,7 @@
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Ring from '../components/Ring';
-import {Cog, Plus, Scanner} from '../ui/icons';
+import {Cog, Plus, Scanner, TrendUp} from '../ui/icons';
 import {MINUS, withThousands} from '../lib/format';
 import {Screen, useActionBarInset} from '../ui';
 import {brand, radius, spacing, type as type_, useTheme} from '../theme';
@@ -15,6 +15,16 @@ type Props = {
   /** Today's header is the navigation — there is no tab bar. */
   onWeek?: () => void;
   onSettings?: () => void;
+  /** The day name opens the month. */
+  onDay?: () => void;
+  /** The one-tap starters on an empty day. */
+  onStarter?: (id: string) => void;
+  /** Change what is already logged. */
+  onEdit?: () => void;
+  /** The stepper either side of a past day's date, and the way back. */
+  onPrevDay?: () => void;
+  onNextDay?: () => void;
+  onToday?: () => void;
 };
 
 const MACRO_COLOUR: Record<MacroKey, keyof Palette['macroBar']> = {
@@ -33,6 +43,12 @@ export default function Today({
   onLogFood,
   onWeek,
   onSettings,
+  onDay,
+  onStarter,
+  onEdit,
+  onPrevDay,
+  onNextDay,
+  onToday,
 }: Props) {
   const t = useTheme();
   const barInset = useActionBarInset();
@@ -70,14 +86,34 @@ export default function Today({
         contentContainerStyle={{paddingBottom: 106 + barInset}}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={[type_.sectionTitle, {color: t.text}]}>{day.dayLabel}</Text>
+          <Pressable
+            onPress={onDay}
+            accessibilityRole="button"
+            accessibilityLabel="Pick a day"
+            style={styles.dayName}>
+            <Text style={[type_.sectionTitle, {color: t.text}]}>{day.dayLabel}</Text>
+            {day.dateLabel ? (
+              <Text style={[styles.dateLabel, {color: t.textMuted}]}>
+                {day.dateLabel}
+              </Text>
+            ) : null}
+          </Pressable>
           <View style={styles.headerActions}>
-            <Pressable
-              onPress={onWeek}
-              style={[styles.chip, {backgroundColor: t.fill}]}
-              accessibilityRole="button">
-              <Text style={[styles.chipLabel, {color: t.text}]}>Week</Text>
-            </Pressable>
+            {day.past ? (
+              <Pressable
+                onPress={onToday}
+                style={[styles.chip, {backgroundColor: brand.lime}]}
+                accessibilityRole="button">
+                <Text style={[styles.chipLabel, {color: brand.onLime}]}>Today</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={onWeek}
+                style={[styles.chip, {backgroundColor: t.fill}]}
+                accessibilityRole="button">
+                <Text style={[styles.chipLabel, {color: t.text}]}>Week</Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={onSettings}
               accessibilityRole="button"
@@ -87,6 +123,22 @@ export default function Today({
             </Pressable>
           </View>
         </View>
+
+        {day.neighbours ? (
+          <View style={styles.stepper}>
+            <Pressable onPress={onPrevDay} accessibilityRole="button">
+              <Text style={[styles.stepperLabel, {color: t.textMuted}]}>
+                {`‹ ${day.neighbours.prev}`}
+              </Text>
+            </Pressable>
+            <Text style={[styles.stepperLabel, {color: t.textFaint}]}>·</Text>
+            <Pressable onPress={onNextDay} accessibilityRole="button">
+              <Text style={[styles.stepperLabel, {color: t.textMuted}]}>
+                {`${day.neighbours.next} ›`}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.ringWrap}>
           <Ring
@@ -102,6 +154,20 @@ export default function Today({
             <Text style={[type_.caption, {color: t.textMuted}]}>{sub}</Text>
           </View>
         </View>
+
+        {day.weekNote ? (
+          <View style={styles.weekNote}>
+            <View style={[styles.weekPill, {backgroundColor: t.fill}]}>
+              <TrendUp colour={day.weekNote.under ? t.status.under : t.status.over} size={15} />
+              <Text style={[styles.weekLabel, {color: t.text}]}>
+                This week you are{' '}
+                <Text style={styles.weekFigure}>
+                  {`${withThousands(day.weekNote.kcal)} ${day.weekNote.under ? 'under' : 'over'}`}
+                </Text>
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.macros}>
           {day.macros.map(macro => {
@@ -137,11 +203,49 @@ export default function Today({
           })}
         </View>
 
-        {/* Nothing to list on a fresh day — the ring already says so, and the
-            row of foods you usually have at this hour is its own slice. */}
+        {/*
+          An empty day offers a way out of itself. A blank list is technically
+          correct and useless: what this person has every morning is one tap
+          away, and that is the whole first-log problem solved.
+        */}
+        {empty && day.starters ? (
+          <View style={styles.diary}>
+            <Text style={[type_.sectionTitle, {color: t.text}]}>
+              Start with what you usually have
+            </Text>
+            <Text style={[styles.starterLede, {color: t.textMuted}]}>
+              Your most-logged breakfast, one tap each.
+            </Text>
+            {day.starters.map(starter => (
+              <Pressable
+                key={starter.id}
+                onPress={() => onStarter?.(starter.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`Log ${starter.name}`}
+                style={[styles.row, {borderBottomColor: t.line}]}>
+                <View style={styles.rowText}>
+                  <Text style={[type_.bodyStrong, {color: t.text}]}>{starter.name}</Text>
+                  <Text style={[type_.caption, {color: t.textMuted}]}>{starter.meta}</Text>
+                </View>
+                <Text style={[type_.figureMd, {color: t.text}]}>{starter.kcal}</Text>
+                <View style={styles.starterAdd}>
+                  <Plus colour={brand.onLime} size={16} />
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
         {!empty && (
         <View style={styles.diary}>
-          <Text style={[type_.sectionTitle, {color: t.text}]}>Logged today</Text>
+          <View style={styles.diaryHead}>
+            <Text style={[type_.sectionTitle, {color: t.text}]}>
+              {day.past ? 'Logged that day' : 'Logged today'}
+            </Text>
+            <Pressable onPress={onEdit} accessibilityRole="button">
+              <Text style={[styles.edit, {color: t.text}]}>Edit</Text>
+            </Pressable>
+          </View>
           {day.foods.map(food => (
             <View
               key={food.id}
@@ -201,7 +305,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },
+  dayName: {flex: 1},
+  dateLabel: {...type_.caption, fontSize: 12},
   headerActions: {flexDirection: 'row', gap: spacing.sm},
+  stepper: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 10,
+    paddingHorizontal: spacing.lg,
+  },
+  stepperLabel: {...type_.caption, fontSize: 12},
+  weekNote: {alignItems: 'center', marginTop: -6, marginBottom: 14},
+  weekPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+  },
+  weekLabel: {...type_.caption, fontSize: 12.5},
+  weekFigure: {fontWeight: '700'},
+  diaryHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  edit: {...type_.caption, fontWeight: '600'},
+  starterLede: {...type_.caption, marginTop: 3, marginBottom: 6},
+  starterAdd: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: brand.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chip: {paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill},
   chipLabel: {...type_.caption, fontWeight: '600'},
   cog: {

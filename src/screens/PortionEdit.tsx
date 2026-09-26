@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import CameraStub from '../components/CameraStub';
+import Viewfinder from '../components/Viewfinder';
+import {BarcodeCard} from '../components/subjects';
 import Sheet from '../ui/Sheet';
 import {Button, Segmented} from '../ui';
 import {Plus} from '../ui/icons';
@@ -25,74 +26,80 @@ export default function PortionEdit({
   const [grams, setGrams] = useState(guessG);
   const kcal = Math.round(grams * KCAL_PER_G);
 
-  return (
-    <CameraStub title="Scan" onClose={onClose}>
-      <Sheet>
-        <Text style={[type_.title, {color: t.text}]}>{name}</Text>
-        <Text style={[type_.caption, {color: t.textMuted}]}>
-          {`The photo guessed ${guessG} g`}
-        </Text>
-
-        <View style={styles.stepperRow}>
-          <Pressable
-            onPress={() => setGrams(g => Math.max(0, g - 5))}
-            accessibilityRole="button"
-            accessibilityLabel="Less"
-            style={[styles.stepper, {backgroundColor: t.fill}]}>
-            <View style={[styles.minus, {backgroundColor: t.text}]} />
-          </Pressable>
-          <View style={styles.amount}>
-            <Text style={[styles.figure, {color: t.text}]}>{String(grams)}</Text>
-            <Text style={[styles.unit, {color: t.textMuted}]}>g</Text>
-          </View>
-          <Pressable
-            onPress={() => setGrams(g => g + 5)}
-            accessibilityRole="button"
-            accessibilityLabel="More"
-            style={[styles.stepper, {backgroundColor: t.fill}]}>
-            <Plus colour={t.text} size={20} />
-          </Pressable>
-        </View>
-
-        <View style={styles.presets}>
-          {PRESETS.map(preset => {
-            const on = preset === grams;
-            return (
-              <Pressable
-                key={preset}
-                onPress={() => setGrams(preset)}
-                accessibilityRole="button"
-                accessibilityState={{selected: on}}
-                style={[styles.preset, {backgroundColor: on ? t.chipOnBg : t.fill}]}>
-                <Text
-                  style={[styles.presetLabel, {color: on ? t.chipOnText : t.text}]}>
-                  {`${preset} g`}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View style={styles.units}>
-          <Segmented options={['Grams', 'Ounces', 'Pieces']} value="Grams" />
-        </View>
-
-        <View style={[styles.guide, {backgroundColor: t.fill}]}>
-          <Text style={[type_.label, {color: t.textMuted}]}>IF YOU ARE GUESSING</Text>
-          <Text style={[styles.guideText, {color: t.text}]}>
-            One thigh, boneless ≈ 75 g{'\n'}Your palm, thickness included ≈ 120 g
+  // The sheet goes over the picture, so it is passed rather than nested: the
+  // viewfinder's children are what the camera is pointed at.
+  const sheet = (
+    <Sheet>
+          <Text style={[type_.title, {color: t.text}]}>{name}</Text>
+          <Text style={[type_.caption, {color: t.textMuted}]}>
+            {`The photo guessed ${guessG} g`}
           </Text>
-        </View>
+  
+          <View style={styles.stepperRow}>
+            <Pressable
+              onPress={() => setGrams(g => Math.max(0, g - 5))}
+              accessibilityRole="button"
+              accessibilityLabel="Less"
+              style={[styles.stepper, {backgroundColor: t.fill}]}>
+              <View style={[styles.minus, {backgroundColor: t.text}]} />
+            </Pressable>
+            <View style={styles.amount}>
+              <Text style={[styles.figure, {color: t.text}]}>{String(grams)}</Text>
+              <Text style={[styles.unit, {color: t.textMuted}]}>g</Text>
+            </View>
+            <Pressable
+              onPress={() => setGrams(g => g + 5)}
+              accessibilityRole="button"
+              accessibilityLabel="More"
+              style={[styles.stepper, {backgroundColor: t.fill}]}>
+              <Plus colour={t.text} size={20} />
+            </Pressable>
+          </View>
+  
+          <View style={styles.presets}>
+            {PRESETS.map(preset => {
+              const on = preset === grams;
+              return (
+                <Pressable
+                  key={preset}
+                  onPress={() => setGrams(preset)}
+                  accessibilityRole="button"
+                  accessibilityState={{selected: on}}
+                  style={[styles.preset, {backgroundColor: on ? t.chipOnBg : t.fill}]}>
+                  <Text
+                    style={[styles.presetLabel, {color: on ? t.chipOnText : t.text}]}>
+                    {`${preset} g`}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+  
+          <View style={styles.units}>
+            <Segmented options={['Grams', 'Ounces', 'Pieces']} value="Grams" />
+          </View>
+  
+          <View style={[styles.guide, {backgroundColor: t.fill}]}>
+            <Text style={[type_.label, {color: t.textMuted}]}>IF YOU ARE GUESSING</Text>
+            <Text style={[styles.guideText, {color: t.text}]}>
+              One thigh, boneless ≈ 75 g{'\n'}Your palm, thickness included ≈ 120 g
+            </Text>
+          </View>
+  
+          <View style={styles.liveRow}>
+            <Text style={[styles.live, {color: t.text}]}>{String(kcal)}</Text>
+            <Text style={[type_.caption, {color: t.textMuted}]}>kcal at this portion</Text>
+          </View>
+  
+          <View style={styles.spacer} />
+          <Button label="Save this portion" onPress={() => onSave?.(grams)} />
+        </Sheet>
+  );
 
-        <View style={styles.liveRow}>
-          <Text style={[styles.live, {color: t.text}]}>{String(kcal)}</Text>
-          <Text style={[type_.caption, {color: t.textMuted}]}>kcal at this portion</Text>
-        </View>
-
-        <View style={styles.spacer} />
-        <Button label="Save this portion" onPress={() => onSave?.(grams)} />
-      </Sheet>
-    </CameraStub>
+  return (
+    <Viewfinder title="Scan" onClose={onClose} scrim={0.62} sheet={sheet}>
+      <BarcodeCard />
+    </Viewfinder>
   );
 }
 

@@ -68,6 +68,12 @@ export type Palette = {
    * The goal screen and the trend summary both sit on these.
    */
   verdict: {ok: string; fast: string};
+  /**
+   * The dashed rule under a number the app guessed rather than read — a plate
+   * portion, a figure off a label, a weight off a scale display. Dashed because
+   * it is provisional, and coloured because it is tappable.
+   */
+  guessLine: string;
   /** A selected chip or segment. */
   chipOnBg: string;
   chipOnText: string;
@@ -127,6 +133,7 @@ export const palettes: Record<ThemeName, Palette> = {
     track: '#EEF1E6',
     caveat: {bg: '#F7F3E6', text: '#7A6330'},
     verdict: {ok: '#EAF5DF', fast: '#FBECEB'},
+    guessLine: '#9DBFA4',
     chipOnBg: '#16281F',
     chipOnText: '#FFFFFF',
     secondaryButton: {bg: '#16281F', fg: '#FFFFFF', border: '#16281F'},
@@ -165,6 +172,7 @@ export const palettes: Record<ThemeName, Palette> = {
     track: '#243024',
     caveat: {bg: '#2A2416', text: '#D6BD86'},
     verdict: {ok: '#1B2A17', fast: '#2E1A19'},
+    guessLine: '#4E7355',
     chipOnBg: '#EAF0E4',
     chipOnText: '#10160F',
     secondaryButton: {bg: '#1A231A', fg: '#EAF0E4', border: '#2C382C'},
@@ -346,6 +354,12 @@ export const type = {
     lineHeight: 31,
   },
   screenTitle: {fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.4},
+  /** A sheet's own title: the scan results, the serving picker, the month. */
+  sheetTitle: {fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.4},
+  /** A card's heading, a step below a sheet's: 'Not in the database'. */
+  cardTitle: {fontFamily: fonts.display, fontSize: 18, letterSpacing: -0.3},
+  /** A matched product's name, the one thing on that sheet read from across a kitchen. */
+  productTitle: {fontFamily: fonts.display, fontSize: 22, letterSpacing: -0.4},
   sectionTitle: {fontFamily: fonts.display, fontSize: 17, letterSpacing: -0.2},
   tag: {fontFamily: fonts.bodyStrong, fontSize: 11, letterSpacing: 5},
   body: {fontFamily: fonts.body, fontSize: 15, lineHeight: 22},
