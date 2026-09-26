@@ -20,9 +20,13 @@
     "react": "19.2.3",
     "react-native": "0.87.1",
     "react-native-bootsplash": "^7.3.3",
+    "react-native-nitro-image": "^0.15.2",
+    "react-native-nitro-modules": "^0.37.1",
+    "react-native-nitro-ocr": "^0.1.0-beta.0",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.28.0",
-    "react-native-svg": "^15.15.5"
+    "react-native-svg": "^15.15.5",
+    "react-native-vision-camera": "^5.2.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
