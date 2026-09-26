@@ -182,7 +182,7 @@ export function Field({
             paddingHorizontal: box.pad,
             backgroundColor: emphasis ? t.verdict.ok : t.fill,
           },
-          emphasis ? {borderWidth: 2, borderColor: brand.lime} : null,
+          emphasis ? styles.fieldRing : null,
         ]}>
         <TextInput
           value={value}
@@ -193,11 +193,8 @@ export function Field({
           accessibilityLabel={label}
           style={[
             styles.fieldValue,
-            {
-              color: t.text,
-              fontSize: box.value,
-              fontWeight: emphasis ? '700' : box.weight,
-            },
+            {color: t.text, fontSize: box.value},
+            emphasis ? styles.fieldValueRequired : {fontWeight: box.weight},
           ]}
         />
         {suffix ? (
@@ -360,6 +357,8 @@ export const styles = StyleSheet.create({
   segmentLabel: {...type_.caption, fontWeight: '600'},
   field: {flex: 1},
   fieldBox: {flexDirection: 'row', alignItems: 'center', marginTop: 6},
+  fieldRing: {borderWidth: 2, borderColor: brand.lime},
+  fieldValueRequired: {fontWeight: '700'},
   fieldValue: {...type_.body, flex: 1},
   note: {
     flexDirection: 'row',
