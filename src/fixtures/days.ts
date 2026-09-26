@@ -100,3 +100,88 @@ export function dayMarks(today: Date, weeks = 6): Record<string, DayMark> {
   }
   return marks;
 }
+
+const WEEKDAY = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
+const MONTH = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/** 'Sat 19', as the past-day stepper names the day either side. */
+function shortLabel(d: Date): string {
+  return `${WEEKDAY[d.getDay()].slice(0, 3)} ${d.getDate()}`;
+}
+
+function parseIso(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  // Local parts, not Date.parse, which reads a bare date string as UTC.
+  return new Date(y, m - 1, d);
+}
+
+/**
+ * The day behind any date, built from the same marks the calendar dots come
+ * from — so a day the picker shows with a red dot opens as a day over budget
+ * rather than contradicting itself.
+ *
+ * Stands in for a query over the diary. When persistence arrives this is the
+ * one function that gets replaced, and no screen changes.
+ */
+export function dayFor(
+  iso: string,
+  today: Date,
+  marks: Record<string, DayMark>,
+): DayView {
+  const date = parseIso(iso);
+  const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
+  const isToday = iso === todayIso;
+  const mark = marks[iso] ?? 'empty';
+
+  const base =
+    mark === 'over' ? anOverBudgetDay : mark === 'empty' ? aFreshDay : aNormalDay;
+
+  const before = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1);
+  const after = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+
+  return {
+    ...base,
+    dayLabel: WEEKDAY[date.getDay()],
+    // Today needs no date; a day you navigated to does.
+    dateLabel: isToday ? undefined : `${date.getDate()} ${MONTH[date.getMonth()]}`,
+    past: !isToday,
+    neighbours: isToday
+      ? undefined
+      : {
+          prev: shortLabel(before),
+          // Never offer a step into the future; the day after can be today.
+          next: after > today ? shortLabel(today) : shortLabel(after),
+        },
+  };
+}
+
+/** The ISO date for the day either side of one, clamped at today. */
+export function stepDay(iso: string, delta: number, today: Date): string {
+  const d = parseIso(iso);
+  const moved = new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
+  const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
+  const movedIso = isoDate(moved.getFullYear(), moved.getMonth(), moved.getDate());
+  return movedIso > todayIso ? todayIso : movedIso;
+}

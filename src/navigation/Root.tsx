@@ -22,7 +22,8 @@ import Settings from '../screens/Settings';
 import {dailyPlan} from '../domain/targets';
 import type {Goal, Profile} from '../domain/targets';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {aNormalDay, dayMarks} from '../fixtures/days';
+import {dayFor, dayMarks, stepDay} from '../fixtures/days';
+import {isoDate} from '../domain/calendar';
 import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
@@ -59,6 +60,17 @@ type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
 export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof RootParams}) {
   const [profile, setProfile] = useState<Profile>(kyel);
   const [goal, setGoal] = useState<Goal>(kyelsGoal);
+
+  /**
+   * Which day the app is looking at, as an ISO date. History is not a screen —
+   * it is Today on another day (ADR-0002) — so this one piece of state is what
+   * makes the day picker and the stepper mean anything.
+   */
+  const today = new Date();
+  const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
+  const [dayIso, setDayIso] = useState(todayIso);
+  const marks = dayMarks(today);
+  const day = dayFor(dayIso, today, marks);
   const {targets} = dailyPlan(profile, goal);
   const dark = useThemeName() === 'dark';
 
@@ -123,13 +135,17 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
         <Stack.Screen name="Today">
           {({navigation}: Props<'Today'>) => (
             <Today
-              day={aNormalDay}
+              day={day}
               onScan={() => navigation.navigate('Scan')}
               onLogFood={() => navigation.navigate('AddFood')}
               onWeek={() => navigation.navigate('Weight')}
               onDay={() => navigation.navigate('DayPicker')}
               onEdit={() => navigation.navigate('AddFood')}
               onSettings={() => navigation.navigate('Settings')}
+              onStarter={() => navigation.navigate('AddFood')}
+              onPrevDay={() => setDayIso(stepDay(dayIso, -1, today))}
+              onNextDay={() => setDayIso(stepDay(dayIso, 1, today))}
+              onToday={() => setDayIso(todayIso)}
             />
           )}
         </Stack.Screen>
@@ -175,9 +191,17 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
           options={{presentation: 'transparentModal', animation: 'fade'}}>
           {({navigation}: Props<'DayPicker'>) => (
             <DayPicker
-              marks={dayMarks(new Date())}
-              onSelect={navigation.goBack}
-              onToday={navigation.goBack}
+              today={today}
+              marks={marks}
+              selected={dayIso}
+              onSelect={iso => {
+                setDayIso(iso);
+                navigation.goBack();
+              }}
+              onToday={() => {
+                setDayIso(todayIso);
+                navigation.goBack();
+              }}
             />
           )}
         </Stack.Screen>
