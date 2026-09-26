@@ -280,10 +280,16 @@ export function ChoiceField({
 export function Note({
   children,
   tone = 'quiet',
+  icon,
 }: {
   children: string;
   /** quiet: a promise the app is making. caveat: an admission that a number is a guess. */
   tone?: 'quiet' | 'caveat';
+  /**
+   * Overrides the glyph. The quiet tone carries an info mark; the caveat tone
+   * carries none, except where a board gives it one — the plate result does.
+   */
+  icon?: React.ReactNode;
 }) {
   const t = useTheme();
   const caveat = tone === 'caveat';
@@ -293,7 +299,7 @@ export function Note({
         styles.note,
         {backgroundColor: caveat ? t.caveat.bg : t.fill},
       ]}>
-      {caveat ? null : <Info colour={t.status.under} size={15} />}
+      {icon ?? (caveat ? null : <Info colour={t.status.under} size={15} />)}
       <Text
         style={[styles.noteText, {color: caveat ? t.caveat.text : t.textMuted}]}>
         {children}

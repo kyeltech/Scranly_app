@@ -61,6 +61,16 @@ export function Scanner({colour, size = 19, testID}: P) {
   );
 }
 
+/** The week-so-far pill on Today. */
+export const TrendUp = stroke('M4 15l6-6 4 4 6-7', 2.2);
+
+/** The torch toggle in the viewfinder header. */
+export const Torch = stroke('M13 2L5 14h6l-1 8 8-12h-6l1-8z', 2);
+/** The warning in the no-match sheet, and anywhere a read went wrong. */
+export const Warning = stroke('M12 7v6M12 17h.01', 2.4);
+/** The result-count sort control on the search results. */
+export const Sort = stroke('M4 6h16M7 12h10M10 18h4', 2.2);
+
 export const Camera = stroke('M3 8a2 2 0 012-2h3l1.5-2h5L19 6h0a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z', 2);
 
 export function SearchGlass({colour, size = 18}: P) {

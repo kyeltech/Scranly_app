@@ -27,9 +27,32 @@ export type MacroView = {
   targetG: number;
 };
 
+/** A one-tap row on a day with nothing on it yet. */
+export type Starter = {
+  id: string;
+  name: string;
+  /** Brand and portion: 'Quaker · 40 g'. */
+  meta: string;
+  kcal: number;
+};
+
 export type DayView = {
   /** 'Tuesday' on today, 'Sunday' on a past day. */
   dayLabel: string;
+  /** '20 September'. Only a past day carries one — today needs no date. */
+  dateLabel?: string;
+  /** True on a day that has been and gone. */
+  past?: boolean;
+  /** The days either side, as the stepper names them: 'Sat 19', 'Mon 21'. */
+  neighbours?: {prev: string; next: string};
+  /**
+   * Where the week stands, when the day alone would mislead. A day over budget
+   * inside a week under it is not the same as a week over, and the screen says
+   * so rather than leaving one red number to speak for seven days.
+   */
+  weekNote?: {kcal: number; under: boolean};
+  /** What this person usually starts the day with. Only used on an empty day. */
+  starters?: Starter[];
   kcalTarget: number;
   kcalEaten: number;
   /** Negative once past the budget. The screen shows this number, not zero. */
