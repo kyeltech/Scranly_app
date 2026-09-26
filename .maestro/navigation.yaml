@@ -1,0 +1,31 @@
+# There is no tab bar — the header is the navigation. This walks it.
+appId: org.reactjs.native.example.Scranly
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Set up my targets"
+    commands:
+      - tapOn: "Set up my targets"
+      - tapOn: "Continue"
+      - tapOn: "Continue"
+      - tapOn: "See my targets"
+      - tapOn: "Start logging"
+
+- tapOn: "Week"
+- assertVisible: "On track"
+- assertVisible: "7-day average"
+- tapOn:
+    id: "Back"
+
+- tapOn:
+    id: "Settings"
+- assertVisible: "Count exercise toward the budget"
+- tapOn:
+    id: "Back"
+
+- tapOn: "Scan"
+- assertVisible: "Mature Cheddar"
+- tapOn:
+    id: "Close"
+- assertVisible: "kcal left"
