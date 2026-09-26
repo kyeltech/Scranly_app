@@ -112,3 +112,48 @@ describe('Create a food', () => {
     );
   });
 });
+
+describe('The filter chips on Add food', () => {
+  it('starts on Recent and swaps the list when another is picked', async () => {
+    await render(<AddFood />);
+
+    expect(screen.getByText('EATEN THIS WEEK')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Frequent'));
+    expect(screen.getByText('MOST LOGGED')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('My foods'));
+    expect(screen.getByText('FOODS YOU MADE')).toBeTruthy();
+    expect(screen.getByText('Mum’s jollof rice')).toBeTruthy();
+  });
+
+  it('sorts Frequent by how often a food is logged, which is the point of it', async () => {
+    await render(<AddFood />);
+    await fireEvent.press(screen.getByText('Frequent'));
+
+    const names = screen.getAllByRole('button').map(b => b.props.accessibilityState);
+    expect(names.length).toBeGreaterThan(0);
+    // Porridge oats is his most-logged food, so it heads the list.
+    const rows = screen.getAllByText(/Porridge oats|Peanut butter, smooth/);
+    expect(rows[0].props.children).toBe('Porridge oats');
+  });
+
+  it('says why an empty chip is empty rather than showing a blank list', async () => {
+    await render(<AddFood />);
+
+    await fireEvent.press(screen.getByText('Meals'));
+    expect(screen.getByText('SAVED MEALS')).toBeTruthy();
+    expect(screen.getByText(/No saved meals yet/)).toBeTruthy();
+  });
+
+  it('keeps the chips out of the way while searching', async () => {
+    await render(<AddFood />);
+    await fireEvent.changeText(
+      screen.getByLabelText('Search foods and brands'),
+      'chicken',
+    );
+
+    expect(screen.queryByText('Frequent')).toBeNull();
+    expect(screen.getByText(/RESULTS$/)).toBeTruthy();
+  });
+});

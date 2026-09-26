@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {spacing, useTheme} from '../theme';
 
 /**
@@ -15,12 +16,19 @@ export default function Sheet({
   tall?: boolean;
 }) {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <View
+      testID="sheet"
       style={[
         styles.sheet,
         tall ? styles.tall : null,
-        {backgroundColor: t.bg, borderTopColor: t.line},
+        {
+          backgroundColor: t.bg,
+          borderTopColor: t.line,
+          // The sheet's own button sits above the home indicator, not in it.
+          paddingBottom: Math.max(insets.bottom, 14),
+        },
       ]}>
       <View style={[styles.grab, {backgroundColor: t.controlLine}]} />
       {children}
@@ -36,8 +44,13 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.lg,
     paddingTop: 14,
-    paddingBottom: 14,
   },
-  tall: {flexShrink: 1, maxHeight: '78%'},
+  /**
+   * A DEFINITE height, not maxHeight. A scrolling list inside a tall sheet
+   * fills the space with flex: 1, and flex against an auto-height parent
+   * resolves to nothing — which rendered the plate and label sheets with their
+   * chrome and an invisible list. 74% is the boards' 614–616 of 844.
+   */
+  tall: {height: '74%'},
   grab: {width: 38, height: 4, borderRadius: 99, alignSelf: 'center', marginBottom: 16},
 });
