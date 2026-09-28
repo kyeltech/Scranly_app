@@ -187,3 +187,47 @@ export function parseLabel(lines: string[]): LabelReading {
 
   return {servingG: servingFrom(lines), per100, perServing, unread};
 }
+
+/** The order a UK label prints them, which is the order to show them back. */
+const ROW_ORDER: [Nutrient, string, boolean][] = [
+  ['energyKcal', 'Energy', false],
+  ['fat', 'Fat', false],
+  ['saturates', 'of which saturates', true],
+  ['carbs', 'Carbohydrate', false],
+  ['sugars', 'of which sugars', true],
+  ['fibre', 'Fibre', false],
+  ['protein', 'Protein', false],
+  ['salt', 'Salt', false],
+];
+
+/** kcal has no unit suffix on the label; everything else is grams. */
+function shown(nutrient: Nutrient, value: number | undefined): string {
+  if (value === undefined) {
+    return '—';
+  }
+  return nutrient === 'energyKcal' ? `${value} kcal` : `${value} g`;
+}
+
+/**
+ * A reading, as the result sheet lists it. Only what was actually read: a
+ * nutrient the label did not carry is left out rather than shown as zero, and
+ * one that was read for 100 g but not per serving shows a dash in that column.
+ */
+export function toLabelRows(read: {reading: LabelReading}): {
+  id: string;
+  name: string;
+  under?: boolean;
+  per100: string;
+  perServing: string;
+}[] {
+  const {per100, perServing} = read.reading;
+  return ROW_ORDER.filter(([nutrient]) => per100[nutrient] !== undefined).map(
+    ([nutrient, name, under]) => ({
+      id: nutrient,
+      name,
+      under,
+      per100: shown(nutrient, per100[nutrient]),
+      perServing: shown(nutrient, perServing[nutrient]),
+    }),
+  );
+}

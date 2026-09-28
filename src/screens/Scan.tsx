@@ -1,5 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import Viewfinder from '../components/Viewfinder';
+import Preview from '../components/Preview';
+import CameraRefused from './scan/CameraRefused';
+import {
+  useBarcodeReader,
+  useCameraState,
+  useLabelReader,
+} from '../readers/useReaders';
+import type {LabelRead, ScannedBarcode} from '../readers';
+import {toLabelRows} from '../readers/label';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
 import {
   FoundSheet,
@@ -64,6 +73,7 @@ export default function Scan({
   onAdd,
   onCreateFromLabel,
   onWeighPortion,
+  onTypeItIn,
 }: {
   mode?: Mode;
   stage?: ScanStage;
@@ -73,12 +83,34 @@ export default function Scan({
   onAdd?: () => void;
   onCreateFromLabel?: () => void;
   onWeighPortion?: () => void;
+  onTypeItIn?: () => void;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [stage, setStage] = useState<ScanStage>(initialStage);
   const [chosenMeal, setChosenMeal] = useState(meal);
   const [serving, setServing] = useState(packServings[0]);
   const [column, setColumn] = useState<LabelColumn>('per100');
+  const [torch, setTorch] = useState(false);
+
+  /**
+   * What the camera can do here. 'unavailable' is the simulator, and it is not
+   * an error — the drawn stand-in takes over and every state stays reachable.
+   */
+  const camera = useCameraState();
+  const live = camera === 'ready';
+
+  /** What was actually read, kept so a poor read can show its working. */
+  const [scanned, setScanned] = useState<ScannedBarcode | undefined>();
+  const [labelRead, setLabelRead] = useState<LabelRead | undefined>();
+
+  const onBarcode = useCallback((code: ScannedBarcode) => {
+    setScanned(code);
+    setStage('looking');
+  }, []);
+
+  // Hooks, so they run in every mode; only one is fed frames at a time.
+  const barcodeOutput = useBarcodeReader(onBarcode, live && mode === 'barcode');
+  const labelReader = useLabelReader();
 
   /**
    * Aiming is not a resting state — a reader is always reading. The timers are
@@ -86,6 +118,15 @@ export default function Scan({
    * neither stage is one the screen can be stuck in.
    */
   useEffect(() => {
+    // With a real camera the reader supplies these transitions itself; the
+    // timers are the stand-in's way of walking the same states.
+    if (live) {
+      if (mode === 'barcode' && stage === 'looking') {
+        const t = setTimeout(() => setStage(missing ? 'nomatch' : 'found'), LOOKUP_MS);
+        return () => clearTimeout(t);
+      }
+      return undefined;
+    }
     if (mode === 'barcode' && stage === 'aiming') {
       const t = setTimeout(() => setStage('looking'), LOOKUP_MS);
       return () => clearTimeout(t);
@@ -99,7 +140,7 @@ export default function Scan({
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [mode, stage, missing]);
+  }, [mode, stage, missing, live]);
 
   const changeMode = (next: Mode) => {
     setMode(next);
@@ -109,6 +150,29 @@ export default function Scan({
   const title = mode === 'plate' ? 'Scan a plate' : mode === 'label' ? 'Scan a label' : 'Scan';
   const aiming = stage === 'aiming';
 
+  /**
+   * Refused, and there is nothing to aim. Shown over the dark ground so it
+   * reads as part of the scanner rather than an error page. There is no board
+   * for this — a camera can always be said no to and the design does not cover
+   * it — so it is built on the same sheet as every other outcome.
+   */
+  if (camera === 'no-permission' || camera === 'refused') {
+    return (
+      <Viewfinder
+        title={title}
+        onClose={onClose}
+        scrim={0.62}
+        sheet={
+          <CameraRefused
+            canAsk={camera === 'no-permission'}
+            onTypeItIn={onTypeItIn}
+            onClose={onClose}
+          />
+        }
+      />
+    );
+  }
+
   /* -------------------------------------------------- barcode -------- */
   if (mode === 'barcode') {
     const read = stage !== 'aiming';
@@ -116,7 +180,7 @@ export default function Scan({
       <Viewfinder
         title={title}
         onClose={onClose}
-        onTorch={() => {}}
+        onTorch={() => setTorch(on => !on)}
         frame={
           stage === 'found' || stage === 'serving'
             ? undefined
@@ -141,10 +205,10 @@ export default function Scan({
         footnote={aiming ? 'No barcode? Switch to Plate' : undefined}
         sheet={
           stage === 'looking' ? (
-            <LookingUpSheet barcode={BARCODE} onCancel={onClose} />
+            <LookingUpSheet barcode={scanned?.value ?? BARCODE} onCancel={onClose} />
           ) : stage === 'nomatch' ? (
             <NoMatchSheet
-              barcode={BARCODE}
+              barcode={scanned?.value ?? BARCODE}
               onFromLabel={() => changeMode('label')}
               onRetry={() => setStage('aiming')}
             />
@@ -168,7 +232,7 @@ export default function Scan({
             />
           ) : undefined
         }>
-        <BarcodeCard />
+        {live ? <Preview outputs={[barcodeOutput]} torch={torch} /> : <BarcodeCard />}
       </Viewfinder>
     );
   }
@@ -179,7 +243,7 @@ export default function Scan({
       <Viewfinder
         title={title}
         onClose={onClose}
-        onTorch={() => {}}
+        onTorch={() => setTorch(on => !on)}
         frame={aiming ? FRAMES.plate : undefined}
         scrim={aiming ? 0 : stage === 'working' ? 0.62 : 0.5}
         hint={aiming ? 'Fit the whole plate in frame, from above' : undefined}
@@ -206,7 +270,11 @@ export default function Scan({
             />
           ) : undefined
         }>
-        <Plate />
+        {live ? (
+          <Preview outputs={[labelReader.photoOutput]} torch={torch} />
+        ) : (
+          <Plate />
+        )}
       </Viewfinder>
     );
   }
@@ -216,18 +284,37 @@ export default function Scan({
     <Viewfinder
       title={title}
       onClose={onClose}
-      onTorch={() => {}}
+      onTorch={() => setTorch(on => !on)}
       frame={aiming ? FRAMES.label : undefined}
       scrim={aiming ? 0 : 0.62}
       hint={aiming ? 'Fit the whole nutrition table in the frame' : undefined}
       mode={aiming ? mode : undefined}
       onMode={aiming ? changeMode : undefined}
-      onShutter={aiming ? () => setStage('result') : undefined}
+      onShutter={
+        aiming
+          ? () => {
+              if (!live) {
+                setStage('result');
+                return;
+              }
+              setStage('working');
+              labelReader
+                .capture()
+                .then(read => {
+                  setLabelRead(read);
+                  setStage('result');
+                })
+                // A failed read returns to aiming rather than to nothing.
+                .catch(() => setStage('aiming'));
+            }
+          : undefined
+      }
       sheet={
         stage === 'result' ? (
           <LabelResultSheet
-            rows={labelRows}
-            servingG={labelServingG}
+            rows={labelRead ? toLabelRows(labelRead) : labelRows}
+            servingG={labelRead?.reading.servingG ?? labelServingG}
+            unread={labelRead?.reading.unread}
             column={column}
             onColumn={setColumn}
             onFix={onCreateFromLabel}
@@ -235,7 +322,11 @@ export default function Scan({
           />
         ) : undefined
       }>
-      <NutritionLabel />
+      {live ? (
+        <Preview outputs={[labelReader.photoOutput]} torch={torch} />
+      ) : (
+        <NutritionLabel />
+      )}
     </Viewfinder>
   );
 }
