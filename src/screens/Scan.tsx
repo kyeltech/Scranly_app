@@ -3,6 +3,7 @@ import Viewfinder from '../components/Viewfinder';
 import Preview from '../components/Preview';
 import CameraRefused from './scan/CameraRefused';
 import {
+  outputsOf,
   useBarcodeReader,
   useCameraState,
   useLabelReader,
@@ -232,7 +233,7 @@ export default function Scan({
             />
           ) : undefined
         }>
-        {live ? <Preview outputs={[barcodeOutput]} torch={torch} /> : <BarcodeCard />}
+        {live ? <Preview outputs={outputsOf(barcodeOutput)} torch={torch} /> : <BarcodeCard />}
       </Viewfinder>
     );
   }
@@ -271,7 +272,7 @@ export default function Scan({
           ) : undefined
         }>
         {live ? (
-          <Preview outputs={[labelReader.photoOutput]} torch={torch} />
+          <Preview outputs={outputsOf(labelReader.photoOutput)} torch={torch} />
         ) : (
           <Plate />
         )}
@@ -323,7 +324,7 @@ export default function Scan({
         ) : undefined
       }>
       {live ? (
-        <Preview outputs={[labelReader.photoOutput]} torch={torch} />
+        <Preview outputs={outputsOf(labelReader.photoOutput)} torch={torch} />
       ) : (
         <NutritionLabel />
       )}
