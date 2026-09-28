@@ -1775,6 +1775,11 @@
     prompts "^2.4.2"
     semver "^7.5.2"
 
+"@react-native-ml-kit/text-recognition@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@react-native-ml-kit/text-recognition/-/text-recognition-2.0.0.tgz#b0a707f908d3e57a220cc665b6b615c8d4575bd1"
+  integrity sha512-RHefLYKndSyoDtgqHQptYQe+mftFk6/H30IQDenKX7PgMlJqoDejX+HdZ8gnP1kVNAt3iH+wyl/P6vCOkLMW9Q==
+
 "@react-native/asset-utils@0.87.1":
   version "0.87.1"
   resolved "https://registry.yarnpkg.com/@react-native/asset-utils/-/asset-utils-0.87.1.tgz#b8a129103bf270b74964ba3b21abcb791385ff06"
@@ -5978,15 +5983,10 @@ react-native-nitro-image@^0.15.2:
   resolved "https://registry.yarnpkg.com/react-native-nitro-image/-/react-native-nitro-image-0.15.2.tgz#d7807f4a12ee7ecbc94990b2290d83b16fef9165"
   integrity sha512-WiaGnORmfNIIqtRJW76TWYNet1YZx1MWDlSOxd0jfcIBN4KjkVVMDVpvO01eCfpxKVG0ez9nA2iLQkPVlGFj+A==
 
-react-native-nitro-modules@^0.37.1:
-  version "0.37.1"
-  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.37.1.tgz#368bda3038ebe796b219d98e0a364f9166e2cc7c"
-  integrity sha512-KpW6EQVQ/bfegpCGxN9Be+ndvsfj56t4IESEvCASu9gWpJa/NDfHpIeIwCOvZQ3eXmLEj6YD4wCLqcC1FJPr2w==
-
-react-native-nitro-ocr@^0.1.0-beta.0:
-  version "0.1.0-beta.0"
-  resolved "https://registry.yarnpkg.com/react-native-nitro-ocr/-/react-native-nitro-ocr-0.1.0-beta.0.tgz#f3354ec6d1992a96c5a2f9f7873e19be7d0ec813"
-  integrity sha512-kawMjOlWGOv3C4Ie8UoKhTQa7FDvUJh1RuFcVZnbsXTZVL2fFvPiNQomvUXf/x06ThuChooeK3WP+R/2JickRg==
+react-native-nitro-modules@^0.35.0:
+  version "0.35.10"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.35.10.tgz#8f8e659ceed8638ab3ede871762e51893513214a"
+  integrity sha512-KsySOAIkbSTjNiX2GvXiNT9P5DMeZd99yvtE/+Lw7RXV7Ztxh9Z+YyAbYkBqadhN5J/KXXuPjhRYgyLOIZgsbQ==
 
 react-native-safe-area-context@^5.5.2:
   version "5.10.0"

@@ -16,9 +16,11 @@ jest.mock('react-native-safe-area-context', () =>
 );
 
 /**
- * The camera and the OCR are native, and their stand-ins live in __mocks__ at
- * the project root rather than here: a jest.mock in a setup file cannot be
- * overridden by one in a test file, and scan/live.test.tsx needs to.
+ * The camera is native, and its stand-in lives in __mocks__ at the project root
+ * rather than here: a jest.mock in a setup file cannot be overridden by one in a
+ * test file, and scan/live.test.tsx needs to.
+ *
+ * The OCR stand-in is there too, for the same reason.
  */
 jest.mock('react-native-vision-camera');
-jest.mock('react-native-nitro-ocr');
+jest.mock('@react-native-ml-kit/text-recognition');
