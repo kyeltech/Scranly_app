@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {Button, Screen, TextAction} from '../ui';
+import {Button, Screen} from '../ui';
 import {Mark} from '../ui/icons';
 import {spacing, type as type_, useTheme} from '../theme';
 
@@ -15,8 +15,8 @@ export default function Welcome({onStart}: {onStart?: () => void}) {
           EAT. LOG. DONE.
         </Text>
         <Text style={[styles.pitch, {color: t.text}]}>
-          A food diary that will make Day very rich, and Ezekiel very happy. Plenty adverts, Plenty
-          subscription, we want youer money, we want everything.
+          A food diary that costs nothing and sells nothing. No adverts, no
+          subscription, no premium tier waiting behind a screen.
         </Text>
         <Text style={[styles.small, {color: t.textMuted}]}>
           Setting up takes about a minute. You can change any of it later.
@@ -24,7 +24,9 @@ export default function Welcome({onStart}: {onStart?: () => void}) {
       </View>
       <View style={styles.actions}>
         <Button label="Set up my targets" onPress={onStart} />
-        <TextAction label="I have an invite code" />
+        <Text style={[styles.invite, {color: t.status.under}]}>
+          I have an invite code
+        </Text>
       </View>
     </Screen>
   );
@@ -38,4 +40,5 @@ const styles = StyleSheet.create({
   pitch: {...type_.body, fontSize: 16, lineHeight: 24, marginTop: 26},
   small: {...type_.caption, marginTop: 14},
   actions: {paddingHorizontal: spacing.lg, paddingBottom: 20, gap: spacing.lg},
+  invite: {...type_.bodyStrong, textAlign: 'center'},
 });
