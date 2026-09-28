@@ -16,27 +16,9 @@ jest.mock('react-native-safe-area-context', () =>
 );
 
 /**
- * The camera and the OCR are native. Under Jest they stand in as an absent
- * camera, which is the same path the iOS simulator takes — so every scan test
- * exercises the stand-in picture, and the real readers are only ever exercised
- * on a device.
+ * The camera and the OCR are native, and their stand-ins live in __mocks__ at
+ * the project root rather than here: a jest.mock in a setup file cannot be
+ * overridden by one in a test file, and scan/live.test.tsx needs to.
  */
-jest.mock('react-native-vision-camera', () => ({
-  Camera: () => null,
-  useCameraDevice: () => undefined,
-  useCameraPermission: () => ({
-    status: 'authorized',
-    hasPermission: true,
-    canRequestPermission: false,
-    requestPermission: jest.fn().mockResolvedValue(true),
-  }),
-  useObjectOutput: () => ({}),
-  usePhotoOutput: () => ({capturePhoto: jest.fn()}),
-  usePreviewOutput: () => ({}),
-  isScannedCode: obj => 'value' in obj,
-}));
-
-jest.mock('react-native-nitro-ocr', () => ({
-  recognize: jest.fn().mockResolvedValue({blocks: []}),
-  recognizeText: jest.fn().mockResolvedValue(''),
-}));
+jest.mock('react-native-vision-camera');
+jest.mock('react-native-nitro-ocr');

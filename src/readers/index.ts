@@ -38,5 +38,20 @@ export type CameraState =
   | 'no-permission'
   /** Asked and refused, and the app can no longer ask — Settings only. */
   | 'refused'
-  /** No camera on this device. The simulator, mostly. */
-  | 'unavailable';
+  /** No camera on this device. The iOS simulator, mostly. */
+  | 'unavailable'
+  /**
+   * The native reader is not in this build — a `pod install` or a rebuild that
+   * has not happened. Told apart from 'unavailable' because the two look
+   * identical on screen and are fixed completely differently.
+   */
+  | 'no-reader';
+
+/** Why there is no picture, in words the person seeing it can act on. */
+export const CAMERA_NOTICE: Record<CameraState, string | undefined> = {
+  ready: undefined,
+  'no-permission': undefined,
+  refused: undefined,
+  unavailable: 'No camera on this device — showing an example',
+  'no-reader': 'Camera reader not in this build — showing an example',
+};

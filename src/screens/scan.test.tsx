@@ -20,8 +20,9 @@ describe('Scan — the three readers', () => {
     expect(screen.getByText('Plate')).toBeTruthy();
     expect(screen.getByText('Label')).toBeTruthy();
     expect(screen.getByText(/Point at the barcode/)).toBeTruthy();
-    // The way out of a barcode that does not exist, before it fails.
-    expect(screen.getByText('No barcode? Switch to Plate')).toBeTruthy();
+    // Jest has no camera, as the simulator has none, so the footnote says why
+    // rather than showing the designed hint. See live.test.tsx for that.
+    expect(screen.getByText(/showing an example/)).toBeTruthy();
   });
 
   it('switching mode starts that reader aiming, not showing the last result', async () => {

@@ -124,7 +124,8 @@ function useNativeLabelReader() {
  * Without them                                                       *
  * ------------------------------------------------------------------ */
 
-const NO_CAMERA = () => 'unavailable' as CameraState;
+/** No native module at all: a different problem from no camera, and says so. */
+const NO_CAMERA = () => 'no-reader' as CameraState;
 const NO_OUTPUT = () => undefined;
 const NO_LABEL_READER = () => ({
   photoOutput: undefined,
