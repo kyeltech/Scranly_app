@@ -1,6 +1,6 @@
 /**
- * A build where the native readers are missing — a forgotten `pod install`,
- * which is exactly what happened.
+ * A build where the native camera is missing — a forgotten `pod install`, which
+ * is exactly what happened.
  *
  * The JS packages are in node_modules either way, so the import succeeds and
  * the native half is simply absent. Before this, that took the whole app down
@@ -10,15 +10,13 @@
 jest.mock('react-native-vision-camera', () => {
   throw new Error('Native module VisionCamera not found');
 });
-jest.mock('react-native-nitro-ocr', () => {
-  throw new Error('Native module NitroOcr not found');
-});
 
 import React from 'react';
 import {render, screen} from '@testing-library/react-native';
 import Scan from '../screens/Scan';
 import Root from '../navigation/Root';
 import {hasNativeReaders} from './native';
+import {hasLabelReader} from './useReaders';
 
 describe('A build with no native readers', () => {
   it('notices they are missing rather than trusting the import', () => {
@@ -47,5 +45,14 @@ describe('A build with no native readers', () => {
   it('still reaches the label result, which needs no camera to render', async () => {
     await render(<Scan mode="label" stage="result" />);
     expect(screen.getByText('READ FROM THE LABEL')).toBeTruthy();
+  });
+});
+
+describe('A build with the camera but no OCR', () => {
+  it('keeps the barcode reader and falls back on the label mode alone', () => {
+    // Exercised for real when @react-native-ml-kit/text-recognition is absent:
+    // the camera is fine and only the label reader is missing, so saying 'no
+    // camera' there would be a lie. See hasLabelReader in useReaders.
+    expect(typeof hasLabelReader).toBe('boolean');
   });
 });

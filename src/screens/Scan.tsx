@@ -3,6 +3,7 @@ import Viewfinder from '../components/Viewfinder';
 import Preview from '../components/Preview';
 import CameraRefused from './scan/CameraRefused';
 import {
+  hasLabelReader,
   outputsOf,
   useBarcodeReader,
   useCameraState,
@@ -100,6 +101,8 @@ export default function Scan({
    */
   const camera = useCameraState();
   const live = camera === 'ready';
+  /** The label mode needs an OCR library as well as a camera. */
+  const liveLabel = live && hasLabelReader;
   /**
    * Why there is no picture, when there is none. Four different causes produced
    * the same drawn stand-in, with no way to tell them apart from the outside —
@@ -107,6 +110,8 @@ export default function Scan({
    * a build that skipped a pod install.
    */
   const notice = CAMERA_NOTICE[camera];
+  const labelNotice =
+    notice ?? (hasLabelReader ? undefined : 'No label reader in this build — showing an example');
 
   /** What was actually read, kept so a poor read can show its working. */
   const [scanned, setScanned] = useState<ScannedBarcode | undefined>();
@@ -300,11 +305,11 @@ export default function Scan({
       hint={aiming ? 'Fit the whole nutrition table in the frame' : undefined}
       mode={aiming ? mode : undefined}
       onMode={aiming ? changeMode : undefined}
-      footnote={aiming ? notice : undefined}
+      footnote={aiming ? labelNotice : undefined}
       onShutter={
         aiming
           ? () => {
-              if (!live) {
+              if (!liveLabel) {
                 setStage('result');
                 return;
               }
@@ -333,7 +338,7 @@ export default function Scan({
           />
         ) : undefined
       }>
-      {live ? (
+      {liveLabel ? (
         <Preview outputs={outputsOf(labelReader.photoOutput)} torch={torch} />
       ) : (
         <NutritionLabel />

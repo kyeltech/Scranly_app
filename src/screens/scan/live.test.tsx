@@ -40,17 +40,17 @@ describe('With a working camera', () => {
     expect(screen.queryByTestId('subject-barcode')).toBeNull();
   });
 
-  it('gives the barcode mode its scanner and the label mode its shutter', async () => {
+  it('gives the barcode mode its scanner', async () => {
     await render(<Scan />);
     expect(latestCamera().outputs).toEqual([{kind: 'objects'}]);
+  });
 
-    camera.__resetCamera();
-    camera.__setCamera({
-      device: {id: 'back-wide'},
-      photoOutput: {kind: 'photo', capturePhoto: jest.fn()},
-    });
+  it('gives the label mode its shutter, now there is an OCR library again', async () => {
     await render(<Scan mode="label" />);
+
     expect(latestCamera().outputs[0].kind).toBe('photo');
+    expect(screen.queryByTestId('subject-label')).toBeNull();
+    expect(screen.queryByText(/No label reader in this build/)).toBeNull();
   });
 
   it('toggles the torch, which was a dead button before there was a camera', async () => {

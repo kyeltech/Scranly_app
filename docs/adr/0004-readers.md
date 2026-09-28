@@ -1,6 +1,29 @@
 # ADR-0004: What actually reads the barcode, the plate and the label
 
-**Status: OPEN — options only, no decision.** Three separate choices, not one. Kyel decides; this
+**Status: PART DECIDED — barcode and label chosen; the plate is still open.**
+
+Decided: react-native-vision-camera 5.2.3 for the camera and its built-in barcode
+scanner; @react-native-ml-kit/text-recognition 2.0.0 for the label. The plate is
+deferred — it is the only reader with a running cost, and deferring it costs
+nothing.
+
+**react-native-nitro-ocr was tried first and abandoned.** It installs as a
+pre-release and does not compile:
+
+| Attempt | Failure |
+| --- | --- |
+| 0.1.0-beta.0 | `CGImagePropertyOrientation` does not conform to `BinaryFloatingPoint` |
+| 0.1.0-beta.1, nitro-modules 0.37.1 | `Type 'RuntimeError' has no member 'from'` |
+| 0.1.0-beta.1, nitro-modules 0.35.10 (what it asks for) | the same, on a clean build |
+
+The third is the telling one: `RuntimeError.from(cppError:)` is present in
+0.35.10 — read it in the source — and there is only one copy of nitro-modules in
+the tree. Its generated bindings do not match any nitro-modules the camera can
+also live with. A library at 0.1.0-beta failing to build against the current iOS
+SDK is the library saying it is not ready; that should have been the conclusion
+after the first failure rather than the third.
+
+**Original status: OPEN — options only, no decision.** Three separate choices, not one. Kyel decides; this
 records what the options are and what each costs, so the decision is made on facts rather than on
 whichever library I reached for first.
 

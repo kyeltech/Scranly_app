@@ -14,6 +14,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-ml-kit/text-recognition": "^2.0.0",
     "@react-native/new-app-screen": "0.87.1",
     "@react-navigation/native": "^7.4.1",
     "@react-navigation/native-stack": "^7.19.2",
@@ -21,8 +22,7 @@
     "react-native": "0.87.1",
     "react-native-bootsplash": "^7.3.3",
     "react-native-nitro-image": "^0.15.2",
-    "react-native-nitro-modules": "^0.37.1",
-    "react-native-nitro-ocr": "^0.1.0-beta.0",
+    "react-native-nitro-modules": "^0.35.0",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.28.0",
     "react-native-svg": "^15.15.5",

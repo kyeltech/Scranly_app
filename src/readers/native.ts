@@ -12,9 +12,16 @@
  * the app.
  */
 
-type VisionCamera = typeof import('react-native-vision-camera');
-type NitroOcr = typeof import('react-native-nitro-ocr');
+import type {MlKitResult} from './mlkit';
 
+type VisionCamera = typeof import('react-native-vision-camera');
+/**
+ * The OCR module's default export. Typed here rather than imported from the
+ * package so a build without it stays a compile-time non-event.
+ */
+type TextRecogniser = {
+  recognize: (imageUrl: string, script?: string) => Promise<MlKitResult>;
+};
 /**
  * Requires a module and satisfies itself that the native half arrived, by
  * checking for something only the real one has. A module that throws on import,
@@ -34,10 +41,20 @@ export const visionCamera = load<VisionCamera>(
   m => typeof m.useCameraPermission === 'function',
 );
 
-export const nitroOcr = load<NitroOcr>(
-  () => require('react-native-nitro-ocr'),
-  m => typeof m.recognize === 'function',
+/**
+ * The package exports the recogniser as a default, so the interop shape is
+ * `{default: {recognize}}` — checked rather than assumed, because a half-built
+ * module is exactly what a missing pod looks like.
+ */
+export const textRecogniser = load<{default?: TextRecogniser} & TextRecogniser>(
+  () => require('@react-native-ml-kit/text-recognition'),
+  m => typeof (m.default ?? m).recognize === 'function',
 );
 
-/** True when the native readers are in this build. */
+/** Whichever of the two shapes the bundler handed back. */
+export const ocr: TextRecogniser | undefined = textRecogniser
+  ? textRecogniser.default ?? textRecogniser
+  : undefined;
+
+/** True when the camera is in this build. The OCR is separate — see `ocr`. */
 export const hasNativeReaders = visionCamera !== undefined;

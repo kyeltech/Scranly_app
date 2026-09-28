@@ -4,9 +4,9 @@ import type {
   ScannedObject,
   ScannedObjectType,
 } from 'react-native-vision-camera';
-import {nitroOcr, visionCamera} from './native';
+import {ocr, visionCamera} from './native';
 import {parseLabel} from './label';
-import {linesOf, toRows} from './rows';
+import {asImageUrl, rowsFromMlKit} from './mlkit';
 import type {CameraState, LabelRead, ScannedBarcode} from './index';
 
 /**
@@ -105,11 +105,9 @@ function useNativeLabelReader() {
       // A temporary file, so no filesystem library is needed. The photo is read
       // on this device and never sent anywhere.
       const path = await photo.saveToTemporaryFileAsync();
-      const result = await nitroOcr!.recognize(path, {
-        recognitionLevel: 'accurate',
-        languageCorrection: false, // Correction mangles '34.9g' into words.
-      });
-      const rows = toRows(linesOf(result));
+      // A temporary file read on this device. Nothing is uploaded.
+      const result = await ocr!.recognize(asImageUrl(path));
+      const rows = rowsFromMlKit(result);
       return {reading: parseLabel(rows), rows};
     } finally {
       photo.dispose();
@@ -139,6 +137,14 @@ const NO_LABEL_READER = () => ({
 
 export const useCameraState = visionCamera ? useNativeCameraState : NO_CAMERA;
 
+/**
+ * Whether this build can read a label at all. Separate from the camera, because
+ * they fail separately: with no OCR library the barcode reader is still live and
+ * only the label mode falls back to its drawn stand-in. Saying 'no camera' there
+ * would be a lie — the camera is fine, the reader is missing.
+ */
+export const hasLabelReader = visionCamera !== undefined && ocr !== undefined;
+
 export const useBarcodeReader: (
   onRead: (code: ScannedBarcode) => void,
   enabled: boolean,
@@ -148,7 +154,7 @@ export const useLabelReader: () => {
   photoOutput: CameraOutput | undefined;
   capture: () => Promise<LabelRead>;
   reading: boolean;
-} = visionCamera && nitroOcr ? useNativeLabelReader : NO_LABEL_READER;
+} = visionCamera && ocr ? useNativeLabelReader : NO_LABEL_READER;
 
 /**
  * The outputs a mode needs, minus any the build does not have. Only ever called
