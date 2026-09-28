@@ -181,6 +181,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
               onAdd={navigation.goBack}
               onCreateFromLabel={() => navigation.navigate('CreateFood')}
               onWeighPortion={() => navigation.navigate('Portion')}
+              onTypeItIn={() => navigation.navigate('CreateFood')}
             />
           )}
         </Stack.Screen>

@@ -340,12 +340,19 @@ export function LabelResultSheet({
   rows,
   servingG,
   column,
+  unread,
   onColumn,
   onFix,
   onSave,
 }: {
   rows: LabelRow[];
   servingG: number;
+  /**
+   * Lines the reader could not place. Shown rather than swallowed: the photo
+   * never leaves the phone, so the text is the only way to see why a read went
+   * wrong — and the only thing worth sending to whoever fixes the parser.
+   */
+  unread?: string[];
   column: LabelColumn;
   onColumn?: (next: LabelColumn) => void;
   onFix?: (row: LabelRow) => void;
@@ -391,6 +398,13 @@ export function LabelResultSheet({
       </Text>
 
       <ScrollView style={styles.labelList}>
+        {unread && unread.length > 0 ? (
+          <View style={styles.unread}>
+            <Note tone="caveat" icon={<Info colour={t.status.close} size={15} />}>
+              {`Could not place: ${unread.join(' · ')}`}
+            </Note>
+          </View>
+        ) : null}
         {rows.map(row => (
           <View key={row.id} style={[styles.labelRow, {borderBottomColor: t.line}]}>
             <Text
@@ -525,6 +539,7 @@ const styles = StyleSheet.create({
   columnLabel: {...type_.bodyStrong, fontSize: 14},
   columnNote: {...type_.caption, fontSize: 12.5, lineHeight: 18, marginTop: 12},
   labelList: {flex: 1, marginTop: 2},
+  unread: {marginBottom: 8},
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',

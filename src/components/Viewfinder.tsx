@@ -48,6 +48,7 @@ export default function Viewfinder({
   footnote,
   onShutter,
   children,
+  live,
   sheet,
   working,
 }: {
@@ -65,8 +66,13 @@ export default function Viewfinder({
   onMode?: (next: Mode) => void;
   footnote?: string;
   onShutter?: () => void;
-  /** The stand-in picture. */
+  /**
+   * The stand-in picture. Shown whenever `live` is absent — which is what the
+   * iOS simulator gets, since it has no camera at all.
+   */
   children?: React.ReactNode;
+  /** The real camera preview, when this device has one and may use it. */
+  live?: React.ReactNode;
   /** The panel that rises over the picture, when there is one. */
   sheet?: React.ReactNode;
   /**
@@ -93,7 +99,7 @@ export default function Viewfinder({
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#ground)" />
       </Svg>
 
-      {children}
+      {live ?? children}
 
       {scrim > 0 ? (
         <View

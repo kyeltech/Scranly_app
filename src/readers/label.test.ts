@@ -1,4 +1,4 @@
-import {parseLabel} from './label';
+import {parseLabel, toLabelRows} from './label';
 
 /**
  * The cases are real UK label wordings, not invented ones. Every awkward line
@@ -123,5 +123,46 @@ describe('when the read is partial', () => {
   it('survives the empty and the nonsense', () => {
     expect(parseLabel([]).per100).toEqual({});
     expect(parseLabel(['', '   ']).unread).toEqual([]);
+  });
+});
+
+describe('showing a reading back', () => {
+  it('lists only what was read, in the order a label prints it', () => {
+    const rows = toLabelRows({reading: parseLabel(CHEDDAR)});
+
+    expect(rows.map(r => r.name)).toEqual([
+      'Energy',
+      'Fat',
+      'of which saturates',
+      'Carbohydrate',
+      'of which sugars',
+      'Protein',
+      'Salt',
+    ]);
+    // Fibre was not on this label, so it is absent rather than zero.
+    expect(rows.find(r => r.id === 'fibre')).toBeUndefined();
+  });
+
+  it('carries the units the label uses', () => {
+    const rows = toLabelRows({reading: parseLabel(CHEDDAR)});
+    const energy = rows.find(r => r.id === 'energyKcal');
+
+    expect(energy?.per100).toBe('416 kcal');
+    expect(energy?.perServing).toBe('125 kcal');
+    expect(rows.find(r => r.id === 'fat')?.per100).toBe('34.9 g');
+  });
+
+  it('dashes a column it could not read, rather than inventing it', () => {
+    const rows = toLabelRows({reading: parseLabel(['Fat 34.9g'])});
+
+    expect(rows[0].per100).toBe('34.9 g');
+    // One column on the pack means one column here. Halving would be invention.
+    expect(rows[0].perServing).toBe('—');
+  });
+
+  it('marks the sub-rows, so the indent survives', () => {
+    const rows = toLabelRows({reading: parseLabel(CHEDDAR)});
+    expect(rows.find(r => r.id === 'saturates')?.under).toBe(true);
+    expect(rows.find(r => r.id === 'fat')?.under).toBe(false);
   });
 });
