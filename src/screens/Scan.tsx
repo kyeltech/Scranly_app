@@ -8,6 +8,7 @@ import {
   useCameraState,
   useLabelReader,
 } from '../readers/useReaders';
+import {CAMERA_NOTICE} from '../readers';
 import type {LabelRead, ScannedBarcode} from '../readers';
 import {toLabelRows} from '../readers/label';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
@@ -99,6 +100,13 @@ export default function Scan({
    */
   const camera = useCameraState();
   const live = camera === 'ready';
+  /**
+   * Why there is no picture, when there is none. Four different causes produced
+   * the same drawn stand-in, with no way to tell them apart from the outside —
+   * so the screen says which. True of a user's iPad with no camera as much as of
+   * a build that skipped a pod install.
+   */
+  const notice = CAMERA_NOTICE[camera];
 
   /** What was actually read, kept so a poor read can show its working. */
   const [scanned, setScanned] = useState<ScannedBarcode | undefined>();
@@ -203,7 +211,7 @@ export default function Scan({
         hintDot={stage === 'looking' || stage === 'found'}
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
-        footnote={aiming ? 'No barcode? Switch to Plate' : undefined}
+        footnote={aiming ? notice ?? 'No barcode? Switch to Plate' : undefined}
         sheet={
           stage === 'looking' ? (
             <LookingUpSheet barcode={scanned?.value ?? BARCODE} onCancel={onClose} />
@@ -250,6 +258,7 @@ export default function Scan({
         hint={aiming ? 'Fit the whole plate in frame, from above' : undefined}
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
+        footnote={aiming ? notice : undefined}
         onShutter={aiming ? () => setStage('working') : undefined}
         working={
           stage === 'working'
@@ -291,6 +300,7 @@ export default function Scan({
       hint={aiming ? 'Fit the whole nutrition table in the frame' : undefined}
       mode={aiming ? mode : undefined}
       onMode={aiming ? changeMode : undefined}
+      footnote={aiming ? notice : undefined}
       onShutter={
         aiming
           ? () => {
