@@ -48,11 +48,11 @@ describe('A build with no native readers', () => {
   });
 });
 
-describe('A build with the camera but no OCR', () => {
-  it('keeps the barcode reader and falls back on the label mode alone', () => {
-    // Exercised for real when @react-native-ml-kit/text-recognition is absent:
-    // the camera is fine and only the label reader is missing, so saying 'no
-    // camera' there would be a lie. See hasLabelReader in useReaders.
-    expect(typeof hasLabelReader).toBe('boolean');
+describe('A build with neither', () => {
+  it('cannot read a label either, for the other reason', () => {
+    expect(hasLabelReader).toBe(false);
   });
 });
+
+// The camera-without-OCR build — the half-finished `pod install` — is its own
+// file, because it needs the module registry loaded a second way: noOcr.test.ts.
