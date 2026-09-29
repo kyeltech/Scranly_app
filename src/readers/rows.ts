@@ -70,9 +70,10 @@ export function toRows(lines: RecognisedLine[]): string[] {
 }
 
 /**
- * What the OCR result looks like from react-native-nitro-ocr. Kept structural
- * rather than imported, so the parser and this file owe nothing to the library
- * — which matters while that library is a beta.
+ * The shape an OCR result arrives in — blocks of lines, each with a box.
+ * Kept structural rather than imported from whichever library is current, so
+ * the parser owes nothing to it. That has already paid for itself once:
+ * the library underneath changed and this file did not.
  */
 export type OcrResultShape = {
   blocks?: {lines?: RecognisedLine[]}[];

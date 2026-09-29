@@ -84,3 +84,6 @@ package-lock.json
 
 # Local agent tool settings, never committed
 .claude/
+
+# Build logs from command-line xcodebuild runs
+build.log
