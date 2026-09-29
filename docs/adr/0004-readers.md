@@ -23,6 +23,24 @@ also live with. A library at 0.1.0-beta failing to build against the current iOS
 SDK is the library saying it is not ready; that should have been the conclusion
 after the first failure rather than the third.
 
+### Two things the ML Kit package brings with it
+
+Both were found by reading its podspec and its iOS source, not by hitting them at runtime. Neither
+blocks the build; both are Kyel's call.
+
+1. **It pulls five script packs.** The podspec depends on `GoogleMLKit/TextRecognition` *plus*
+   Chinese, Devanagari, Japanese and Korean — all five, unconditionally — and the Objective-C file
+   `@import`s all of them. A UK food label is Latin. The extra packs are app size for nothing, and
+   trimming them means either patch-package (a new dev dependency) or a vendored podspec with
+   autolinking disabled for the package. Deferred: app size decides nothing before the App Store,
+   and the release is gated on 20 active users.
+2. **It is an old-architecture bridge module** (`RCT_EXPORT_MODULE`, `NativeModules.TextRecognition`)
+   in a project running the New Architecture. RN 0.87's interop layer is meant to carry it. If it
+   does not, that is the first thing to suspect on a failed label read.
+
+It also requires **iOS 15.5**, so the project's deployment target moved from 15.1 (see the Podfile's
+`post_install`, which holds every pod target at the same floor).
+
 **Original status: OPEN — options only, no decision.** Three separate choices, not one. Kyel decides; this
 records what the options are and what each costs, so the decision is made on facts rather than on
 whichever library I reached for first.
