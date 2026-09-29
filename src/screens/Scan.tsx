@@ -112,6 +112,12 @@ export default function Scan({
   const notice = CAMERA_NOTICE[camera];
   const labelNotice =
     notice ?? (hasLabelReader ? undefined : 'No label reader in this build — showing an example');
+  /**
+   * There is no plate reader in any build yet, so the plate mode never shows a
+   * live picture: a preview that reads nothing is a promise the app cannot
+   * keep. The drawn plate and the footnote say what is actually happening.
+   */
+  const plateNotice = notice ?? 'No plate reader yet — showing an example';
 
   /** What was actually read, kept so a poor read can show its working. */
   const [scanned, setScanned] = useState<ScannedBarcode | undefined>();
@@ -132,23 +138,26 @@ export default function Scan({
    * neither stage is one the screen can be stuck in.
    */
   useEffect(() => {
-    // With a real camera the reader supplies these transitions itself; the
-    // timers are the stand-in's way of walking the same states.
-    if (live) {
-      if (mode === 'barcode' && stage === 'looking') {
-        const t = setTimeout(() => setStage(missing ? 'nomatch' : 'found'), LOOKUP_MS);
-        return () => clearTimeout(t);
-      }
-      return undefined;
-    }
-    if (mode === 'barcode' && stage === 'aiming') {
+    // Aiming is where a reader takes over: with a real camera the barcode
+    // scanner reports the code itself, so only the stand-in needs walking out
+    // of it.
+    if (mode === 'barcode' && stage === 'aiming' && !live) {
       const t = setTimeout(() => setStage('looking'), LOOKUP_MS);
       return () => clearTimeout(t);
     }
+    // Looking up is a timer in both builds, because the lookup is still a mock.
     if (mode === 'barcode' && stage === 'looking') {
       const t = setTimeout(() => setStage(missing ? 'nomatch' : 'found'), LOOKUP_MS);
       return () => clearTimeout(t);
     }
+    /**
+     * And so is the plate, in both builds, because there is no plate reader in
+     * either — ADR-0004 is still open on it. This used to sit inside the branch
+     * that only ran without a camera, so on a real phone the shutter opened the
+     * 'Working out what's on the plate' overlay and nothing ever closed it.
+     * Nothing caught it, because every test ran on the simulator's no-camera
+     * path where the timer did run.
+     */
     if (mode === 'plate' && stage === 'working') {
       const t = setTimeout(() => setStage('result'), ANALYSE_MS);
       return () => clearTimeout(t);
@@ -263,7 +272,7 @@ export default function Scan({
         hint={aiming ? 'Fit the whole plate in frame, from above' : undefined}
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
-        footnote={aiming ? notice : undefined}
+        footnote={aiming ? plateNotice : undefined}
         onShutter={aiming ? () => setStage('working') : undefined}
         working={
           stage === 'working'
@@ -285,11 +294,7 @@ export default function Scan({
             />
           ) : undefined
         }>
-        {live ? (
-          <Preview outputs={outputsOf(labelReader.photoOutput)} torch={torch} />
-        ) : (
-          <Plate />
-        )}
+        <Plate />
       </Viewfinder>
     );
   }

@@ -8,7 +8,7 @@
  * silently do nothing.
  */
 import React from 'react';
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {act, fireEvent, render, screen} from '@testing-library/react-native';
 const camera = require('react-native-vision-camera');
 import Scan from '../Scan';
 
@@ -67,5 +67,27 @@ describe('With a working camera', () => {
     // The stand-in advances itself; a real reader supplies the transition.
     expect(screen.getByText(/Point at the barcode/)).toBeTruthy();
     expect(screen.queryByText('LOOKING UP')).toBeNull();
+  });
+
+  it('walks the plate out of Working, which it did not on a real phone', async () => {
+    await render(<Scan mode="plate" />);
+
+    await fireEvent.press(screen.getByLabelText('Take the photo'));
+    expect(screen.getByText(/Working out what/)).toBeTruthy();
+
+    // The plate timer used to live inside the no-camera branch, so with a real
+    // camera nothing ever closed this overlay and Cancel was the only way out.
+    await act(async () => {
+      jest.advanceTimersByTime(10000);
+    });
+
+    expect(screen.queryByText(/Working out what/)).toBeNull();
+  });
+
+  it('does not show a live picture for a plate it cannot read', async () => {
+    await render(<Scan mode="plate" />);
+
+    expect(screen.getByTestId('subject-plate')).toBeTruthy();
+    expect(screen.getByText(/No plate reader yet/)).toBeTruthy();
   });
 });
