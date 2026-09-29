@@ -12,6 +12,7 @@
  * the app.
  */
 
+import {NativeModules} from 'react-native';
 import type {MlKitResult} from './mlkit';
 
 type VisionCamera = typeof import('react-native-vision-camera');
@@ -45,10 +46,18 @@ export const visionCamera = load<VisionCamera>(
  * The package exports the recogniser as a default, so the interop shape is
  * `{default: {recognize}}` — checked rather than assumed, because a half-built
  * module is exactly what a missing pod looks like.
+ *
+ * And checking the JS shape is not enough on its own. This package's `recognize`
+ * is an ordinary function that reaches for `NativeModules.TextRecognition` only
+ * when called, so with the pod missing it still looks like a working reader and
+ * fails at the shutter instead — the worst possible moment. The native module
+ * itself is the honest test, so that is what is asked for.
  */
 export const textRecogniser = load<{default?: TextRecogniser} & TextRecogniser>(
   () => require('@react-native-ml-kit/text-recognition'),
-  m => typeof (m.default ?? m).recognize === 'function',
+  m =>
+    typeof (m.default ?? m).recognize === 'function' &&
+    NativeModules.TextRecognition != null,
 );
 
 /** Whichever of the two shapes the bundler handed back. */
