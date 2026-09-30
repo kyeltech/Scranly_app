@@ -346,7 +346,10 @@ export default function Scan({
                   setStage('result');
                 })
                 // A failed read returns to aiming, and says so.
-                .catch(() => {
+                .catch(error => {
+                  if (__DEV__) {
+                    console.log('[label] capture threw', String(error));
+                  }
                   setPoorRead(true);
                   setStage('aiming');
                 });
