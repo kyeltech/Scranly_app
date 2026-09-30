@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import Viewfinder from '../components/Viewfinder';
 import Preview from '../components/Preview';
 import CameraRefused from './scan/CameraRefused';
+import ReadDebug from './scan/ReadDebug';
 import {
   hasLabelReader,
   outputsOf,
@@ -127,6 +128,12 @@ export default function Scan({
    * rather than in a sheet, because the answer is to take another photo.
    */
   const [poorRead, setPoorRead] = useState(false);
+  /**
+   * The last read, good or bad, and why it failed if it did. Only ever shown in
+   * a development build — see ReadDebug.
+   */
+  const [lastRead, setLastRead] = useState<LabelRead | undefined>();
+  const [captureError, setCaptureError] = useState<string | undefined>();
 
   const onBarcode = useCallback((code: ScannedBarcode) => {
     setScanned(code);
@@ -331,10 +338,12 @@ export default function Scan({
                 return;
               }
               setPoorRead(false);
+              setCaptureError(undefined);
               setStage('working');
               labelReader
                 .capture()
                 .then(read => {
+                  setLastRead(read);
                   // A fragment is a failed read, not a thin answer: showing one
                   // row under 'Check these before saving' invites saving it.
                   if (!isUsable(read.reading)) {
@@ -347,9 +356,8 @@ export default function Scan({
                 })
                 // A failed read returns to aiming, and says so.
                 .catch(error => {
-                  if (__DEV__) {
-                    console.log('[label] capture threw', String(error));
-                  }
+                  setLastRead(undefined);
+                  setCaptureError(String(error));
                   setPoorRead(true);
                   setStage('aiming');
                 });
@@ -357,7 +365,11 @@ export default function Scan({
           : undefined
       }
       sheet={
-        stage === 'result' ? (
+        // A failed read, on a development build, says what it got rather than
+        // only that it failed — the diagnosis belongs where the failure is.
+        poorRead && __DEV__ ? (
+          <ReadDebug read={lastRead} error={captureError} />
+        ) : stage === 'result' ? (
           <LabelResultSheet
             rows={labelRead ? toLabelRows(labelRead) : labelRows}
             servingG={labelRead?.reading.servingG ?? labelServingG}
