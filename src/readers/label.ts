@@ -128,11 +128,34 @@ function isHeader(line: string): boolean {
   return /typical values|per\s*100|nutrition|reference intake|\bri\b/i.test(line);
 }
 
-function nutrientOf(line: string): Nutrient | undefined {
+/**
+ * A table row names its nutrient and then states the numbers: 'Energy 1728kJ /
+ * 416kcal', 'Fat 34.9g'. Prose about the pack does the opposite — it mentions
+ * the unit at the end, after a serving size: 'Each slice (30g) contains
+ * 75kcal'.
+ *
+ * Reading that sentence as the energy row is how a photo that caught only the
+ * small print under a panel produced a complete-looking reading of one row,
+ * 75 kcal per 100 g, with nothing flagged as unread because the line had
+ * matched. A footnote is not a nutrition table.
+ *
+ * So the keyword has to come before the first number. A line that mentions a
+ * nutrient only after its numbers is prose, and is passed over in silence the
+ * way a column header is — reporting it as unread would put a warning on every
+ * label that carries a perfectly ordinary footnote.
+ */
+function isProse(line: string, at: number): boolean {
+  const firstDigit = line.search(/\d/);
+  return firstDigit !== -1 && at > firstDigit;
+}
+
+function nutrientOf(line: string): Nutrient | undefined | 'prose' {
   for (const [nutrient, pattern] of NUTRIENTS) {
-    if (pattern.test(line)) {
-      return nutrient;
+    const at = line.match(pattern)?.index;
+    if (at === undefined) {
+      continue;
     }
+    return isProse(line, at) ? 'prose' : nutrient;
   }
   return undefined;
 }
@@ -157,9 +180,10 @@ export function parseLabel(lines: string[]): LabelReading {
     }
 
     const nutrient = nutrientOf(line);
-    if (!nutrient || isHeader(line)) {
-      // A header is expected and not worth reporting; anything else is a miss.
-      if (!isHeader(line) && /\d/.test(line)) {
+    if (!nutrient || nutrient === 'prose' || isHeader(line)) {
+      // A header and a footnote are both expected and neither is worth
+      // reporting; anything else carrying a number is a miss.
+      if (nutrient !== 'prose' && !isHeader(line) && /\d/.test(line)) {
         unread.push(line);
       }
       continue;

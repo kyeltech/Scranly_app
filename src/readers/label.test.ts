@@ -166,3 +166,52 @@ describe('showing a reading back', () => {
     expect(rows.find(r => r.id === 'fat')?.under).toBe(false);
   });
 });
+
+/**
+ * The failure that a real phone found, and no fixture had.
+ *
+ * Pointed at a pack, the photo caught the small print under the panel and
+ * little else. 'Each slice (30g) contains 75kcal' mentions kcal, so it was read
+ * as the energy row — and the screen showed a finished-looking reading of one
+ * row, 75 kcal per 100 g, with nothing flagged, because the line had matched.
+ */
+describe('Prose under the panel', () => {
+  it('is not the energy row', () => {
+    const read = parseLabel(['Each slice (30g) contains 75kcal']);
+
+    expect(read.per100.energyKcal).toBeUndefined();
+    expect(read.perServing.energyKcal).toBeUndefined();
+  });
+
+  it('still gives up the serving size, which it does state', () => {
+    expect(parseLabel(['Each slice (30g) contains 75kcal']).servingG).toBe(30);
+  });
+
+  it('does not put a warning on a label that reads perfectly', () => {
+    const read = parseLabel([
+      'Typical values per 100g per 30g slice',
+      'Energy 1050kJ / 249kcal 315kJ / 75kcal',
+      'Fat 3.2g 1.0g',
+      'Each slice (30g) contains 75kcal',
+    ]);
+
+    // The table wins, and the footnote is passed over rather than reported —
+    // a warning on every ordinary footnote is worse than no warning at all.
+    expect(read.per100.energyKcal).toBe(249);
+    expect(read.perServing.energyKcal).toBe(75);
+    expect(read.unread).toEqual([]);
+  });
+
+  it('leaves a row that names its nutrient first alone', () => {
+    // The rule is positional, so check it does not swallow the ordinary shape.
+    expect(parseLabel(['Energy (kJ/kcal) 1515/362 606/145']).per100.energyKcal).toBe(362);
+    expect(parseLabel(['of which saturates 21.7g 6.5g']).per100.saturates).toBe(21.7);
+    expect(parseLabel(['Sodium 0.5g 0.15g']).per100.salt).toBe(0.5);
+  });
+
+  it('reports a numeric line it cannot place, which is a different thing', () => {
+    expect(parseLabel(['This pack contains 8 servings']).unread).toEqual([
+      'This pack contains 8 servings',
+    ]);
+  });
+});

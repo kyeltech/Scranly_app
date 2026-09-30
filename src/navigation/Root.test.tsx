@@ -1,6 +1,7 @@
 import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react-native';
 import Root from './Root';
+import {dayMarks} from '../fixtures/days';
 
 describe('the app', () => {
   it('walks from the welcome through onboarding to Today', async () => {
@@ -164,11 +165,24 @@ describe('picking a day changes the day', () => {
 
   it('agrees with its own dots: a day the month shows as over opens as over', async () => {
     await openPicker();
-    // The marks put an over day three days back from today.
-    const over = new Date();
-    over.setDate(over.getDate() - 3);
 
-    await fireEvent.press(screen.getByLabelText(dateLabel(over.getDate())));
+    /**
+     * Ask the marks which day is over rather than assuming one.
+     *
+     * This used to count three days back from today, because that is where the
+     * pattern puts an over day — except on the Sundays it marks empty instead,
+     * which made the test fail one day in seven. It duly failed on a Wednesday,
+     * having passed every day since it was written.
+     */
+    const today = new Date();
+    const marks = dayMarks(today);
+    const over = Object.keys(marks)
+      .filter(iso => marks[iso] === 'over')
+      .map(iso => new Date(`${iso}T00:00:00`))
+      .find(d => d.getMonth() === today.getMonth());
+
+    expect(over).toBeDefined();
+    await fireEvent.press(screen.getByLabelText(dateLabel(over!.getDate())));
     expect(screen.getByText('kcal over')).toBeTruthy();
   });
 });
