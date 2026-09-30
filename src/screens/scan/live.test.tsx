@@ -135,8 +135,25 @@ describe('With a working camera', () => {
 
     // Development builds only, which is what a test runs as.
     expect(screen.getByText('WHAT THE READER GOT')).toBeTruthy();
-    expect(screen.getByText(/1 row\(s\) after grouping/)).toBeTruthy();
+    expect(screen.getByText(/rows after grouping: 1/)).toBeTruthy();
     expect(screen.getByText(/Each slice \(30g\) contains 75kcal/)).toBeTruthy();
+  });
+
+  it('copies the whole dump, because it is too long to select by hand', async () => {
+    const {Clipboard} = require('react-native');
+    const setString = jest.spyOn(Clipboard, 'setString').mockImplementation(() => {});
+
+    await shootLabel(['Each slice (30g) contains 75kcal']);
+    await fireEvent.press(screen.getByLabelText('Copy the read'));
+
+    expect(setString).toHaveBeenCalledTimes(1);
+    const dump = setString.mock.calls[0][0];
+    // The rows and the parse, which is the whole point of copying it.
+    expect(dump).toContain('Each slice (30g) contains 75kcal');
+    expect(dump).toContain('per100:');
+    expect(dump).toContain('unread:');
+    expect(screen.getByText('Copied')).toBeTruthy();
+    setString.mockRestore();
   });
 
   it('opens the sheet when the photo caught the table', async () => {
