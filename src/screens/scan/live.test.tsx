@@ -90,4 +90,55 @@ describe('With a working camera', () => {
     expect(screen.getByTestId('subject-plate')).toBeTruthy();
     expect(screen.getByText(/No plate reader yet/)).toBeTruthy();
   });
+
+  /**
+   * The photo that caught the small print and none of the table. Before the
+   * floor, this opened the result sheet with one row and 'Save this food'
+   * under it — which is how a footnote nearly became a diary entry.
+   */
+  const shootLabel = async (lines: string[]) => {
+    const ocr = require('@react-native-ml-kit/text-recognition');
+    ocr.__setOcr({
+      blocks: [
+        {
+          lines: lines.map((text: string, i: number) => ({
+            text,
+            frame: {left: 0, top: i * 40, width: 300, height: 30},
+          })),
+        },
+      ],
+    });
+    camera.__setCamera({
+      photoOutput: {
+        kind: 'photo',
+        capturePhoto: jest.fn().mockResolvedValue({
+          saveToTemporaryFileAsync: jest.fn().mockResolvedValue('/tmp/label.jpg'),
+          dispose: jest.fn(),
+        }),
+      },
+    });
+    await render(<Scan mode="label" />);
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('Take the photo'));
+    });
+  };
+
+  it('stays on the viewfinder when the photo caught only the small print', async () => {
+    await shootLabel(['Each slice (30g) contains 75kcal']);
+
+    expect(screen.queryByText('Check these before saving')).toBeNull();
+    expect(screen.getByText(/Could not read that panel/)).toBeTruthy();
+  });
+
+  it('opens the sheet when the photo caught the table', async () => {
+    await shootLabel([
+      'Typical values per 100g per 30g',
+      'Energy 1728kJ / 416kcal 518kJ / 125kcal',
+      'Fat 34.9g 10.5g',
+      'Protein 25.4g 7.6g',
+    ]);
+
+    expect(screen.getByText('READ FROM THE LABEL')).toBeTruthy();
+    expect(screen.queryByText(/Could not read that panel/)).toBeNull();
+  });
 });

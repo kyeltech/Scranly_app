@@ -13,6 +13,12 @@ import {visionCamera} from '../readers/native';
  *
  * Deliberately thin — the frame, the hints and the sheets are the viewfinder's,
  * and they sit over this or over the drawn stand-in without knowing which.
+ *
+ * Tap-to-focus is the library's native gesture rather than a ref and a
+ * coordinate conversion of our own: it focuses where the finger lands, in the
+ * view's own coordinate system, which is the part that is easy to get subtly
+ * wrong. The first real label photo came back too blurred to read, and the
+ * shutter had no way of knowing.
  */
 export default function Preview({
   outputs,
@@ -36,6 +42,7 @@ export default function Preview({
       isActive={isActive}
       outputs={outputs}
       torchMode={torch ? 'on' : 'off'}
+      enableNativeTapToFocusGesture
     />
   );
 }

@@ -11,7 +11,7 @@ import {
 } from '../readers/useReaders';
 import {CAMERA_NOTICE} from '../readers';
 import type {LabelRead, ScannedBarcode} from '../readers';
-import {toLabelRows} from '../readers/label';
+import {isUsable, toLabelRows} from '../readers/label';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
 import {
   FoundSheet,
@@ -122,6 +122,11 @@ export default function Scan({
   /** What was actually read, kept so a poor read can show its working. */
   const [scanned, setScanned] = useState<ScannedBarcode | undefined>();
   const [labelRead, setLabelRead] = useState<LabelRead | undefined>();
+  /**
+   * The last shutter press did not produce a panel. Said on the viewfinder
+   * rather than in a sheet, because the answer is to take another photo.
+   */
+  const [poorRead, setPoorRead] = useState(false);
 
   const onBarcode = useCallback((code: ScannedBarcode) => {
     setScanned(code);
@@ -168,6 +173,7 @@ export default function Scan({
   const changeMode = (next: Mode) => {
     setMode(next);
     setStage('aiming');
+    setPoorRead(false);
   };
 
   const title = mode === 'plate' ? 'Scan a plate' : mode === 'label' ? 'Scan a label' : 'Scan';
@@ -307,7 +313,13 @@ export default function Scan({
       onTorch={() => setTorch(on => !on)}
       frame={aiming ? FRAMES.label : undefined}
       scrim={aiming ? 0 : 0.62}
-      hint={aiming ? 'Fit the whole nutrition table in the frame' : undefined}
+      hint={
+        aiming
+          ? poorRead
+            ? 'Could not read that panel. Fill the frame with the table and tap to focus.'
+            : 'Fit the whole nutrition table in the frame'
+          : undefined
+      }
       mode={aiming ? mode : undefined}
       onMode={aiming ? changeMode : undefined}
       footnote={aiming ? labelNotice : undefined}
@@ -318,15 +330,26 @@ export default function Scan({
                 setStage('result');
                 return;
               }
+              setPoorRead(false);
               setStage('working');
               labelReader
                 .capture()
                 .then(read => {
+                  // A fragment is a failed read, not a thin answer: showing one
+                  // row under 'Check these before saving' invites saving it.
+                  if (!isUsable(read.reading)) {
+                    setPoorRead(true);
+                    setStage('aiming');
+                    return;
+                  }
                   setLabelRead(read);
                   setStage('result');
                 })
-                // A failed read returns to aiming rather than to nothing.
-                .catch(() => setStage('aiming'));
+                // A failed read returns to aiming, and says so.
+                .catch(() => {
+                  setPoorRead(true);
+                  setStage('aiming');
+                });
             }
           : undefined
       }

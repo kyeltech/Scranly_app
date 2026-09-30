@@ -212,6 +212,27 @@ export function parseLabel(lines: string[]): LabelReading {
   return {servingG: servingFrom(lines), per100, perServing, unread};
 }
 
+/**
+ * Whether this is a nutrition panel or a scrap of one.
+ *
+ * A photo that catches the small print and none of the table still parses: it
+ * comes back with a serving size, one row and nothing marked unread, and the
+ * result sheet presents it as a finished reading with a Save button under it.
+ * That happened on the first real label, and the screen gave no sign of it.
+ *
+ * So there is a floor. Energy is on every panel in the country, and a panel
+ * carries more than two rows — anything below that is a fragment, and a
+ * fragment is a failed read rather than a thin answer. The cost of the floor is
+ * a re-snap when it misjudges; the cost of no floor is a wrong number in the
+ * diary that looks exactly like a right one.
+ */
+export function isUsable(reading: LabelReading): boolean {
+  return (
+    reading.per100.energyKcal !== undefined &&
+    Object.keys(reading.per100).length >= 3
+  );
+}
+
 /** The order a UK label prints them, which is the order to show them back. */
 const ROW_ORDER: [Nutrient, string, boolean][] = [
   ['energyKcal', 'Energy', false],
