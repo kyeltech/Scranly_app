@@ -1,4 +1,4 @@
-import {parseLabel, toLabelRows} from './label';
+import {isUsable, parseLabel, toLabelRows} from './label';
 
 /**
  * The cases are real UK label wordings, not invented ones. Every awkward line
@@ -213,5 +213,38 @@ describe('Prose under the panel', () => {
     expect(parseLabel(['This pack contains 8 servings']).unread).toEqual([
       'This pack contains 8 servings',
     ]);
+  });
+});
+
+describe('Whether a reading is a panel or a scrap of one', () => {
+  const panel = [
+    'Typical values per 100g per 30g',
+    'Energy 1728kJ / 416kcal 518kJ / 125kcal',
+    'Fat 34.9g 10.5g',
+    'Protein 25.4g 7.6g',
+  ];
+
+  it('accepts a panel', () => {
+    expect(isUsable(parseLabel(panel))).toBe(true);
+  });
+
+  it('rejects the footnote that started all this', () => {
+    expect(isUsable(parseLabel(['Each slice (30g) contains 75kcal']))).toBe(false);
+  });
+
+  it('rejects a couple of rows, which is not a panel', () => {
+    expect(isUsable(parseLabel(['Energy 1728kJ / 416kcal', 'Fat 34.9g']))).toBe(false);
+  });
+
+  it('rejects rows with no energy, because every UK panel carries it', () => {
+    const noEnergy = parseLabel(['Fat 34.9g', 'Protein 25.4g', 'Salt 1.8g']);
+    expect(Object.keys(noEnergy.per100)).toHaveLength(3);
+    expect(isUsable(noEnergy)).toBe(false);
+  });
+
+  it('accepts the sparsest real panel: energy, fat, carbs', () => {
+    expect(
+      isUsable(parseLabel(['Energy 416kcal', 'Fat 34.9g', 'Carbohydrate 0.1g'])),
+    ).toBe(true);
   });
 });
