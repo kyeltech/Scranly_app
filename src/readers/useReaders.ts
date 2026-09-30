@@ -108,6 +108,23 @@ function useNativeLabelReader() {
       // A temporary file read on this device. Nothing is uploaded.
       const result = await ocr!.recognize(asImageUrl(path));
       const rows = rowsFromMlKit(result);
+      if (__DEV__) {
+        // Everything between the shutter and the reading, in one place.
+        // Two rounds of fixes were made without ever seeing what ML Kit
+        // actually returns for a nutrition table; this is that.
+        console.log('[label] path', path, '->', asImageUrl(path));
+        console.log('[label] blocks', result.blocks?.length ?? 0);
+        console.log(
+          '[label] lines',
+          JSON.stringify(
+            (result.blocks ?? []).flatMap(b =>
+              (b.lines ?? []).map(l => [l.text, l.frame]),
+            ),
+          ),
+        );
+        console.log('[label] rows', JSON.stringify(rows));
+        console.log('[label] reading', JSON.stringify(parseLabel(rows)));
+      }
       return {reading: parseLabel(rows), rows};
     } finally {
       photo.dispose();

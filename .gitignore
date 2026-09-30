@@ -87,3 +87,4 @@ package-lock.json
 
 # Build logs from command-line xcodebuild runs
 build.log
+metro.log
