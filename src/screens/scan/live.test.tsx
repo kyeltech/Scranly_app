@@ -130,6 +130,15 @@ describe('With a working camera', () => {
     expect(screen.getByText(/Could not read that panel/)).toBeTruthy();
   });
 
+  it('shows what it did get, so a failure in a kitchen can be diagnosed', async () => {
+    await shootLabel(['Each slice (30g) contains 75kcal']);
+
+    // Development builds only, which is what a test runs as.
+    expect(screen.getByText('WHAT THE READER GOT')).toBeTruthy();
+    expect(screen.getByText(/1 row\(s\) after grouping/)).toBeTruthy();
+    expect(screen.getByText(/Each slice \(30g\) contains 75kcal/)).toBeTruthy();
+  });
+
   it('opens the sheet when the photo caught the table', async () => {
     await shootLabel([
       'Typical values per 100g per 30g',
