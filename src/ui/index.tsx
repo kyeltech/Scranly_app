@@ -1,10 +1,11 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Pressable, Text, TextInput, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import type {ViewStyle} from 'react-native';
-import {brand, radius, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 import {ChevronLeft, Info} from './icons';
 
+import {kit as styles} from '../styles';
 /**
  * Every screen's outermost view. It owns the safe-area insets, so no screen
  * draws under the status bar or the home indicator — the header row is the
@@ -351,58 +352,3 @@ export function Progress({step, of}: {step: number; of: number}) {
   );
 }
 
-export const styles = StyleSheet.create({
-  screen: {flex: 1},
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  headerText: {flex: 1},
-  overline: {...type_.label, marginBottom: 1},
-  round: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  button: {
-    height: 56,
-    borderRadius: radius.pill,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  buttonSub: {...type_.caption, opacity: 0.6, fontWeight: '600'},
-  segmented: {flexDirection: 'row', gap: 6},
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 9,
-    borderRadius: radius.pill,
-  },
-  segmentLabel: {...type_.caption, fontWeight: '600'},
-  field: {flex: 1},
-  fieldBox: {flexDirection: 'row', alignItems: 'center', marginTop: 6},
-  fieldRing: {borderWidth: 2, borderColor: brand.lime},
-  fieldValueRequired: {fontWeight: '700'},
-  fieldValue: {...type_.body, flex: 1},
-  note: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 9,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  noteText: {...type_.caption, flex: 1, fontSize: 12.5, lineHeight: 18},
-  panel: {borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16},
-  panelText: {...type_.body, fontSize: 13.5, lineHeight: 20, marginTop: 6},
-  textAction: {...type_.bodyStrong, textAlign: 'center'},
-  progress: {flexDirection: 'row', gap: 5, paddingHorizontal: spacing.lg},
-  progressBar: {flex: 1, height: 4, borderRadius: radius.pill},
-});

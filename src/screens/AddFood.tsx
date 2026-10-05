@@ -1,19 +1,13 @@
 import React, {useMemo, useState} from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import {Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {Button, Screen, useActionBarInset} from '../ui';
 import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons';
 import {withThousands} from '../lib/format';
-import {brand, radius, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
 import type {FoodItem} from '../fixtures/foods';
 
+import {addFood as styles} from '../styles';
 const FILTERS = ['Recent', 'Frequent', 'My foods', 'Meals'];
 
 export default function AddFood({
@@ -210,94 +204,3 @@ export default function AddFood({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  title: {flex: 1},
-  round: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: spacing.lg,
-    marginTop: 18,
-  },
-  search: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    height: 50,
-    paddingLeft: 14,
-    paddingRight: 7,
-    borderRadius: 15,
-    borderWidth: 2,
-  },
-  searchFocused: {borderColor: brand.lime},
-  searchResting: {borderColor: 'transparent'},
-  input: {...type_.body, flex: 1, paddingVertical: 0},
-  clear: {
-    width: 19,
-    height: 19,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scan: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: brand.lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filters: {flexDirection: 'row', gap: 8, paddingHorizontal: spacing.lg, marginTop: 18},
-  filter: {paddingHorizontal: 15, paddingVertical: 8, borderRadius: radius.pill},
-  filterLabel: {...type_.caption, fontWeight: '600'},
-  list: {paddingHorizontal: spacing.lg, paddingTop: 18},
-  listHead: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  none: {...type_.caption, lineHeight: 20, paddingVertical: 16},
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowText: {flex: 1},
-  nameRow: {flexDirection: 'row', alignItems: 'center', gap: 7},
-  yours: {...type_.label, fontSize: 10, letterSpacing: 0.8},
-  control: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actions: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-});

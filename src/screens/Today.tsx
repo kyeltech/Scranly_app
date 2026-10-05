@@ -1,13 +1,14 @@
 import React from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import Ring from '../components/Ring';
 import {Cog, Plus, Scanner, TrendUp} from '../ui/icons';
 import {MINUS, withThousands} from '../lib/format';
 import {Screen, useActionBarInset} from '../ui';
-import {brand, radius, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 import type {Palette} from '../theme';
 import type {DayView, MacroKey} from '../domain/day';
 
+import {today as styles} from '../styles';
 type Props = {
   day: DayView;
   onScan?: () => void;
@@ -301,110 +302,3 @@ export default function Today({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  dayName: {flex: 1},
-  dateLabel: {...type_.caption, fontSize: 12},
-  headerActions: {flexDirection: 'row', gap: spacing.sm},
-  stepper: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 10,
-    paddingHorizontal: spacing.lg,
-  },
-  stepperLabel: {...type_.caption, fontSize: 12},
-  weekNote: {alignItems: 'center', marginTop: -6, marginBottom: 14},
-  weekPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-  },
-  weekLabel: {...type_.caption, fontSize: 12.5},
-  weekFigure: {fontWeight: '700'},
-  diaryHead: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  edit: {...type_.caption, fontWeight: '600'},
-  starterLede: {...type_.caption, marginTop: 3, marginBottom: 6},
-  starterAdd: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.pill,
-    backgroundColor: brand.lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chip: {paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill},
-  chipLabel: {...type_.caption, fontWeight: '600'},
-  cog: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ringWrap: {alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm},
-  ringCentre: {position: 'absolute', alignItems: 'center'},
-  caption: {...type_.caption, fontWeight: '600', marginTop: spacing.xs},
-  macros: {flexDirection: 'row', gap: 14, paddingHorizontal: spacing.lg},
-  macro: {flex: 1, alignItems: 'center'},
-  macroValue: {marginTop: 3},
-  macroTrack: {
-    height: 5,
-    borderRadius: radius.pill,
-    marginTop: 7,
-    alignSelf: 'stretch',
-    overflow: 'hidden',
-  },
-  macroFill: {height: 5},
-  diary: {paddingHorizontal: spacing.lg, marginTop: spacing.lg},
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  mealTile: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowText: {flex: 1},
-  actions: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  secondary: {borderWidth: 1},
-  button: {
-    flex: 1,
-    height: 54,
-    borderRadius: radius.pill,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-});

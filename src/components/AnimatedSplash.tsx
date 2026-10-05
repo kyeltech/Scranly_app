@@ -1,14 +1,9 @@
 import React, {useEffect, useRef} from 'react';
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  StyleSheet,
-  View,
-} from 'react-native';
-import {scheme as activeScheme, schemes, timing, type} from '../theme';
+import {AccessibilityInfo, Animated, Easing, View} from 'react-native';
+import {scheme as activeScheme, schemes, timing} from '../theme';
 import type {SchemeName} from '../theme';
 
+import {animatedSplash as styles} from '../styles';
 type Props = {
   /** Called once the animation has finished, so the app can take over. */
   onFinish: () => void;
@@ -166,19 +161,3 @@ export default function AnimatedSplash({onFinish, schemeName}: Props) {
 
 /** The boot splash background, so the static and animated splashes match. */
 export const splashBackground = activeScheme.splash.background;
-
-const styles = StyleSheet.create({
-  screen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
-  },
-  mark: {width: 116, height: 116},
-  brand: {...type.brand},
-  tag: {...type.tag},
-});

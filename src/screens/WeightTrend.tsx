@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import Svg, {Circle, Line} from 'react-native-svg';
 import {Button, Header, Screen} from '../ui';
 import {Check} from '../ui/icons';
@@ -7,8 +7,9 @@ import TrendChart from '../components/TrendChart';
 import {trend, weekByWeek} from '../domain/weight';
 import type {Reading} from '../domain/weight';
 import {MINUS} from '../lib/format';
-import {radius, spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 
+import {weightTrend as styles} from '../styles';
 export default function WeightTrend({
   readings,
   goalKg,
@@ -167,43 +168,3 @@ function Legend({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: 30},
-  legend: {flexDirection: 'row', gap: 14, marginTop: 6, paddingLeft: 8},
-  legendItem: {flexDirection: 'row', alignItems: 'center', gap: 5},
-  legendLabel: {...type_.caption, fontSize: 11.5},
-  stats: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 22,
-    paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  weeksHead: {marginTop: 22},
-  weekRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 9,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  weekLabel: {...type_.body, fontSize: 14, flex: 1},
-  weekAverage: {...type_.body, fontSize: 14},
-  weekChange: {...type_.bodyStrong, fontSize: 14, width: 62, textAlign: 'right'},
-  stat: {flex: 1},
-  statValue: {marginTop: 3},
-  verdict: {borderRadius: 16, padding: 16, marginTop: 18},
-  verdictHead: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  badge: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verdictLine: {...type_.body, marginTop: 10},
-  verdictDetail: {...type_.caption, lineHeight: 19, marginTop: 6},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12},
-});

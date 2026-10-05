@@ -1,12 +1,13 @@
 import React from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import Sheet from '../../ui/Sheet';
 import {Button, Note, Segmented} from '../../ui';
 import {Check, ChevronDown, ChevronRight, Info, Plus, Warning} from '../../ui/icons';
 import {withThousands} from '../../lib/format';
-import {brand, radius, spacing, type as type_, useTheme} from '../../theme';
+import {brand, type as type_, useTheme} from '../../theme';
 import type {LabelRow, PlateItem, Product, Serving} from '../../fixtures/scan';
 
+import {scanSheets as styles} from '../../styles';
 /**
  * The panels that rise over the viewfinder. One per outcome of the three
  * modes, kept together because they share a shape and differ only in what
@@ -431,132 +432,3 @@ export function LabelResultSheet({
     </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  code: {...type_.title, fontSize: 20, marginTop: 4},
-  progress: {height: 4, borderRadius: radius.pill, marginTop: 16, overflow: 'hidden'},
-  progressFill: {width: '46%', height: 4, borderRadius: radius.pill},
-  skeleton: {height: 13, borderRadius: 7, marginTop: 10},
-  skeletonTall: {height: 18, marginTop: 22},
-
-  failHead: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  failIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  failText: {flex: 1},
-  body: {...type_.body, fontSize: 14, marginTop: 14},
-
-  figureRow: {flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginTop: 16},
-  figure: {...type_.figureLg, fontSize: 38, lineHeight: 38},
-  unit: {...type_.caption, fontWeight: '600', paddingBottom: 4},
-  macroChips: {flexDirection: 'row', gap: 6, marginLeft: 'auto'},
-  chip: {alignItems: 'center', borderRadius: 12, paddingHorizontal: 11, paddingVertical: 7},
-  chipLabel: {...type_.label, fontSize: 10, letterSpacing: 0.8},
-  serving: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 50,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    marginTop: 16,
-  },
-  servingRight: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  meals: {marginTop: 14},
-
-  legend: {marginTop: 18},
-  servingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 13,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  radioOff: {borderWidth: 1.5},
-  radio: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  servingText: {flex: 1},
-  weigh: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15},
-  weighLabel: {flex: 1},
-
-  plateHead: {flexDirection: 'row', alignItems: 'flex-start', gap: 12},
-  plateHeadText: {flex: 1},
-  plateTotal: {alignItems: 'flex-end'},
-  plateUnit: {...type_.caption, fontSize: 12},
-  plateFigure: {...type_.figureLg, fontSize: 26, lineHeight: 26},
-  caveat: {marginTop: 14},
-  plateList: {flex: 1, marginTop: 4},
-  plateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 11,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tick: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.pill,
-    backgroundColor: brand.lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plateRowText: {flex: 1, minWidth: 0},
-  plateName: {flexDirection: 'row', alignItems: 'center', gap: 6},
-  flag: {
-    ...type_.label,
-    fontSize: 10,
-    letterSpacing: 0.6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  guessRow: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1},
-  guess: {
-    ...type_.caption,
-    fontWeight: '600',
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-  },
-  missing: {flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 12},
-  missingLabel: {...type_.body, fontSize: 14, fontWeight: '600'},
-
-  readHead: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  readDot: {width: 7, height: 7, borderRadius: radius.pill, backgroundColor: brand.lime},
-  readTitle: {marginTop: 6},
-  columns: {flexDirection: 'row', gap: 6, marginTop: 14},
-  column: {flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: radius.pill},
-  columnLabel: {...type_.bodyStrong, fontSize: 14},
-  columnNote: {...type_.caption, fontSize: 12.5, lineHeight: 18, marginTop: 12},
-  labelList: {flex: 1, marginTop: 2},
-  unread: {marginBottom: 8},
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  labelName: {...type_.bodyStrong, fontSize: 14.5},
-  labelUnder: {...type_.body, fontSize: 14.5, paddingLeft: 14},
-  labelFigure: {
-    ...type_.bodyStrong,
-    fontSize: 15,
-    fontWeight: '700',
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-  },
-
-  gapLg: {height: spacing.lg},
-  gapSm: {height: 10},
-});

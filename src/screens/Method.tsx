@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import {Button, Header, Note, Progress, Screen} from '../ui';
 import {Check} from '../ui/icons';
-import {brand, radius, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 
+import {method as styles} from '../styles';
 export type MethodKey = 'bodyweight' | 'mifflin';
 
 const METHODS: {key: MethodKey; name: string; what: string; why: string}[] = [
@@ -90,26 +91,3 @@ export default function Method({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: 40},
-  lede: {...type_.body, marginTop: 8},
-  card: {borderRadius: 16, borderWidth: 2, padding: 14, marginTop: 12},
-  cardChosen: {borderColor: brand.lime},
-  cardResting: {borderColor: 'transparent'},
-  tickOn: {backgroundColor: brand.lime},
-  tickOff: {borderWidth: 1.5},
-  cardHead: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  tick: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  what: {...type_.caption, lineHeight: 20, marginTop: 8},
-  why: {...type_.caption, lineHeight: 18, marginTop: 8, opacity: 0.75},
-  note: {marginTop: 18},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
-});

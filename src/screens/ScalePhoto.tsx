@@ -1,11 +1,12 @@
 import React, {useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import Viewfinder from '../components/Viewfinder';
 import {ScaleDisplay} from '../components/subjects';
 import Sheet from '../ui/Sheet';
 import {Button, Note} from '../ui';
-import {radius, spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 
+import {scalePhoto as styles} from '../styles';
 /**
  * Photograph the scale rather than type the number. Two stages, both designed:
  * aim, then check what was read — because a display photographed at an angle is
@@ -95,21 +96,3 @@ export default function ScalePhoto({
     </Viewfinder>
   );
 }
-
-const styles = StyleSheet.create({
-  head: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  dot: {width: 7, height: 7, borderRadius: radius.pill, backgroundColor: '#C2F24D'},
-  figureRow: {flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 10},
-  figure: {
-    ...type_.figureHero,
-    fontSize: 56,
-    lineHeight: 56,
-    borderBottomWidth: 2,
-    borderStyle: 'dashed',
-  },
-  unit: {...type_.title, fontSize: 18, fontWeight: '600', paddingBottom: 6},
-  body: {...type_.caption, lineHeight: 19, marginTop: 12},
-  note: {marginTop: 16},
-  gap: {height: spacing.lg},
-  gapSm: {height: 10},
-});

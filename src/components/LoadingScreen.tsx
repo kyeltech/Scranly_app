@@ -1,8 +1,9 @@
 import React, {useEffect, useRef} from 'react';
-import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
-import {scheme as activeScheme, schemes, timing, type} from '../theme';
+import {Animated, Easing, Text, View} from 'react-native';
+import {scheme as activeScheme, schemes, timing} from '../theme';
 import type {SchemeName} from '../theme';
 
+import {loadingScreen as styles} from '../styles';
 type Props = {
   /** Line shown under the mark. Keep it short and plain. */
   message?: string;
@@ -116,29 +117,3 @@ export default function LoadingScreen({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 18,
-  },
-  art: {width: 116, height: 116},
-  // Tines sit on the crossbar and grow upward from it.
-  tine: {
-    position: 'absolute',
-    width: 10,
-    borderRadius: 5,
-    transformOrigin: 'bottom',
-  },
-  forkBase: {position: 'absolute', top: 0, left: 0, width: 116, height: 116},
-  brand: {...type.brandSmall},
-  barTrack: {width: 128, height: 5, borderRadius: 3, overflow: 'hidden'},
-  barFill: {width: 48, height: 5, borderRadius: 3},
-  status: {...type.status},
-});

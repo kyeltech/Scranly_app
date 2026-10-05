@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import {Button, Header, Panel, Screen} from '../ui';
 import {Camera, ChevronRight, Plus} from '../ui/icons';
-import {radius, spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 
+import {weighIn as styles} from '../styles';
 export default function WeighIn({
   startKg,
   yesterdayKg,
@@ -86,53 +87,3 @@ export default function WeighIn({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  figureWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    marginTop: 40,
-  },
-  figureText: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  figure: {...type_.figureHero, fontSize: 68, lineHeight: 70},
-  unit: {...type_.title, fontSize: 24},
-  stepper: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  minus: {width: 20, height: 2.8, borderRadius: 2},
-  context: {...type_.caption, textAlign: 'center', marginTop: 10},
-  note: {paddingHorizontal: spacing.lg, marginTop: 30},
-  photo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: spacing.lg,
-    marginTop: 16,
-  },
-  photoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoLabel: {flex: 1},
-  actions: {
-    marginTop: 'auto',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 12,
-  },
-});

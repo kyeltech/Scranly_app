@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
+import {Pressable, ScrollView, Switch, Text, View} from 'react-native';
 import {Header, Screen} from '../ui';
 import {ChevronRight} from '../ui/icons';
-import {brand, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 
+import {settings as styles} from '../styles';
 type Row =
   | {kind: 'link'; label: string; value?: string; note?: string}
   | {kind: 'toggle'; label: string; note?: string; on: boolean}
@@ -101,19 +102,3 @@ export default function Settings({onBack}: {onBack?: () => void}) {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingBottom: 40},
-  legend: {marginTop: 22},
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 13,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowText: {flex: 1},
-  note: {...type_.caption, lineHeight: 18, marginTop: 2},
-  footer: {...type_.caption, lineHeight: 18, marginTop: 18},
-});

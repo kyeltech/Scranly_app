@@ -3,8 +3,9 @@ import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Defs, LinearGradient, Rect, Stop} from 'react-native-svg';
 import {Close, Torch} from '../ui/icons';
-import {brand, camera, radius, spacing, type as type_} from '../theme';
+import {brand, camera} from '../theme';
 
+import {viewfinder as styles} from '../styles';
 /**
  * The chrome every camera screen shares: the dark ground, the header, the
  * corner frame, the hint, the mode tabs and the shutter. It is dark in both
@@ -21,7 +22,7 @@ export type FrameState = 'aiming' | 'read' | 'failed';
 const FRAME_COLOUR: Record<FrameState, string> = {
   aiming: 'rgba(255,255,255,0.75)',
   read: brand.lime,
-  failed: '#E4726A',
+  failed: camera.frameFailed,
 };
 
 export type Frame = {width: number; height: number; top: number};
@@ -227,122 +228,3 @@ export default function Viewfinder({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: brand.black900},
-  header: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-  },
-  round: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: camera.control,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {...type_.bodyStrong, color: camera.text},
-  frame: {position: 'absolute', left: '50%'},
-  corner: {position: 'absolute', width: 34, height: 34},
-  tl: {top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 12},
-  tr: {top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 12},
-  bl: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderBottomLeftRadius: 12,
-  },
-  br: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderBottomRightRadius: 12,
-  },
-  bottom: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    gap: 24,
-  },
-  hint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: 'rgba(10,12,9,0.6)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-  },
-  dot: {width: 7, height: 7, borderRadius: radius.pill, backgroundColor: brand.lime},
-  hintText: {...type_.caption, fontSize: 12.5, fontWeight: '600', color: '#E7EEE3'},
-  tabs: {
-    flexDirection: 'row',
-    gap: 2,
-    padding: 4,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(10,12,9,0.55)',
-  },
-  tab: {paddingHorizontal: 18, paddingVertical: 8, borderRadius: radius.pill},
-  tabOn: {backgroundColor: 'rgba(255,255,255,0.22)'},
-  tabLabel: {...type_.caption, fontSize: 13.5, fontWeight: '600', color: 'rgba(255,255,255,0.55)'},
-  tabLabelOn: {fontWeight: '700', color: camera.text},
-  shutter: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.pill,
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutterInner: {width: 56, height: 56, borderRadius: radius.pill, backgroundColor: camera.text},
-  footnote: {...type_.caption, fontSize: 12.5, color: 'rgba(255,255,255,0.5)'},
-  working: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '66%',
-    alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: spacing.lg,
-  },
-  dots: {flexDirection: 'row', gap: 7},
-  workingDot: {width: 9, height: 9, borderRadius: radius.pill, backgroundColor: brand.lime},
-  workingTitle: {
-    ...type_.title,
-    fontSize: 19,
-    letterSpacing: -0.3,
-    color: camera.text,
-    textAlign: 'center',
-  },
-  workingBody: {
-    ...type_.caption,
-    fontSize: 13.5,
-    lineHeight: 19,
-    color: 'rgba(255,255,255,0.62)',
-    textAlign: 'center',
-    maxWidth: 250,
-  },
-  cancel: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    height: 52,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelLabel: {...type_.bodyStrong, color: camera.text},
-});

@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import {Button, Field, Header, Screen} from '../ui';
 import {Barcode, ChevronRight} from '../ui/icons';
-import {brand, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 
+import {createFood as styles} from '../styles';
 /** What the screen hands back. Blank macros are allowed — the note says so. */
 export type NewFood = {
   name: string;
@@ -148,35 +149,3 @@ export default function CreateFood({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 40},
-  shortcut: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginTop: 4,
-  },
-  shortcutIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: brand.lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shortcutText: {flex: 1},
-  shortcutTitle: {...type_.bodyStrong, fontSize: 14.5},
-  shortcutSub: {...type_.caption, fontSize: 12.5},
-  field: {marginTop: 14},
-  row: {flexDirection: 'row', gap: 10, marginTop: 14},
-  calories: {flex: 0, width: 132},
-  legend: {marginTop: 20},
-  macros: {flexDirection: 'row', gap: 10, marginTop: 2},
-  note: {...type_.caption, fontSize: 12.5, lineHeight: 18, marginTop: 16},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
-});

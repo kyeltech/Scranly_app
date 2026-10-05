@@ -1,10 +1,11 @@
 import React from 'react';
-import {Linking, StyleSheet, Text, View} from 'react-native';
+import {Linking, Text, View} from 'react-native';
 import Sheet from '../../ui/Sheet';
 import {Button} from '../../ui';
 import {Warning} from '../../ui/icons';
-import {radius, type as type_, useTheme} from '../../theme';
+import {type as type_, useTheme} from '../../theme';
 
+import {cameraRefused as styles} from '../../styles';
 /**
  * The camera was refused.
  *
@@ -73,18 +74,3 @@ export default function CameraRefused({
     </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  head: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  icon: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {flex: 1},
-  body: {...type_.body, fontSize: 14, marginTop: 14},
-  gap: {height: 20},
-  gapSm: {height: 10},
-});

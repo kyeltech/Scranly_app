@@ -1,12 +1,13 @@
 import React, {useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import Viewfinder from '../components/Viewfinder';
 import {BarcodeCard} from '../components/subjects';
 import Sheet from '../ui/Sheet';
 import {Button, Segmented} from '../ui';
 import {Plus} from '../ui/icons';
-import {radius, spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 
+import {portionEdit as styles} from '../styles';
 const PRESETS = [100, 125, 150, 175, 200];
 /** Per gram, from the fixture's chicken thigh: 261 kcal at 150 g. */
 const KCAL_PER_G = 261 / 150;
@@ -102,32 +103,3 @@ export default function PortionEdit({
     </Viewfinder>
   );
 }
-
-const styles = StyleSheet.create({
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  amount: {flexDirection: 'row', alignItems: 'baseline', gap: 6},
-  figure: {...type_.figureHero, fontSize: 44, lineHeight: 46},
-  unit: {...type_.title, fontSize: 20},
-  stepper: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  minus: {width: 18, height: 2.8, borderRadius: 2},
-  presets: {flexDirection: 'row', gap: 6, marginTop: 18},
-  preset: {flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.pill},
-  presetLabel: {...type_.caption, fontWeight: '700'},
-  units: {marginTop: 10},
-  guide: {borderRadius: 14, padding: 14, marginTop: 16},
-  guideText: {...type_.caption, lineHeight: 20, marginTop: 5},
-  liveRow: {flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 18},
-  live: {...type_.figureLg, fontSize: 26},
-  spacer: {height: spacing.lg},
-});

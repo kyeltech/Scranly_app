@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {Clipboard, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Clipboard, Pressable, ScrollView, Text, View} from 'react-native';
 import {useTheme} from '../../theme';
 import type {LabelRead} from '../../readers';
 
+import {readDebug as styles} from '../../styles';
 /**
  * What the reader actually got, on the phone that got it.
  *
@@ -71,13 +72,3 @@ export default function ReadDebug({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {padding: 16, maxHeight: 340, gap: 10},
-  head: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  title: {fontSize: 11, letterSpacing: 2, fontWeight: '600'},
-  copy: {borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7},
-  copyText: {fontSize: 13, fontWeight: '600'},
-  scroll: {maxHeight: 250},
-  line: {fontSize: 12, fontFamily: 'Menlo', lineHeight: 17},
-});
