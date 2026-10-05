@@ -81,3 +81,10 @@ package-lock.json
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Local agent tool settings, never committed
+.claude/
+
+# Build logs from command-line xcodebuild runs
+build.log
+metro.log

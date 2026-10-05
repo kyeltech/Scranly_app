@@ -1,0 +1,32 @@
+# Walk a new user from the welcome to Today.
+# Run on the Mac:  maestro test .maestro/onboarding.yaml
+appId: org.reactjs.native.example.Scranly
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Scranly"
+- assertVisible: "Set up my targets"
+- tapOn: "Set up my targets"
+
+- assertVisible: "About you"
+- assertVisible: "182"
+- tapOn: "Continue"
+
+- assertVisible: "Where are you heading?"
+- assertVisible: "A pace most people can hold"
+# Asking for too much is capped, not obeyed.
+- tapOn: "6 weeks"
+- assertVisible: "Faster than most people hold"
+- tapOn: "Try 3 months instead"
+- assertVisible: "A pace most people can hold"
+- tapOn: "Continue"
+
+- assertVisible: "How should the targets be worked out?"
+- tapOn: "See my targets"
+
+- assertVisible: "Your daily targets"
+- assertVisible: "1,815"
+- tapOn: "Start logging"
+
+- assertVisible: "642"
+- assertVisible: "kcal left"
