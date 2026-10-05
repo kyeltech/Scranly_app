@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import {
   Button,
   ChoiceField,
@@ -10,9 +10,10 @@ import {
   Segmented,
 } from '../ui';
 import {Check} from '../ui/icons';
-import {brand, radius, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 import type {Activity, Profile} from '../domain/targets';
 
+import {aboutYou as styles} from '../styles';
 const LEVELS: {key: Activity; name: string; detail: string}[] = [
   {key: 'sedentary', name: 'Sedentary', detail: 'Desk work, little walking'},
   {key: 'light', name: 'Light', detail: 'On your feet, or 1–3 sessions a week'},
@@ -134,30 +135,3 @@ export default function AboutYou({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: 40},
-  lede: {...type_.body, marginTop: 8},
-  units: {marginTop: 20},
-  row: {flexDirection: 'row', gap: 10, marginTop: 14},
-  legend: {marginTop: 22, marginBottom: 4},
-  level: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tick: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tickOn: {backgroundColor: brand.lime},
-  tickOff: {borderWidth: 1.5},
-  levelText: {flex: 1},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
-});

@@ -1,10 +1,11 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import {Button, Header, Note, Progress, Screen, TextAction} from '../ui';
 import {withThousands} from '../lib/format';
-import {radius, spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 import type {Targets as TargetValues} from '../domain/targets';
 
+import {targets as styles} from '../styles';
 export default function Targets({
   targets,
   weightKg,
@@ -86,25 +87,3 @@ export default function Targets({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: 40},
-  lede: {...type_.body, marginTop: 8},
-  headline: {flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 22},
-  figure: {...type_.figureHero, fontSize: 56, lineHeight: 56},
-  unit: {paddingBottom: 6},
-  row: {paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth},
-  rowHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between'},
-  rowRight: {flexDirection: 'row', alignItems: 'baseline', gap: 8},
-  track: {height: 6, borderRadius: radius.pill, marginTop: 8, overflow: 'hidden'},
-  fill: {height: 6},
-  fibreNote: {marginTop: 6},
-  note: {marginTop: 16},
-  actions: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 12,
-    paddingTop: spacing.sm,
-    gap: 18,
-  },
-});

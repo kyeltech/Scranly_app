@@ -1,11 +1,12 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import {Button, Field, Header, Progress, Screen} from '../ui';
 import {withThousands} from '../lib/format';
-import {brand, radius, spacing, type as type_, useTheme} from '../theme';
+import {brand, type as type_, useTheme} from '../theme';
 import {dailyPlan} from '../domain/targets';
 import type {Profile} from '../domain/targets';
 
+import {goal as styles} from '../styles';
 /**
  * How long they have. The label is what the screen says — "2 months", not
  * "9 weeks" — because a horizon is how people think about it; the weeks are
@@ -160,33 +161,3 @@ export default function Goal({
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: 40},
-  lede: {...type_.body, fontSize: 14.5, lineHeight: 21, marginTop: 8},
-  row: {flexDirection: 'row', gap: 10, marginTop: 20},
-  legend: {marginTop: 20},
-  horizons: {flexDirection: 'row', gap: 6, marginTop: 8},
-  horizon: {flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: radius.pill},
-  horizonLabel: {...type_.caption, fontWeight: '600'},
-  verdict: {borderRadius: 16, padding: 16, marginTop: 20},
-  rateRow: {flexDirection: 'row', alignItems: 'baseline', gap: 8},
-  rate: {...type_.figureLg, fontSize: 30, letterSpacing: -1, lineHeight: 30},
-  rateUnit: {...type_.bodyStrong, fontSize: 14},
-  verdictLine: {fontSize: 14, marginTop: 8},
-  detail: {...type_.caption, lineHeight: 19, marginTop: 5},
-  detailSecond: {marginTop: 9},
-  suggestion: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12},
-  suggestionChip: {
-    ...type_.caption,
-    fontWeight: '700',
-    backgroundColor: brand.lime,
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-  },
-  suggestionRate: {...type_.caption, fontSize: 12.5},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 12, paddingTop: spacing.sm},
-});

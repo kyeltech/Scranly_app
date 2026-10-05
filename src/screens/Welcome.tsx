@@ -1,9 +1,10 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {Button, Screen} from '../ui';
 import {Mark} from '../ui/icons';
-import {spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 
+import {welcome as styles} from '../styles';
 export default function Welcome({onStart}: {onStart?: () => void}) {
   const t = useTheme();
   return (
@@ -31,14 +32,3 @@ export default function Welcome({onStart}: {onStart?: () => void}) {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {flex: 1},
-  body: {flex: 1, justifyContent: 'center', paddingHorizontal: 26},
-  word: {marginTop: 22},
-  tag: {marginTop: 6},
-  pitch: {...type_.body, fontSize: 16, lineHeight: 24, marginTop: 26},
-  small: {...type_.caption, marginTop: 14},
-  actions: {paddingHorizontal: spacing.lg, paddingBottom: 20, gap: spacing.lg},
-  invite: {...type_.bodyStrong, textAlign: 'center'},
-});

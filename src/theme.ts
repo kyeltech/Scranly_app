@@ -118,7 +118,18 @@ export const camera = {
   reticle: brand.lime,
   control: 'rgba(255,255,255,0.16)',
   text: brand.white,
+  /** The hint under the frame: off-white, so it sits back from the controls. */
+  hint: '#E7EEE3',
+  /** A frame that read nothing. Warm red — the one failure colour on the camera. */
+  frameFailed: '#E4726A',
 } as const;
+
+/**
+ * The camera chrome does not follow the theme, and that is deliberate: a
+ * viewfinder is dark because it is a viewfinder, not because the phone is in
+ * dark mode. Inverting it in daylight would make the picture harder to see,
+ * which is the one thing the screen exists to do.
+ */
 
 export const palettes: Record<ThemeName, Palette> = {
   light: {
@@ -322,6 +333,20 @@ export const scheme = schemes[ACTIVE_SCHEME];
  * Metrics and type — the same in both themes.                        *
  * ------------------------------------------------------------------ */
 
+/**
+ * The handful of spacing values that recur app-wide — chiefly `lg`, the side
+ * gutter every screen shares.
+ *
+ * It is NOT a grid the whole app snaps to, and it should not be read as one.
+ * Counted across every stylesheet, about three quarters of spacing values sit
+ * off it, on a 2px rhythm — 6, 10, 14, 18, 22 — because that is what the design
+ * boards specify, to the pixel. Snapping those to the nearest step here would
+ * change the design rather than tidy the code.
+ *
+ * So: use these where the value genuinely is the shared one. Everywhere else
+ * the number off the board is the spec, and a literal is the honest way to
+ * write it.
+ */
 export const spacing = {xs: 4, sm: 8, md: 16, lg: 24, xl: 40} as const;
 
 export const radius = {sm: 8, md: 16, lg: 28, pill: 999} as const;

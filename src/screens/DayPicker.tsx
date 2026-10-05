@@ -5,8 +5,9 @@ import {Button} from '../ui';
 import {ChevronLeft, ChevronRight} from '../ui/icons';
 import {addMonths, isoDate, monthGrid} from '../domain/calendar';
 import type {DayMark} from '../domain/calendar';
-import {radius, spacing, type as type_, useTheme} from '../theme';
+import {type as type_, useTheme} from '../theme';
 
+import {dayPicker as styles} from '../styles';
 /**
  * Which day to look at. It rises over Today rather than replacing it, because
  * you are picking a day to see, not leaving the day you are on.
@@ -158,53 +159,3 @@ export default function DayPicker({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {flex: 1},
-  scrim: {backgroundColor: 'rgba(8,10,7,0.42)'},
-  monthRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  round: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  grid: {flexDirection: 'row', flexWrap: 'wrap'},
-  weekday: {
-    ...type_.caption,
-    fontSize: 11,
-    fontWeight: '600',
-    width: `${100 / 7}%`,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  cell: {
-    width: `${100 / 7}%`,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  date: {...type_.body, fontSize: 15, fontWeight: '600'},
-  dateOn: {fontWeight: '700'},
-  hollow: {borderWidth: 1},
-  mark: {width: 5, height: 5, borderRadius: radius.pill},
-  legend: {
-    flexDirection: 'row',
-    gap: 14,
-    marginTop: 16,
-    paddingTop: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  legendItem: {flexDirection: 'row', alignItems: 'center', gap: 6},
-  legendDot: {width: 6, height: 6, borderRadius: radius.pill},
-  legendLabel: {...type_.caption, fontSize: 11.5},
-  gap: {height: spacing.lg},
-});
