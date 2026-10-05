@@ -1,0 +1,26 @@
+# The path that matters: open the app, log two foods, get back to the ring.
+appId: org.reactjs.native.example.Scranly
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Set up my targets"
+    commands:
+      - tapOn: "Set up my targets"
+      - tapOn: "Continue"
+      - tapOn: "Continue"
+      - tapOn: "See my targets"
+      - tapOn: "Start logging"
+
+- assertVisible: "kcal left"
+- tapOn: "Log food"
+
+- assertVisible: "EATEN THIS WEEK"
+- tapOn: "Porridge oats"
+- assertVisible: "Add 1 item"
+- tapOn: "Semi-skimmed milk"
+- assertVisible: "Add 2 items"
+- assertVisible: "250 kcal"
+- tapOn: "Add 2 items"
+
+- assertVisible: "kcal left"
