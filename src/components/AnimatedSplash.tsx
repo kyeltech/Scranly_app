@@ -104,16 +104,18 @@ export default function AnimatedSplash({onFinish, schemeName}: Props) {
         ]),
       ]);
 
+      /**
+       * Nothing between here and the cancelled check above can unmount this
+       * component: the only await is the motion setting, and that is already
+       * guarded. A second `if (cancelled) running.stop()` used to sit after
+       * this call and could never run — the cleanup below is what stops a
+       * started animation.
+       */
       running.start(({finished}) => {
         if (finished && !cancelled) {
           handoff = setTimeout(onFinish, timing.holdAfter);
         }
       });
-
-      // The component can unmount while we were awaiting the motion setting.
-      if (cancelled) {
-        running.stop();
-      }
     };
 
     run();
