@@ -30,3 +30,28 @@ Scan and the portion editor are full-screen modals.
   `react-native-screens`. The last needs `pod install`.
 - Nothing is discoverable by looking at a tab bar, so the header controls have to stay obvious.
   Worth watching the first time someone other than Kyel uses it.
+
+## Amendment, 8 October 2026: setup is one route, not five
+
+- **Raised by:** Kyel
+
+Setup was five stack routes — `Welcome`, `AboutYou`, `Goal`, `Method`, `Targets` — so every
+question was a push. That is wrong twice over. It slides between the four parts of one form,
+which reads as four screens rather than one job; and it puts the back gesture in charge of a
+form, so a swipe can leave you half way out of something you were filling in.
+
+**Setup is one screen.** `Onboarding` holds the answers so far and which face is showing, and a
+`switch` picks the body. The five step components stay as they were — they own their own fields
+and their own chrome; what moved up is only what has to outlive a step.
+
+The route takes a `step` parameter, because the weight trend's *Change the goal* has to open
+setup at the goal rather than at the first question. Back on the face setup opened at leaves the
+way it came in, so *Change the goal* returns to the weight trend and does not walk backwards
+through questions nobody asked.
+
+### Consequences
+
+- The step order lives in one `STEPS` array. Adding a question is an entry in it and a `case`.
+- Nothing animates between steps, which is the point.
+- `RootParams` lost five names and gained one. Anything that wants a particular question asks
+  for it by `step`, not by route.
