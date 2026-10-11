@@ -209,11 +209,14 @@ export default function Scan({
     );
   }
 
+  // console.log({'[scan] mode': mode, 'stage': stage, 'camera': camera, 'live': live, 'torch': torch, 'poorRead': poorRead, 'lastRead': lastRead, 'captureError': captureError, 'labelRead': labelRead, 'scanned': scanned, 'chosenMeal': chosenMeal, 'serving': serving, 'column': column, 'aiming': aiming, 'notice': notice, 'labelNotice': labelNotice, 'plateNotice': plateNotice});
+
   /* -------------------------------------------------- barcode -------- */
   if (mode === 'barcode') {
     const read = stage !== 'aiming';
     return (
       <Viewfinder
+        torch={torch}
         title={title}
         onClose={onClose}
         onTorch={() => setTorch(on => !on)}
@@ -277,6 +280,7 @@ export default function Scan({
   if (mode === 'plate') {
     return (
       <Viewfinder
+       torch={torch}
         title={title}
         onClose={onClose}
         onTorch={() => setTorch(on => !on)}
@@ -315,6 +319,7 @@ export default function Scan({
   /* ---------------------------------------------------- label -------- */
   return (
     <Viewfinder
+      torch={torch}
       title={title}
       onClose={onClose}
       onTorch={() => setTorch(on => !on)}
