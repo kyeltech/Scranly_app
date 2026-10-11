@@ -1,13 +1,10 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
-import Welcome from '../screens/Welcome';
-import AboutYou from '../screens/AboutYou';
-import GoalScreen from '../screens/Goal';
-import MethodScreen from '../screens/Method';
-import TargetsScreen from '../screens/Targets';
+import Onboarding from '../screens/Onboarding';
+import type {Step} from '../screens/Onboarding';
 import Today from '../screens/Today';
 import AddFood from '../screens/AddFood';
 import CreateFood from '../screens/CreateFood';
@@ -19,9 +16,10 @@ import WeighIn from '../screens/WeighIn';
 import WeightTrend from '../screens/WeightTrend';
 import Settings from '../screens/Settings';
 
-import {dailyPlan} from '../domain/targets';
-import type {Goal, Profile} from '../domain/targets';
+import LoadingScreen from '../components/LoadingScreen';
 import {kyel, kyelsGoal} from '../fixtures/profile';
+import {memoryStore} from '../store/memory';
+import type {Setup, SetupStore} from '../store/setup';
 import {dayFor, dayMarks, stepDay} from '../fixtures/days';
 import {isoDate} from '../domain/calendar';
 import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
@@ -30,11 +28,8 @@ import type {Mode} from '../components/Viewfinder';
 import type {ScanStage} from '../screens/Scan';
 
 export type RootParams = {
-  Welcome: undefined;
-  AboutYou: undefined;
-  Goal: undefined;
-  Method: undefined;
-  Targets: undefined;
+  /** Setup, all of it. One screen, five faces — see screens/Onboarding. */
+  Onboarding: {step?: Step} | undefined;
   Today: undefined;
   AddFood: undefined;
   CreateFood: undefined;
@@ -57,9 +52,59 @@ type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
  * rarely, so the bottom bar stays with Scan and Log food and Today's header
  * carries the rest. See the Navigation note in docs/agents/../PRD.
  */
-export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof RootParams}) {
-  const [profile, setProfile] = useState<Profile>(kyel);
-  const [goal, setGoal] = useState<Goal>(kyelsGoal);
+export default function Root({
+  store: given,
+  initialRoute,
+}: {
+  /**
+   * Where setup is kept. ADR-0007: the gate, not the store. The app passes one
+   * that outlives this component; left out, setup lasts as long as the mount,
+   * which is what a screen walked on its own wants.
+   */
+  store?: SetupStore;
+  /** Jump straight to a screen, for tests and for walking the boards. */
+  initialRoute?: keyof RootParams;
+}) {
+  /** `useState` and not a default argument: a default would build a new store, and lose what was in it, on every render. */
+  const [fallback] = useState(memoryStore);
+  const store = given ?? fallback;
+
+  /**
+   * The saved setup: `undefined` while the store is being read, `null` once it
+   * has answered that there is none.
+   *
+   * A store that can answer synchronously answers here, in the initialiser, so
+   * `undefined` never happens and the loading frame never draws. One that
+   * cannot — AsyncStorage, or MMKV in a build with no pod — starts `undefined`
+   * and the effect below fills it in.
+   */
+  const [setup, setSetup] = useState<Setup | null | undefined>(
+    () => store.peek?.(),
+  );
+  const waiting = setup === undefined;
+
+  useEffect(() => {
+    if (!waiting) {
+      return;
+    }
+    let live = true;
+    store
+      .read()
+      // A store that cannot be read is a store with nothing in it. Asking the
+      // four questions again beats opening Today on a guess.
+      .catch(() => null)
+      .then(saved => {
+        if (live) {
+          setSetup(saved);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [store, waiting]);
+
+  const profile = setup?.profile ?? kyel;
+  const goal = setup?.goal ?? kyelsGoal;
 
   /**
    * Which day the app is looking at, as an ISO date. History is not a screen —
@@ -71,63 +116,37 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
   const [dayIso, setDayIso] = useState(todayIso);
   const marks = dayMarks(today);
   const day = dayFor(dayIso, today, marks);
-  const {targets} = dailyPlan(profile, goal);
   const dark = useThemeName() === 'dark';
+
+  if (waiting) {
+    return <LoadingScreen />;
+  }
 
   return (
     <NavigationContainer theme={dark ? DarkTheme : DefaultTheme}>
       <Stack.Navigator
-        initialRouteName={initialRoute}
+        initialRouteName={initialRoute ?? (setup ? 'Today' : 'Onboarding')}
         screenOptions={{headerShown: false}}>
-        <Stack.Screen name="Welcome">
-          {({navigation}: Props<'Welcome'>) => (
-            <Welcome onStart={() => navigation.navigate('AboutYou')} />
-          )}
-        </Stack.Screen>
-
-        <Stack.Screen name="AboutYou">
-          {({navigation}: Props<'AboutYou'>) => (
-            <AboutYou
+        <Stack.Screen name="Onboarding">
+          {({navigation, route}: Props<'Onboarding'>) => (
+            <Onboarding
               profile={profile}
-              onBack={navigation.goBack}
-              onContinue={next => {
-                setProfile(next);
-                navigation.navigate('Goal');
+              goal={goal}
+              step={route.params?.step}
+              onLeave={navigation.goBack}
+              onDone={saved => {
+                setSetup(saved);
+                // The gate already knows, so a failed write costs the next
+                // launch the questions again and nothing more — but it is said
+                // out loud rather than swallowed, which is how the first
+                // version of this hid a missing pod for a whole build.
+                store.write(saved).catch((error: unknown) => {
+                  console.warn(
+                    `[scranly] setup could not be saved, so it will be asked again next launch: ${String(error)}`,
+                  );
+                });
+                navigation.reset({index: 0, routes: [{name: 'Today'}]});
               }}
-            />
-          )}
-        </Stack.Screen>
-
-        <Stack.Screen name="Goal">
-          {({navigation}: Props<'Goal'>) => (
-            <GoalScreen
-              profile={profile}
-              onBack={navigation.goBack}
-              onContinue={next => {
-                setGoal(next);
-                navigation.navigate('Method');
-              }}
-            />
-          )}
-        </Stack.Screen>
-
-        <Stack.Screen name="Method">
-          {({navigation}: Props<'Method'>) => (
-            <MethodScreen
-              onBack={navigation.goBack}
-              onContinue={() => navigation.navigate('Targets')}
-            />
-          )}
-        </Stack.Screen>
-
-        <Stack.Screen name="Targets">
-          {({navigation}: Props<'Targets'>) => (
-            <TargetsScreen
-              targets={targets}
-              weightKg={profile.weightKg}
-              onBack={navigation.goBack}
-              onDone={() => navigation.reset({index: 0, routes: [{name: 'Today'}]})}
-              onAdjust={() => navigation.navigate('Method')}
             />
           )}
         </Stack.Screen>
@@ -236,7 +255,7 @@ export default function Root({initialRoute = 'Welcome'}: {initialRoute?: keyof R
               goalDate="24 November"
               onBack={navigation.goBack}
               onAdd={() => navigation.navigate('WeighIn')}
-              onChangeGoal={() => navigation.navigate('Goal')}
+              onChangeGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
             />
           )}
         </Stack.Screen>
