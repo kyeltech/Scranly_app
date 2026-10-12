@@ -180,6 +180,50 @@ function isProse(line: string, at: number): boolean {
   return firstDigit !== -1 && at > firstDigit;
 }
 
+/**
+ * A panel printed sideways, cut back into rows.
+ *
+ * A tin, a pouch or a bottle has no room for a grid, so the figures run along
+ * one line: 'Typical values per 100g: Energy 440kJ/103kcal, Protein 25.0g, …'.
+ * Every nutrient on that line sits after the digits in 'per 100g', so the
+ * footnote rule above read the whole thing as prose and dropped it in silence.
+ * Photographing a tuna can returned nothing at all.
+ *
+ * What tells the two apart is how many nutrients the line is carrying. A
+ * footnote names one; a panel names the lot, each with figures of its own. So a
+ * line with two or more nutrients that each have numbers after them is cut at
+ * the nutrient names and each piece read as its own row — and because each
+ * piece then begins with its nutrient, the footnote rule leaves them alone.
+ *
+ * Anything before the first nutrient is dropped: on a run that is the 'per
+ * 100g' header, and treating it as a missed row would warn about every panel
+ * of this shape.
+ *
+ * A sentence that mentions two nutrients and some numbers could be cut up like
+ * a panel. The floor in `isUsable` is what catches that — a sentence will not
+ * produce energy and three more rows — and the sheet shows every figure it
+ * read before anything is saved.
+ */
+function runOfNutrients(line: string): string[] | undefined {
+  const starts = [
+    ...new Set(
+      NUTRIENTS.map(([, pattern]) => line.match(pattern)?.index).filter(
+        (at): at is number => at !== undefined,
+      ),
+    ),
+  ].sort((a, b) => a - b);
+
+  if (starts.length < 2) {
+    return undefined;
+  }
+
+  const rows = starts
+    .map((at, i) => line.slice(at, starts[i + 1]).trim())
+    .filter(row => /\d/.test(row));
+
+  return rows.length < 2 ? undefined : rows;
+}
+
 function nutrientOf(line: string): Nutrient | undefined | 'prose' {
   for (const [nutrient, pattern] of NUTRIENTS) {
     const at = line.match(pattern)?.index;
@@ -210,42 +254,56 @@ export function parseLabel(lines: string[]): LabelReading {
       continue;
     }
 
-    const nutrient = nutrientOf(line);
-    if (!nutrient || nutrient === 'prose' || isHeader(line)) {
-      // A header and a footnote are both expected and neither is worth
-      // reporting; anything else carrying a number is a miss.
-      if (nutrient !== 'prose' && !isHeader(line) && /\d/.test(line)) {
-        unread.push(line);
-      }
-      continue;
-    }
-
-    const read =
-      nutrient === 'energyKcal'
-        ? energyFrom(line)
-        : [...line.matchAll(NUMBER)].map(m => toNumber(m[1]));
-
-    const values =
-      nutrient === 'salt' && statesSodium(line)
-        ? saltFromSodium(read, line)
-        : read;
-
-    if (!values.length) {
-      unread.push(line);
-      continue;
-    }
-
-    // Don't let a second reading of the same nutrient overwrite the first:
-    // 'Fat' before 'of which saturates' means the fat row is the fat row.
-    if (per100[nutrient] === undefined) {
-      per100[nutrient] = values[0];
-      if (values.length > 1) {
-        perServing[nutrient] = values[1];
-      }
+    // A panel laid out sideways is several rows on one line. Checked before
+    // anything else, because such a line opens with its own header — 'Typical
+    // values per 100g: …' — and would otherwise be skipped as one.
+    const run = runOfNutrients(line);
+    for (const row of run ?? [line]) {
+      place(row, per100, perServing, unread);
     }
   }
 
   return {servingG: servingFrom(lines), per100, perServing, unread};
+}
+
+/** One line, or one row cut out of a line, put where it belongs. */
+function place(
+  line: string,
+  per100: Partial<Record<Nutrient, number>>,
+  perServing: Partial<Record<Nutrient, number>>,
+  unread: string[],
+): void {
+  const nutrient = nutrientOf(line);
+  if (!nutrient || nutrient === 'prose' || isHeader(line)) {
+    // A header and a footnote are both expected and neither is worth
+    // reporting; anything else carrying a number is a miss.
+    if (nutrient !== 'prose' && !isHeader(line) && /\d/.test(line)) {
+      unread.push(line);
+    }
+    return;
+  }
+
+  const read =
+    nutrient === 'energyKcal'
+      ? energyFrom(line)
+      : [...line.matchAll(NUMBER)].map(m => toNumber(m[1]));
+
+  const values =
+    nutrient === 'salt' && statesSodium(line) ? saltFromSodium(read, line) : read;
+
+  if (!values.length) {
+    unread.push(line);
+    return;
+  }
+
+  // Don't let a second reading of the same nutrient overwrite the first:
+  // 'Fat' before 'of which saturates' means the fat row is the fat row.
+  if (per100[nutrient] === undefined) {
+    per100[nutrient] = values[0];
+    if (values.length > 1) {
+      perServing[nutrient] = values[1];
+    }
+  }
 }
 
 /**
