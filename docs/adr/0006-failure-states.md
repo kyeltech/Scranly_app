@@ -1,6 +1,7 @@
 # ADR-0006: What the app says when something fails
 
-- **Status:** OPEN — options only. To be decided when API work starts.
+- **Status:** OPEN — options only. To be decided when API work starts; see
+  [ADR-0010](0010-where-the-data-lives.md), which is where that work is being scoped.
 - **Raised by:** Kyel, 5 October 2026
 
 ## Why this exists now
