@@ -21,6 +21,7 @@ import {dailyPlan} from '../domain/targets';
 import {dayMarksFrom, dayState} from '../domain/dayState';
 import type {DiaryEntry} from '../domain/diary';
 import {fromForm, fromReading} from '../domain/food';
+import {mealAt} from '../domain/meal';
 import type {FoodItem, NewFood} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 import {memoryDiary, memoryFoods, memoryStore} from '../store/memory';
@@ -40,9 +41,13 @@ export type RootParams = {
   /** Setup, all of it. One screen, five faces — see screens/Onboarding. */
   Onboarding: {step?: Step} | undefined;
   Today: undefined;
-  AddFood: undefined;
-  /** Opened from the label reader, the panel it read comes with it. */
-  CreateFood: {reading?: LabelReading} | undefined;
+  /** Opened from a meal's +, that meal comes with it. */
+  AddFood: {meal?: MealName} | undefined;
+  /**
+   * Opened from the label reader, the panel it read comes with it; opened from
+   * a meal, so does the meal.
+   */
+  CreateFood: {reading?: LabelReading; meal?: MealName} | undefined;
   /** One screen, three readers. `missing` walks the unhappy barcode path. */
   Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean} | undefined;
   Portion: undefined;
@@ -66,8 +71,15 @@ export default function Root({
   store: given,
   diary: givenDiary,
   foods: givenFoods,
+  now,
   initialRoute,
 }: {
+  /**
+   * The clock, for the day it is and for the meal the bottom Log food button
+   * guesses. Passed in so a test can stand at a particular hour rather than
+   * waiting for one.
+   */
+  now?: Date;
   /** Where the diary is kept. Separate from setup — see store/diary.ts. */
   diary?: DiaryStore;
   /** The foods this person created. */
@@ -149,7 +161,7 @@ export default function Root({
    * it is Today on another day (ADR-0002) — so this one piece of state is what
    * makes the day picker and the stepper mean anything.
    */
-  const today = new Date();
+  const today = now ?? new Date();
   const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
   const [dayIso, setDayIso] = useState(todayIso);
 
@@ -176,6 +188,14 @@ export default function Root({
       live = false;
     };
   }, [diary]);
+
+  /**
+   * The meal a screen opened without one falls back to. Only the Log food
+   * button at the bottom of Today has no meal behind it; every other way in
+   * comes from a section, so this is a guess of last resort and the screen it
+   * opens says out loud which meal it picked.
+   */
+  const guessedMeal = mealAt(today);
 
   const log = (items: FoodItem[], meal: MealName) => {
     const logged = items.map(item => asEntry(item, meal, dayIso));
@@ -233,12 +253,14 @@ export default function Root({
             <Today
               day={day}
               onScan={() => navigation.navigate('Scan')}
-              onLogFood={() => navigation.navigate('AddFood')}
+              onLogFood={meal => navigation.navigate('AddFood', {meal})}
               onWeek={() => navigation.navigate('Weight')}
               onDay={() => navigation.navigate('DayPicker')}
               onEdit={() => navigation.navigate('AddFood')}
               onSettings={() => navigation.navigate('Settings')}
-              onStarter={() => navigation.navigate('AddFood')}
+              /* The starters are this person's most-logged breakfast, so that
+                 is the meal the list belongs to. */
+              onStarter={() => navigation.navigate('AddFood', {meal: 'Breakfast'})}
               onPrevDay={() => setDayIso(stepDay(dayIso, -1, today))}
               onNextDay={() => setDayIso(stepDay(dayIso, 1, today))}
               onToday={() => setDayIso(todayIso)}
@@ -247,18 +269,24 @@ export default function Root({
         </Stack.Screen>
 
         <Stack.Screen name="AddFood" options={{presentation: 'modal'}}>
-          {({navigation}: Props<'AddFood'>) => (
-            <AddFood
-              created={created}
-              onBack={navigation.goBack}
-              onScan={() => navigation.navigate('Scan')}
-              onCreate={() => navigation.navigate('CreateFood')}
-              onAdd={items => {
-                log(items, 'Lunch');
-                navigation.goBack();
-              }}
-            />
-          )}
+          {({navigation, route}: Props<'AddFood'>) => {
+            const meal = route.params?.meal ?? guessedMeal;
+            return (
+              <AddFood
+                created={created}
+                meal={meal}
+                onBack={navigation.goBack}
+                onScan={() => navigation.navigate('Scan')}
+                // The meal travels on: you came in through Snack, so the food
+                // you are about to type in is a snack.
+                onCreate={() => navigation.navigate('CreateFood', {meal})}
+                onAdd={items => {
+                  log(items, meal);
+                  navigation.goBack();
+                }}
+              />
+            );
+          }}
         </Stack.Screen>
 
         <Stack.Screen name="CreateFood">
@@ -287,7 +315,7 @@ export default function Root({
                     `[scranly] ${made.name} could not be saved to your foods: ${String(error)}`,
                   );
                 });
-                log([made], 'Lunch');
+                log([made], route.params?.meal ?? guessedMeal);
                 // All the way back to Today, not to Add food. The food is
                 // kept and it is logged, so the job that opened this screen is
                 // finished — landing on the list you came through would read

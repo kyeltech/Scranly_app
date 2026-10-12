@@ -204,3 +204,88 @@ describe('creating a food from a label', () => {
     expect(screen.getByDisplayValue('125')).toBeTruthy();
   });
 });
+
+/**
+ * Which meal it lands in.
+ *
+ * `Root` had `'Lunch'` written into both save paths, so every food logged on
+ * any screen at any hour went down as lunch — and the "what you usually start
+ * the day with" list, which counts breakfasts, could never fill. The meal is
+ * where you were standing when you tapped now: each section on Today has its
+ * own +, per PRD flow 2.
+ */
+describe('which meal it lands in', () => {
+  /** Today, at a fixed hour — the date has to be today for the day to show it. */
+  const at = (hour: number) => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 30);
+  };
+
+  it('logs to the meal whose + you tapped', async () => {
+    const diary = memoryDiary();
+    await launch(<Root store={setUp()} diary={diary} initialRoute="Today" />);
+
+    await fireEvent.press(screen.getByLabelText('Add to Dinner'));
+
+    // The screen it opens says where the food is going.
+    expect(screen.getByText('Add to Dinner')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByText('Add 1 item'));
+    await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
+
+    expect((await diary.read())[0].meal).toBe('Dinner');
+  });
+
+  it('asks the clock only for the button at the bottom, which has no meal behind it', async () => {
+    const diary = memoryDiary();
+    await launch(
+      <Root store={setUp()} diary={diary} now={at(19)} initialRoute="Today" />,
+    );
+
+    await fireEvent.press(screen.getByText('Log food'));
+    expect(screen.getByText('Add to Dinner')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByText('Add 1 item'));
+    await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
+
+    expect((await diary.read())[0].meal).toBe('Dinner');
+  });
+
+  it('puts a breakfast-time log at breakfast, so the starters list can fill', async () => {
+    const diary = memoryDiary();
+    await launch(
+      <Root store={setUp()} diary={diary} now={at(8)} initialRoute="Today" />,
+    );
+
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByText('Add 1 item'));
+    await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
+
+    expect((await diary.read())[0].meal).toBe('Breakfast');
+  });
+
+  it('keeps the meal when you create a food from a section rather than picking one', async () => {
+    const diary = memoryDiary();
+    await launch(
+      <Root
+        store={setUp()}
+        diary={diary}
+        foods={memoryFoods()}
+        initialRoute="Today"
+      />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Add to Snack'));
+    await fireEvent.press(screen.getByText('Create a food'));
+    await fireEvent.changeText(screen.getByLabelText('NAME'), 'Biltong');
+    await fireEvent.changeText(screen.getByLabelText('CALORIES'), '90');
+    await fireEvent.press(screen.getByText('Save food'));
+
+    await waitFor(() => expect(screen.getByText('1,725')).toBeTruthy());
+
+    expect((await diary.read())[0].meal).toBe('Snack');
+  });
+});

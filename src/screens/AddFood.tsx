@@ -6,6 +6,7 @@ import {withThousands} from '../lib/format';
 import {brand, type as type_, useTheme} from '../theme';
 import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
 import type {FoodItem} from '../domain/food';
+import type {MealName} from '../domain/day';
 
 import {addFood as styles} from '../styles';
 
@@ -17,14 +18,15 @@ function matching(foods: FoodItem[], query: string): FoodItem[] {
 const FILTERS = ['Recent', 'Frequent', 'My foods', 'Meals'];
 
 export default function AddFood({
-  meal = 'lunch',
+  meal = 'Lunch',
   created = [],
   onBack,
   onScan,
   onCreate,
   onAdd,
 }: {
-  meal?: string;
+  /** Which meal this is going to. The head says so — it is never a surprise. */
+  meal?: MealName;
   /**
    * Foods this person made themselves. Newest first, and ahead of everything
    * else — you created it because nothing in the list was it.
