@@ -45,7 +45,14 @@ export default function CreateFood({
   return (
     <Screen>
       <Header title="Create a food" onBack={onBack} />
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView
+        contentContainerStyle={styles.body}
+        /* Without this the first tap is spent closing the keyboard, so moving
+           between fields takes two taps and reads as the field not responding. */
+        keyboardShouldPersistTaps="handled"
+        /* And without this the keyboard covers the fields below it with no way
+           to scroll them into view. */
+        automaticallyAdjustKeyboardInsets>
         <Pressable
           onPress={onScanLabel}
           accessibilityRole="button"

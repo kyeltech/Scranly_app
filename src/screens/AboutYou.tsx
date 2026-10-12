@@ -46,7 +46,14 @@ export default function AboutYou({
     <Screen>
       <Header title="" overline="STEP 1 OF 4" onBack={onBack} />
       <Progress step={1} of={4} />
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView
+        contentContainerStyle={styles.body}
+        /* Without this the first tap is spent closing the keyboard, so moving
+           between fields takes two taps and reads as the field not responding. */
+        keyboardShouldPersistTaps="handled"
+        /* And without this the keyboard covers the fields below it with no way
+           to scroll them into view. */
+        automaticallyAdjustKeyboardInsets>
         <Text style={[type_.stepTitle, {color: t.text}]}>About you</Text>
         <Text style={[styles.lede, {color: t.textMuted}]}>
           Used once, to work out what your body needs. It never leaves your phone.
