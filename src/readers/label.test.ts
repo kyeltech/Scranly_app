@@ -85,8 +85,42 @@ describe('the awkward lines real packaging has', () => {
     expect(reading.perServing.fibre).toBe(0.7);
   });
 
-  it('takes sodium as salt, since some labels still use it', () => {
-    expect(parseLabel(['Sodium 0.7g']).per100.salt).toBe(0.7);
+  /**
+   * Sodium is not salt. Salt is sodium chloride and weighs 2.5 times what the
+   * sodium in it does, which is the factor the regulation itself uses to state
+   * one as the other.
+   *
+   * This read sodium as salt one for one, so an imported can stating 0.72 g of
+   * sodium went into the diary as 0.72 g of salt instead of 1.8 — a bit under
+   * a third of what was really there, on the one number a reading is most
+   * likely to be checked against the pack.
+   */
+  it('converts sodium to salt, rather than reading one as the other', () => {
+    expect(parseLabel(['Sodium 0.72g']).per100.salt).toBe(1.8);
+  });
+
+  it('reads sodium stated in milligrams, which is how US packaging states it', () => {
+    expect(parseLabel(['Sodium 280mg']).per100.salt).toBe(0.7);
+  });
+
+  it('converts both columns, not just the first', () => {
+    const reading = parseLabel(['Sodium 0.5g 0.15g']);
+    expect(reading.per100.salt).toBe(1.25);
+    expect(reading.perServing.salt).toBe(0.38);
+  });
+
+  it('leaves a salt row alone, since that is already what is counted', () => {
+    expect(parseLabel(['Salt 1.8g']).per100.salt).toBe(1.8);
+  });
+
+  it('believes the salt figure on a label that prints both', () => {
+    // 'Salt 1.8g (sodium 0.72g)' states the answer and then explains it. The
+    // explanation is not a second reading to convert.
+    expect(parseLabel(['Salt 1.8g (sodium 0.72g)']).per100.salt).toBe(1.8);
+  });
+
+  it('converts a sodium threshold too', () => {
+    expect(parseLabel(['Sodium <0.1g']).per100.salt).toBe(0.25);
   });
 
   it('finds a serving stated in words rather than a column header', () => {
@@ -141,6 +175,26 @@ describe('showing a reading back', () => {
     ]);
     // Fibre was not on this label, so it is absent rather than zero.
     expect(rows.find(r => r.id === 'fibre')).toBeUndefined();
+  });
+
+  /**
+   * The sheet is where this would have been checked against the pack, so it is
+   * worth one test of the whole way through: an imported panel stating sodium
+   * comes back as a salt row, in salt's own figure.
+   */
+  it('shows a sodium panel back as the salt it amounts to', () => {
+    const rows = toLabelRows({
+      reading: parseLabel([
+        'Energy 103kcal',
+        'Protein 25g',
+        'Fat 0.8g',
+        'Sodium 280mg',
+      ]),
+    });
+    const salt = rows.find(r => r.id === 'salt');
+
+    expect(salt?.name).toBe('Salt');
+    expect(salt?.per100).toBe('0.7 g');
   });
 
   it('carries the units the label uses', () => {
@@ -206,7 +260,7 @@ describe('Prose under the panel', () => {
     // The rule is positional, so check it does not swallow the ordinary shape.
     expect(parseLabel(['Energy (kJ/kcal) 1515/362 606/145']).per100.energyKcal).toBe(362);
     expect(parseLabel(['of which saturates 21.7g 6.5g']).per100.saturates).toBe(21.7);
-    expect(parseLabel(['Sodium 0.5g 0.15g']).per100.salt).toBe(0.5);
+    expect(parseLabel(['Sodium 0.5g 0.15g']).per100.salt).toBe(1.25);
   });
 
   it('reports a numeric line it cannot place, which is a different thing', () => {
