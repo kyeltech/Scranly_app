@@ -1,6 +1,7 @@
 import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react-native';
 import AddFood from './AddFood';
+import {fromForm} from '../domain/food';
 import CreateFood from './CreateFood';
 
 describe('Add food', () => {
@@ -155,5 +156,46 @@ describe('The filter chips on Add food', () => {
 
     expect(screen.queryByText('Frequent')).toBeNull();
     expect(screen.getByText(/RESULTS$/)).toBeTruthy();
+  });
+});
+
+/**
+ * Foods you created yourself. Until there was a store they were a fixture, so
+ * the screen could show them and you could never add one.
+ */
+describe('your own foods', () => {
+  const tuna = fromForm({
+    name: 'Skipjack tuna',
+    brand: 'Aldi',
+    servingG: '51',
+    kcal: '55',
+    proteinG: '12.7',
+    carbsG: '0',
+    fatG: '0.5',
+  })!;
+
+  it('shows one you made among the recent foods', async () => {
+    await render(<AddFood created={[tuna]} />);
+
+    expect(screen.getByText('Skipjack tuna')).toBeTruthy();
+    expect(screen.getByText('Aldi · 51 g · P 12.7 C 0 F 0.5')).toBeTruthy();
+  });
+
+  it('lists it under My foods', async () => {
+    await render(<AddFood created={[tuna]} />);
+
+    await fireEvent.press(screen.getByText('My foods'));
+
+    expect(screen.getByText('Skipjack tuna')).toBeTruthy();
+  });
+
+  it('hands it back when it is picked, like any other food', async () => {
+    const onAdd = jest.fn();
+    await render(<AddFood created={[tuna]} onAdd={onAdd} />);
+
+    await fireEvent.press(screen.getByText('Skipjack tuna'));
+    await fireEvent.press(screen.getByText('Add 1 item'));
+
+    expect(onAdd).toHaveBeenCalledWith([expect.objectContaining({name: 'Skipjack tuna'})]);
   });
 });

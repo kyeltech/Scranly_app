@@ -1,11 +1,13 @@
 import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react-native';
 import Root from './Root';
+import {memoryDiary} from '../store/memory';
+import {aLoggedWeek} from '../fixtures/diary';
 import {dayMarks} from '../fixtures/days';
 
 describe('the app', () => {
   it('walks from the welcome through onboarding to Today', async () => {
-    await render(<Root />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} />);
 
     expect(screen.getByText('Scranly')).toBeTruthy();
     await fireEvent.press(screen.getByText('Set up my targets'));
@@ -23,13 +25,21 @@ describe('the app', () => {
     expect(screen.getByText('1,815')).toBeTruthy();
     await fireEvent.press(screen.getByText('Start logging'));
 
-    // Landed on Today, with the ring reading what is left.
-    expect(screen.getByText('642')).toBeTruthy();
+    /**
+     * Landed on Today, with the ring reading what is left — 1,815 target less
+     * the 1,188 the seeded diary has on today.
+     *
+     * This was 642 while the day came from a fixture, because that fixture
+     * hardcoded a 1,830 target that never matched the 1,815 `dailyPlan`
+     * actually produces for this profile. The day is real now, so the two
+     * agree.
+     */
+    expect(screen.getByText('627')).toBeTruthy();
     expect(screen.getByText('kcal left')).toBeTruthy();
   });
 
   it('reaches Weight and Settings from Today, and Add food from the button', async () => {
-    await render(<Root initialRoute="Today" />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Week'));
     expect(screen.getByText('On track')).toBeTruthy();
@@ -44,7 +54,7 @@ describe('the app', () => {
   });
 
   it('carries the activity level chosen in onboarding into the targets', async () => {
-    await render(<Root />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} />);
 
     await fireEvent.press(screen.getByText('Set up my targets'));
     await fireEvent.press(screen.getByText('Very'));
@@ -67,7 +77,7 @@ describe('the app', () => {
  */
 describe('every control lands where it was designed to', () => {
   it('opens the barcode reader aiming from Today, not on a result', async () => {
-    await render(<Root initialRoute="Today" />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Scan'));
 
@@ -77,7 +87,7 @@ describe('every control lands where it was designed to', () => {
   });
 
   it('opens the month from the day name on Today', async () => {
-    await render(<Root initialRoute="Today" />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByLabelText('Pick a day'));
 
@@ -90,7 +100,7 @@ describe('every control lands where it was designed to', () => {
   });
 
   it('opens the scale reader from the weigh-in, not the food scanner', async () => {
-    await render(<Root initialRoute="WeighIn" />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="WeighIn" />);
 
     await fireEvent.press(screen.getByText('Photograph the scale instead'));
 
@@ -100,7 +110,7 @@ describe('every control lands where it was designed to', () => {
   });
 
   it('opens the label reader from Create a food, not a dead barcode', async () => {
-    await render(<Root initialRoute="CreateFood" />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="CreateFood" />);
 
     await fireEvent.press(screen.getByText('Scan the label instead'));
 
@@ -115,7 +125,7 @@ describe('every control lands where it was designed to', () => {
  */
 describe('picking a day changes the day', () => {
   const openPicker = async () => {
-    await render(<Root initialRoute="Today" />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="Today" />);
     await fireEvent.press(screen.getByLabelText('Pick a day'));
   };
 

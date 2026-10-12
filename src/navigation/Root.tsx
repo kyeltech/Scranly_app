@@ -17,17 +17,24 @@ import WeightTrend from '../screens/WeightTrend';
 import Settings from '../screens/Settings';
 
 import LoadingScreen from '../components/LoadingScreen';
-import {fromReading} from '../domain/food';
+import {dailyPlan} from '../domain/targets';
+import {dayMarksFrom, dayState} from '../domain/dayState';
+import type {DiaryEntry} from '../domain/diary';
+import {fromForm, fromReading} from '../domain/food';
+import type {FoodItem, NewFood} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {memoryStore} from '../store/memory';
+import {memoryDiary, memoryFoods, memoryStore} from '../store/memory';
+import type {DiaryStore} from '../store/diary';
+import type {FoodStore} from '../store/foods';
 import type {Setup, SetupStore} from '../store/setup';
-import {dayFor, dayMarks, stepDay} from '../fixtures/days';
+import {stepDay} from '../fixtures/days';
 import {isoDate} from '../domain/calendar';
 import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
 import type {ScanStage} from '../screens/Scan';
 import type {LabelReading} from '../readers/label';
+import type {MealName} from '../domain/day';
 
 export type RootParams = {
   /** Setup, all of it. One screen, five faces — see screens/Onboarding. */
@@ -57,8 +64,14 @@ type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
  */
 export default function Root({
   store: given,
+  diary: givenDiary,
+  foods: givenFoods,
   initialRoute,
 }: {
+  /** Where the diary is kept. Separate from setup — see store/diary.ts. */
+  diary?: DiaryStore;
+  /** The foods this person created. */
+  foods?: FoodStore;
   /**
    * Where setup is kept. ADR-0007: the gate, not the store. The app passes one
    * that outlives this component; left out, setup lasts as long as the mount,
@@ -71,6 +84,28 @@ export default function Root({
   /** `useState` and not a default argument: a default would build a new store, and lose what was in it, on every render. */
   const [fallback] = useState(memoryStore);
   const store = given ?? fallback;
+  const [diaryFallback] = useState(memoryDiary);
+  const diary = givenDiary ?? diaryFallback;
+  const [foodsFallback] = useState(memoryFoods);
+  const foods = givenFoods ?? foodsFallback;
+
+  /** The foods made here, so Add food can offer them back. */
+  const [created, setCreated] = useState<FoodItem[]>(() => foods.peek?.() ?? []);
+
+  useEffect(() => {
+    let live = true;
+    foods
+      .read()
+      .catch(() => [])
+      .then(made => {
+        if (live) {
+          setCreated(made);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [foods]);
 
   /**
    * The saved setup: `undefined` while the store is being read, `null` once it
@@ -117,8 +152,47 @@ export default function Root({
   const today = new Date();
   const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
   const [dayIso, setDayIso] = useState(todayIso);
-  const marks = dayMarks(today);
-  const day = dayFor(dayIso, today, marks);
+
+  /**
+   * The diary, read once and kept here. Written through `log` below so the
+   * screen and the store cannot disagree: the entry goes into both, and a
+   * failed write says so rather than leaving Today showing food that was lost.
+   */
+  const [entries, setEntries] = useState<DiaryEntry[]>(
+    () => diary.peek?.() ?? [],
+  );
+
+  useEffect(() => {
+    let live = true;
+    diary
+      .read()
+      .catch(() => [])
+      .then(logged => {
+        if (live) {
+          setEntries(logged);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [diary]);
+
+  const log = (items: FoodItem[], meal: MealName) => {
+    const logged = items.map(item => asEntry(item, meal, dayIso));
+    setEntries(current => [...current, ...logged]);
+    for (const entry of logged) {
+      diary.add(entry).catch((error: unknown) => {
+        console.warn(
+          `[scranly] ${entry.name} could not be saved to the diary: ${String(error)}`,
+        );
+      });
+    }
+  };
+
+  const {targets} = dailyPlan(profile, goal);
+  const day = dayState(entries, targets, dayIso, today);
+  // From the same entries the day is, so the dots and the day cannot disagree.
+  const marks = dayMarksFrom(entries, targets, today);
   const dark = useThemeName() === 'dark';
 
   if (waiting) {
@@ -175,10 +249,14 @@ export default function Root({
         <Stack.Screen name="AddFood" options={{presentation: 'modal'}}>
           {({navigation}: Props<'AddFood'>) => (
             <AddFood
+              created={created}
               onBack={navigation.goBack}
               onScan={() => navigation.navigate('Scan')}
               onCreate={() => navigation.navigate('CreateFood')}
-              onAdd={navigation.goBack}
+              onAdd={items => {
+                log(items, 'Lunch');
+                navigation.goBack();
+              }}
             />
           )}
         </Stack.Screen>
@@ -195,7 +273,27 @@ export default function Root({
               }
               onBack={navigation.goBack}
               onScanLabel={() => navigation.navigate('Scan', {mode: 'label'})}
-              onSave={navigation.goBack}
+              onSave={(form: NewFood) => {
+                const made = fromForm(form);
+                if (made === undefined) {
+                  // Not a food yet — no name, or no calories. The screen keeps
+                  // what was typed rather than closing on a silent discard.
+                  return;
+                }
+                // Kept and logged: you typed it in because you are eating it.
+                setCreated(current => [...current, made]);
+                foods.add(made).catch((error: unknown) => {
+                  console.warn(
+                    `[scranly] ${made.name} could not be saved to your foods: ${String(error)}`,
+                  );
+                });
+                log([made], 'Lunch');
+                // All the way back to Today, not to Add food. The food is
+                // kept and it is logged, so the job that opened this screen is
+                // finished — landing on the list you came through would read
+                // as though it had not been.
+                navigation.navigate('Today');
+              }}
             />
           )}
         </Stack.Screen>
@@ -293,4 +391,26 @@ export default function Root({
       </Stack.Navigator>
     </NavigationContainer>
   );
+}
+
+/**
+ * A food from a list, as a line in the diary.
+ *
+ * The id is minted here rather than taken from the food: the same porridge
+ * logged twice in one day is two entries, and reusing the food's id would make
+ * removing one remove both.
+ */
+function asEntry(item: FoodItem, meal: MealName, date: string): DiaryEntry {
+  return {
+    id: `${date}-${item.id}-${Math.random().toString(36).slice(2, 9)}`,
+    date,
+    name: item.name,
+    brand: item.brand,
+    portion: item.portion,
+    kcal: item.kcal,
+    proteinG: item.proteinG,
+    carbsG: item.carbsG,
+    fatG: item.fatG,
+    meal,
+  };
 }
