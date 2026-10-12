@@ -1,7 +1,8 @@
 import React from 'react';
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react-native';
 import Root from './Root';
-import {memoryStore} from '../store/memory';
+import {aLoggedWeek} from '../fixtures/diary';
+import {memoryDiary, memoryStore} from '../store/memory';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 
 /**
@@ -24,13 +25,13 @@ const launch = async (element: React.ReactElement) => {
  */
 describe('the setup gate', () => {
   it('asks the questions when the store has nothing', async () => {
-    await launch(<Root store={memoryStore()} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={memoryStore()} />);
 
     expect(screen.getByText('EAT. LOG. DONE.')).toBeTruthy();
   });
 
   it('opens on Today when the store has been through setup', async () => {
-    await launch(<Root store={memoryStore({profile: kyel, goal: kyelsGoal})} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={memoryStore({profile: kyel, goal: kyelsGoal})} />);
 
     expect(screen.getByText('kcal left')).toBeTruthy();
     expect(screen.queryByText('EAT. LOG. DONE.')).toBeNull();
@@ -44,7 +45,7 @@ describe('the setup gate', () => {
 
     // Change goal is the one way back into setup once it is done, so it is
     // where a returning user would see a stale profile.
-    await launch(<Root store={store} initialRoute="Weight" />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} initialRoute="Weight" />);
     await fireEvent.press(screen.getByText('Change the goal'));
 
     expect(screen.getByDisplayValue('71.4')).toBeTruthy();
@@ -53,7 +54,7 @@ describe('the setup gate', () => {
 
   it('saves the answers when setup finishes', async () => {
     const store = memoryStore();
-    await launch(<Root store={store} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
 
     await fireEvent.press(screen.getByText('Set up my targets'));
     await fireEvent.press(screen.getByText('Very'));
@@ -70,7 +71,7 @@ describe('the setup gate', () => {
 
   it('does not ask again on the next launch', async () => {
     const store = memoryStore();
-    const first = await launch(<Root store={store} />);
+    const first = await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
 
     await fireEvent.press(screen.getByText('Set up my targets'));
     await fireEvent.press(screen.getByText('Continue'));
@@ -84,7 +85,7 @@ describe('the setup gate', () => {
     });
 
     // Same store, new launch.
-    await launch(<Root store={store} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
 
     expect(screen.getByText('kcal left')).toBeTruthy();
     expect(screen.queryByText('EAT. LOG. DONE.')).toBeNull();
@@ -100,7 +101,7 @@ describe('the setup gate', () => {
       write: () => Promise.reject(new Error('mmkv: instance is read-only')),
     };
 
-    await launch(<Root store={store} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
     await fireEvent.press(screen.getByText('Set up my targets'));
     await fireEvent.press(screen.getByText('Continue'));
     await fireEvent.press(screen.getByText('Continue'));
@@ -120,7 +121,7 @@ describe('the setup gate', () => {
       read: () => Promise.reject(new Error('no disk')),
     };
 
-    await launch(<Root store={broken} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={broken} />);
 
     expect(screen.getByText('EAT. LOG. DONE.')).toBeTruthy();
   });
@@ -129,7 +130,7 @@ describe('the setup gate', () => {
 describe('Change goal', () => {
   it('opens setup at the goal, not at the first question', async () => {
     await launch(
-      <Root store={memoryStore({profile: kyel, goal: kyelsGoal})} initialRoute="Weight" />,
+      <Root diary={memoryDiary(aLoggedWeek(new Date()))} store={memoryStore({profile: kyel, goal: kyelsGoal})} initialRoute="Weight" />,
     );
 
     await fireEvent.press(screen.getByText('Change the goal'));
@@ -140,7 +141,7 @@ describe('Change goal', () => {
 
   it('comes back to the weight trend when backed out of', async () => {
     await launch(
-      <Root store={memoryStore({profile: kyel, goal: kyelsGoal})} initialRoute="Weight" />,
+      <Root diary={memoryDiary(aLoggedWeek(new Date()))} store={memoryStore({profile: kyel, goal: kyelsGoal})} initialRoute="Weight" />,
     );
 
     await fireEvent.press(screen.getByText('Change the goal'));
@@ -173,7 +174,7 @@ describe('a store that answers without waiting', () => {
   it('opens Today without ever asking for the slow read', async () => {
     const store = instantStore({profile: kyel, goal: kyelsGoal});
 
-    await render(<Root store={store} />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
 
     expect(screen.getByText('kcal left')).toBeTruthy();
     expect(screen.queryByLabelText('Getting your day ready')).toBeNull();
@@ -183,7 +184,7 @@ describe('a store that answers without waiting', () => {
   it('opens setup without ever asking for the slow read', async () => {
     const store = instantStore();
 
-    await render(<Root store={store} />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
 
     expect(screen.getByText('EAT. LOG. DONE.')).toBeTruthy();
     expect(store.read).not.toHaveBeenCalled();
@@ -198,7 +199,7 @@ describe('a store that answers without waiting', () => {
     };
     const read = jest.spyOn(store, 'read');
 
-    await launch(<Root store={store} />);
+    await launch(<Root diary={memoryDiary(aLoggedWeek(new Date()))} store={store} />);
 
     expect(screen.getByText('kcal left')).toBeTruthy();
     expect(read).toHaveBeenCalled();

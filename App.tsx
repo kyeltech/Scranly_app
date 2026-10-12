@@ -5,7 +5,7 @@ import BootSplash from 'react-native-bootsplash';
 import AnimatedSplash from './src/components/AnimatedSplash';
 import LoadingScreen from './src/components/LoadingScreen';
 import Root from './src/navigation/Root';
-import {mmkvStore, storeFailure} from './src/store/mmkv';
+import {mmkvDiary, mmkvFoods, mmkvStore, storeFailure} from './src/store/mmkv';
 import {useTheme} from './src/theme';
 
 type Phase = 'splash' | 'loading' | 'ready';
@@ -20,6 +20,15 @@ type Phase = 'splash' | 'loading' | 'ready';
  * from starting.
  */
 const setupStore = mmkvStore();
+
+/**
+ * The diary, on disk. Same storage and the same tolerance for a missing pod as
+ * the setup store — built once here so it outlives any remount of `Root`.
+ */
+const diaryStore = mmkvDiary();
+
+/** The foods made in Create a food, so they are there to log again tomorrow. */
+const foodStore = mmkvFoods();
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('splash');
@@ -64,7 +73,7 @@ function Shell() {
       <StatusBar barStyle={t.statusBar} />
       {/* The diary still runs on the fixtures in src/fixtures. Setup does not:
           the store decides whether the questions get asked (ADR-0007). */}
-      <Root store={setupStore} />
+      <Root store={setupStore} diary={diaryStore} foods={foodStore} />
     </View>
   );
 }

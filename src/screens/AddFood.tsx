@@ -5,19 +5,31 @@ import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons
 import {withThousands} from '../lib/format';
 import {brand, type as type_, useTheme} from '../theme';
 import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
-import type {FoodItem} from '../fixtures/foods';
+import type {FoodItem} from '../domain/food';
 
 import {addFood as styles} from '../styles';
+
+/** The created foods a typed query matches, searched the same way the rest are. */
+function matching(foods: FoodItem[], query: string): FoodItem[] {
+  const needle = query.trim().toLowerCase();
+  return needle ? foods.filter(f => f.name.toLowerCase().includes(needle)) : [];
+}
 const FILTERS = ['Recent', 'Frequent', 'My foods', 'Meals'];
 
 export default function AddFood({
   meal = 'lunch',
+  created = [],
   onBack,
   onScan,
   onCreate,
   onAdd,
 }: {
   meal?: string;
+  /**
+   * Foods this person made themselves. Newest first, and ahead of everything
+   * else — you created it because nothing in the list was it.
+   */
+  created?: FoodItem[];
   onBack?: () => void;
   onScan?: () => void;
   onCreate?: () => void;
@@ -30,14 +42,26 @@ export default function AddFood({
   const [picked, setPicked] = useState<string[]>([]);
 
   const searching = query.trim().length > 0;
+
+  /** Foods made here, newest first — you created one because nothing else was it. */
+  const mine = useMemo(() => [...created].reverse(), [created]);
+
   const rows = useMemo(
-    () => (searching ? searchFoods(query) : foodsFor(filter)),
-    [query, searching, filter],
+    () =>
+      searching
+        ? [...matching(mine, query), ...searchFoods(query)]
+        : filter === 'Meals'
+        ? foodsFor(filter)
+        : [...mine, ...foodsFor(filter)],
+    [query, searching, filter, mine],
   );
   const copy = FILTER_COPY[filter] ?? FILTER_COPY.Recent;
   const chosen = useMemo(
-    () => [...recentFoods, ...searchFoods(query)].filter(f => picked.includes(f.id)),
-    [picked, query],
+    () =>
+      [...mine, ...recentFoods, ...searchFoods(query)].filter(f =>
+        picked.includes(f.id),
+      ),
+    [picked, query, mine],
   );
   const total = chosen.reduce((sum, f) => sum + f.kcal, 0);
 
