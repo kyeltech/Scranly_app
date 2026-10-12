@@ -1,6 +1,6 @@
 # ADR-0004: What actually reads the barcode, the plate and the label
 
-**Status: PART DECIDED — barcode and label chosen; the plate is still open.**
+**Status: PART DECIDED — barcode and label chosen; the plate moved to [ADR-0009](0009-plate-reader.md).**
 
 Decided: react-native-vision-camera 5.2.3 for the camera and its built-in barcode
 scanner; @react-native-ml-kit/text-recognition 2.0.0 for the label. The plate is
@@ -89,6 +89,12 @@ accuracy would be paying for a number the screen already treats as a guess.
 
 **Open question for Kyel:** is a running per-scan cost acceptable on a free app, or does the plate
 reader have to be on-device or absent?
+
+**This question, and the options above, moved to [ADR-0009](0009-plate-reader.md) on 11 October
+2026.** The table here is kept as the record of what was known when 0004 was written; 0009 carries
+it forward with two more options — building a model ourselves, and dropping vision in favour of a
+shortlist of what you already eat — plus what the on-device row actually contains and the research
+still outstanding. Read 0009, not this section, before deciding.
 
 ## 3. The label — probably not an LLM
 
