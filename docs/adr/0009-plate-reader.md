@@ -124,6 +124,34 @@ a first-time user with an empty diary, and nothing for food they have never logg
 Costs nothing. Barcode and label cover packaged food, which is most of a UK diet. Loses the
 mode that makes the app feel modern, and the board is already drawn.
 
+## What the incumbent actually does — checked 12 October 2026
+
+Lose It! is the app Scranly was described against, and its *Snap It* plate reader is **not an
+LLM**. Per Google's own ML Kit case study, it is a **custom-trained, quantized TensorFlow Lite
+model running on-device**, deployed through ML Kit's custom model hosting on Firebase. Their
+Director of Data Science is quoted on "compressed, quantized TF Lite models" and on "a custom
+model hosted by ML Kit [that] allowed us to seamlessly implement a quantized Snap It model on
+device".
+
+Three things in that worth carrying into the decision:
+
+1. **They moved off the cloud, not onto it.** Snap It began server-side — "the high computational
+   cost of the algorithm necessitated the use of a GPU server", with the image transferred for
+   inference — and they migrated to on-device so it runs "in real time and without a data
+   connection". The incumbent tried option 1's shape and left it.
+2. **Their label reader is ML Kit on-device text recognition**, which is the choice ADR-0004
+   already made for Scranly. Independent agreement on that call.
+3. **Snap It is option 4 above**, done by a company with a data science function and model hosting
+   that lets them retrain and A/B test without shipping an app release. That is the scale of
+   commitment the build-it-yourself option carries.
+
+**Caveats, because the page does not support more than this.** It carries no publication or
+revision date at all, and it refers to Firebase-era ML Kit custom model hosting rather than the
+current standalone product — so it is evidence of what Lose It! *did*, not proof of what ships
+today. It states nothing about training data, the number of food classes, or accuracy. A search
+result offering a specific accuracy figure for Snap It came from an SEO review site and is
+deliberately not recorded here.
+
 ## Research still to do
 
 Nothing below has been done. This is the list, not the findings.
@@ -140,6 +168,8 @@ Nothing below has been done. This is the list, not the findings.
       to exist, not verified, deliberately not listed above as though it had been.
 - [ ] **What the About you copy would have to say** if a cloud reader were chosen. A wording
       problem as much as a technical one, and it touches a promise already on screen.
+- [ ] **What Lose It! uses today**, as opposed to whenever that undated case study was written.
+      Would need a teardown or their current privacy disclosures; not worth guessing at.
 - [ ] **Whether option 5 is enough.** Cheapest to find out: it needs no vendor, and the diary
       has to exist first either way.
 
@@ -156,3 +186,7 @@ answer it rather than a preference for whichever library was reached for first.
 - Passio mobile SDK overview: https://passio.gitbook.io/nutrition-ai/mobile-sdks/mobile-sdk-overview
 - nutrilens, a worked example of the fully on-device route (Swin-Food101, MobileCLIP, SlimSAM,
   ONNX, no backend): https://github.com/thejusdutt/nutrilens
+- Google ML Kit case study, Lose It! (undated):
+  https://developers.google.com/ml-kit/case-studies/lose-it
+- TechCrunch on the Snap It launch, 29 September 2016:
+  https://techcrunch.com/2016/09/29/lose-it-launches-snap-it-to-let-users-count-calories-in-food-photos/
