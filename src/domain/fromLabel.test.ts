@@ -1,4 +1,5 @@
 import {fromReading} from './food';
+import {isUsable, parseLabel} from '../readers/label';
 import type {LabelReading} from '../readers/label';
 
 /**
@@ -60,5 +61,33 @@ describe('a label, as the Create a food form', () => {
     const useless: LabelReading = {servingG: undefined, per100: {}, perServing: {}, unread: ['???']};
 
     expect(fromReading(useless).kcal).toBe('');
+  });
+});
+
+/**
+ * The whole way through, for the can that started it: the panel is printed
+ * along one line on the body of the tin, and what Kyel wanted from
+ * photographing it was the Create a food form already filled.
+ */
+describe('a tin whose panel is printed as a run of text', () => {
+  const run = parseLabel([
+    'Typical values per 100g: Energy 440kJ/103kcal, Protein 25.0g, ' +
+      'Carbohydrate 0.5g, Fat 0.8g, Salt 1.0g',
+  ]);
+
+  it('is a reading the sheet will offer, rather than nothing at all', () => {
+    expect(isUsable(run)).toBe(true);
+  });
+
+  it('fills the form from it, stated for the 100 g the panel is stated for', () => {
+    expect(fromReading(run)).toEqual(
+      expect.objectContaining({
+        servingG: '100',
+        kcal: '103',
+        proteinG: '25',
+        carbsG: '0.5',
+        fatG: '0.8',
+      }),
+    );
   });
 });
