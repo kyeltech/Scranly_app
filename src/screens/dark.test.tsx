@@ -98,3 +98,26 @@ describe('A day with nothing logged, in the dark', () => {
     expect(screen.getByLabelText('Log Porridge oats')).toBeTruthy();
   });
 });
+
+/**
+ * The meal sections, in the dark.
+ *
+ * Four of these + buttons sit on every day, so they are deliberately the
+ * surface fill rather than the lime of the starter rows — and a fill that
+ * inverted would be four white discs down a dark screen.
+ */
+describe('the meal sections, in the dark', () => {
+  it('keeps each meal + a surface disc rather than inverting it', async () => {
+    await render(<Today day={aNormalDay} />);
+
+    expect(backgroundOf('Add to Breakfast')).toBe(dark.fill);
+    expect(backgroundOf('Add to Snack')).toBe(dark.fill);
+  });
+
+  it('stays legible on a meal with nothing in it', async () => {
+    await render(<Today day={aNormalDay} />);
+
+    const [nothing] = screen.getAllByText('Nothing yet');
+    expect(StyleSheet.flatten(nothing.props.style).color).toBe(dark.textMuted);
+  });
+});

@@ -10,10 +10,12 @@
 import React from 'react';
 import {act, fireEvent, render, screen} from '@testing-library/react-native';
 import Root from './Root';
+import {memoryDiary} from '../store/memory';
+import {aLoggedWeek} from '../fixtures/diary';
 
 /** Walks onboarding, which every route below sits behind. */
 const toToday = async () => {
-  await render(<Root initialRoute="Today" />);
+  await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="Today" />);
 };
 
 describe('Leaving Today', () => {
@@ -93,7 +95,7 @@ describe('Leaving the weight trend', () => {
 
 describe('Leaving the targets screen', () => {
   it('Set them myself instead goes back to the method', async () => {
-    await render(<Root />);
+    await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} />);
     await fireEvent.press(screen.getByText('Set up my targets'));
     await fireEvent.press(screen.getByText('Continue'));
     await fireEvent.press(screen.getByText('Continue'));

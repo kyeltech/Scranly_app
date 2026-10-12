@@ -84,3 +84,34 @@ export const labelRows: LabelRow[] = [
 
 /** The serving size the label's second column is stated for. */
 export const labelServingG = 30;
+
+/**
+ * The same panel as a parsed reading.
+ *
+ * The drawn stand-in has to hand over what a real read would, or the screens
+ * *can* tell which they are looking at — and the one place that showed was
+ * Save this food, which filled the form from a live read and left it empty
+ * from the stand-in.
+ */
+export const labelReading = {
+  servingG: labelServingG,
+  per100: {
+    energyKcal: 416,
+    fat: 34.9,
+    saturates: 21.7,
+    carbs: 0.1,
+    sugars: 0.1,
+    protein: 25.4,
+    salt: 1.8,
+  },
+  perServing: {
+    energyKcal: 125,
+    fat: 10.4,
+    saturates: 6.5,
+    carbs: 0.1,
+    sugars: 0.1,
+    protein: 7.7,
+    salt: 0.5,
+  },
+  unread: [],
+};

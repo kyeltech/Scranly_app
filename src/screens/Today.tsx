@@ -6,13 +6,18 @@ import {MINUS, withThousands} from '../lib/format';
 import {Screen, useActionBarInset} from '../ui';
 import {brand, type as type_, useTheme} from '../theme';
 import type {Palette} from '../theme';
-import type {DayView, MacroKey} from '../domain/day';
+import type {DayView, MacroKey, MealName} from '../domain/day';
 
 import {today as styles} from '../styles';
 type Props = {
   day: DayView;
   onScan?: () => void;
-  onLogFood?: () => void;
+  /**
+   * The meal is which + you tapped — the section's, or none at all from the
+   * button at the bottom, which is the one place on the screen that does not
+   * know what meal you mean.
+   */
+  onLogFood?: (meal?: MealName) => void;
   /** Today's header is the navigation — there is no tab bar. */
   onWeek?: () => void;
   onSettings?: () => void;
@@ -54,7 +59,7 @@ export default function Today({
   const t = useTheme();
   const barInset = useActionBarInset();
   const over = day.kcalRemaining < 0;
-  const empty = day.foods.length === 0;
+  const empty = day.meals.every(meal => meal.foods.length === 0);
 
   const figure = over
     ? MINUS + withThousands(Math.abs(day.kcalRemaining))
@@ -243,36 +248,69 @@ export default function Today({
           </View>
         ) : null}
 
-        {!empty && (
+        {/*
+          Four sections, every day, whether or not there is anything in them:
+          the + on a section is what decides the meal, so a section that
+          disappeared when empty would be a meal you could not log to.
+
+          The rows carry no meal of their own any more — the section they sit
+          in says it, and the tile spelling out 'B' beside every breakfast was
+          saying it twice.
+        */}
         <View style={styles.diary}>
           <View style={styles.diaryHead}>
             <Text style={[type_.sectionTitle, {color: t.text}]}>
               {day.past ? 'Logged that day' : 'Logged today'}
             </Text>
-            <Pressable onPress={onEdit} accessibilityRole="button">
-              <Text style={[styles.edit, {color: t.text}]}>Edit</Text>
-            </Pressable>
+            {!empty ? (
+              <Pressable onPress={onEdit} accessibilityRole="button">
+                <Text style={[styles.edit, {color: t.text}]}>Edit</Text>
+              </Pressable>
+            ) : null}
           </View>
-          {day.foods.map(food => (
-            <View
-              key={food.id}
-              style={[styles.row, {borderBottomColor: t.line}]}>
-              <View style={[styles.mealTile, {backgroundColor: t.fill}]}>
-                <Text style={[type_.label, {color: t.textMuted}]}>
-                  {food.meal[0]}
+
+          {day.meals.map(meal => (
+            <View key={meal.name} testID={`meal-${meal.name}`} style={styles.meal}>
+              <View style={styles.mealHead}>
+                <Text style={[type_.bodyStrong, {color: t.text}, styles.mealName]}>
+                  {meal.name}
                 </Text>
-              </View>
-              <View style={styles.rowText}>
-                <Text style={[type_.bodyStrong, {color: t.text}]}>{food.name}</Text>
-                <Text style={[type_.caption, {color: t.textMuted}]}>
-                  {`${food.portion} · ${food.meal}`}
+                <Text style={[type_.figureMd, {color: t.textMuted}]}>
+                  {withThousands(meal.kcal)}
                 </Text>
+                <Pressable
+                  onPress={() => onLogFood?.(meal.name)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add to ${meal.name}`}
+                  style={[styles.mealAdd, {backgroundColor: t.fill}]}>
+                  <Plus colour={t.text} size={16} />
+                </Pressable>
               </View>
-              <Text style={[type_.figureMd, {color: t.text}]}>{food.kcal}</Text>
+
+              {meal.foods.length === 0 ? (
+                <Text style={[styles.mealEmpty, {color: t.textMuted}]}>
+                  Nothing yet
+                </Text>
+              ) : (
+                meal.foods.map(food => (
+                  <View
+                    key={food.id}
+                    style={[styles.row, {borderBottomColor: t.line}]}>
+                    <View style={styles.rowText}>
+                      <Text style={[type_.bodyStrong, {color: t.text}]}>
+                        {food.name}
+                      </Text>
+                      <Text style={[type_.caption, {color: t.textMuted}]}>
+                        {food.portion}
+                      </Text>
+                    </View>
+                    <Text style={[type_.figureMd, {color: t.text}]}>{food.kcal}</Text>
+                  </View>
+                ))
+              )}
             </View>
           ))}
         </View>
-        )}
       </ScrollView>
 
       <View
@@ -292,7 +330,7 @@ export default function Today({
           <Text style={[type_.bodyStrong, {color: t.secondaryButton.fg}]}>Scan</Text>
         </Pressable>
         <Pressable
-          onPress={onLogFood}
+          onPress={() => onLogFood?.(undefined)}
           accessibilityRole="button"
           style={[styles.button, {backgroundColor: brand.lime}]}>
           <Plus colour={brand.onLime} size={19} testID="icon-log-food" />
