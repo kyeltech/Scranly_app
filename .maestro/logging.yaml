@@ -12,7 +12,8 @@ appId: org.reactjs.native.example.Scranly
       - tapOn: "See my targets"
       - tapOn: "Start logging"
 
-- assertVisible: "kcal left"
+# Not "kcal left" yet: a day with nothing on it reads "kcal to spend".
+- assertVisible: "Log food"
 - tapOn: "Log food"
 
 - assertVisible: "EATEN THIS WEEK"
