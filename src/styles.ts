@@ -853,13 +853,24 @@ export const today = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  mealTile: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+  /** One meal's section, and the head that carries its total and its +. */
+  meal: {marginTop: spacing.md},
+  mealHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 8,
+  },
+  mealName: {flex: 1},
+  /** Quieter than the lime starter +: there are four of these on every day. */
+  mealAdd: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  mealEmpty: {...type_.caption, paddingBottom: 12},
   rowText: {flex: 1},
   actions: {
     position: 'absolute',

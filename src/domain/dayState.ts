@@ -1,4 +1,5 @@
-import type {DayView, LoggedFood, MacroView, Starter} from './day';
+import {MEALS} from './day';
+import type {DayView, LoggedFood, MacroView, MealView, Starter} from './day';
 import type {DiaryEntry} from './diary';
 import type {Targets} from './targets';
 import {isoDate} from './calendar';
@@ -36,12 +37,30 @@ export function dayState(
       macro('carbs', 'CARBS', sum(onThisDay, e => e.carbsG), targets.carbsG),
       macro('fat', 'FAT', sum(onThisDay, e => e.fatG), targets.fatG),
     ],
-    foods: onThisDay.map(asLoggedFood),
+    meals: mealsFrom(onThisDay.map(asLoggedFood)),
     starters: onThisDay.length === 0 ? startersFrom(entries) : undefined,
     // Only when the day alone would mislead — which is when it is over.
     weekNote:
       kcalEaten > targets.kcal ? weekNoteFor(entries, targets, iso) : undefined,
   };
+}
+
+/**
+ * The day in four sections, each with its own total.
+ *
+ * Every meal is here whether or not it has food in it, because the section is
+ * what you tap to log to that meal — and the totals are worked out here rather
+ * than on the screen, which does no arithmetic of its own.
+ */
+export function mealsFrom(foods: LoggedFood[]): MealView[] {
+  return MEALS.map(name => {
+    const eaten = foods.filter(f => f.meal === name);
+    return {
+      name,
+      kcal: eaten.reduce((total, f) => total + f.kcal, 0),
+      foods: eaten,
+    };
+  });
 }
 
 /** How many days back the week note looks, today included. */

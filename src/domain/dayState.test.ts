@@ -1,9 +1,13 @@
 import {dayMarksFrom, dayState} from './dayState';
+import type {DayView} from './day';
 import type {DiaryEntry} from './diary';
 import {dailyPlan} from './targets';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 
 const {targets} = dailyPlan(kyel, kyelsGoal);
+
+/** Everything on the day, meal by meal, as one list. */
+const loggedOn = (day: DayView) => day.meals.flatMap(m => m.foods);
 
 /** Wednesday 16 September 2026, the clock every test in this project runs on. */
 const TODAY = new Date(2026, 8, 16);
@@ -28,7 +32,7 @@ describe('a day with nothing on it', () => {
     expect(day.kcalTarget).toBe(targets.kcal);
     expect(day.kcalEaten).toBe(0);
     expect(day.kcalRemaining).toBe(targets.kcal);
-    expect(day.foods).toEqual([]);
+    expect(loggedOn(day)).toEqual([]);
   });
 
   it('still shows the macro rows, at zero against their targets', () => {
@@ -65,7 +69,7 @@ describe('a day with food on it', () => {
   it('lists the food as it was logged', () => {
     const day = dayState(entries, targets, '2026-09-16', TODAY);
 
-    expect(day.foods).toEqual([
+    expect(loggedOn(day)).toEqual([
       {id: 'a', name: 'Porridge oats', portion: '80 g', kcal: 303, meal: 'Breakfast'},
       {id: 'b', name: 'Chicken thigh', portion: '80 g', kcal: 287, meal: 'Lunch'},
     ]);
@@ -80,7 +84,7 @@ describe('a day with food on it', () => {
     );
 
     expect(day.kcalEaten).toBe(590);
-    expect(day.foods).toHaveLength(2);
+    expect(loggedOn(day)).toHaveLength(2);
   });
 
   it('goes negative past the budget rather than stopping at zero', () => {
@@ -92,6 +96,83 @@ describe('a day with food on it', () => {
     );
 
     expect(day.kcalRemaining).toBe(-142);
+  });
+});
+
+/**
+ * The four sections Today is built from.
+ *
+ * The meal was never decided anywhere: everything logged went down as Lunch,
+ * because `Root` had the name written into it. The PRD settles it — "Tap + on
+ * a meal" — so the meal is where you were standing when you tapped, and the
+ * day has to arrive in four parts for there to be four places to stand.
+ */
+describe('the day, by meal', () => {
+  it('offers all four meals, in the order they are eaten, on a day with nothing on it', () => {
+    const day = dayState([], targets, '2026-09-16', TODAY);
+
+    expect(day.meals.map(m => m.name)).toEqual([
+      'Breakfast',
+      'Lunch',
+      'Dinner',
+      'Snack',
+    ]);
+    // A meal with nothing in it is still a meal: it is the + you tap.
+    expect(day.meals.map(m => m.foods)).toEqual([[], [], [], []]);
+    expect(day.meals.map(m => m.kcal)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('puts each food under the meal it was logged to', () => {
+    const day = dayState(
+      [
+        entry({id: 'a', meal: 'Breakfast', name: 'Porridge oats'}),
+        entry({id: 'b', meal: 'Dinner', name: 'Takeaway pizza'}),
+        entry({id: 'c', meal: 'Breakfast', name: 'Semi-skimmed milk'}),
+      ],
+      targets,
+      '2026-09-16',
+      TODAY,
+    );
+    const named = (name: string) =>
+      day.meals.find(m => m.name === name)?.foods.map(f => f.name);
+
+    expect(named('Breakfast')).toEqual(['Porridge oats', 'Semi-skimmed milk']);
+    expect(named('Dinner')).toEqual(['Takeaway pizza']);
+    expect(named('Lunch')).toEqual([]);
+    expect(named('Snack')).toEqual([]);
+  });
+
+  it('totals each meal on its own, so the section can show what it came to', () => {
+    const day = dayState(
+      [
+        entry({id: 'a', meal: 'Breakfast', kcal: 303}),
+        entry({id: 'b', meal: 'Breakfast', kcal: 98}),
+        entry({id: 'c', meal: 'Snack', kcal: 122}),
+      ],
+      targets,
+      '2026-09-16',
+      TODAY,
+    );
+    const total = (name: string) => day.meals.find(m => m.name === name)?.kcal;
+
+    // 303 + 98, by hand rather than by the code under test.
+    expect(total('Breakfast')).toBe(401);
+    expect(total('Snack')).toBe(122);
+    expect(total('Dinner')).toBe(0);
+  });
+
+  it('counts only the day asked for, meal by meal', () => {
+    const day = dayState(
+      [
+        entry({id: 'a', meal: 'Dinner', kcal: 784}),
+        entry({id: 'b', meal: 'Dinner', kcal: 900, date: '2026-09-15'}),
+      ],
+      targets,
+      '2026-09-16',
+      TODAY,
+    );
+
+    expect(day.meals.find(m => m.name === 'Dinner')?.kcal).toBe(784);
   });
 });
 

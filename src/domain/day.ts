@@ -9,6 +9,15 @@
 
 export type MealName = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
+/**
+ * The meals, in the order they are eaten.
+ *
+ * Today draws a section for each, every day, whether or not there is anything
+ * in it: the section's + is how the meal gets decided, so an absent section
+ * would be a meal you could not log to.
+ */
+export const MEALS: MealName[] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
 export type LoggedFood = {
   id: string;
   name: string;
@@ -16,6 +25,14 @@ export type LoggedFood = {
   portion: string;
   kcal: number;
   meal: MealName;
+};
+
+/** One meal's section: what was logged to it, and what it came to. */
+export type MealView = {
+  name: MealName;
+  /** Zero on a meal with nothing in it. */
+  kcal: number;
+  foods: LoggedFood[];
 };
 
 export type MacroKey = 'protein' | 'carbs' | 'fat';
@@ -58,5 +75,7 @@ export type DayView = {
   /** Negative once past the budget. The screen shows this number, not zero. */
   kcalRemaining: number;
   macros: MacroView[];
-  foods: LoggedFood[];
+  /** Always four, in `MEALS` order. The flat list this replaced could not say
+      which section a food belonged in. */
+  meals: MealView[];
 };
