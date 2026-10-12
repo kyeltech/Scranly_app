@@ -101,6 +101,37 @@ function energyFrom(line: string): number[] {
 }
 
 /**
+ * Salt from sodium.
+ *
+ * They are not the same number: salt is sodium chloride and weighs 2.5 times
+ * the sodium in it. That factor is the one the regulation uses to state either
+ * as the other, so a label that prints sodium is printing the same fact in
+ * different units — not a different nutrient.
+ *
+ * Only a row that states sodium *and does not state salt* is converted. A label
+ * printing 'Salt 1.8g (sodium 0.72g)' has given the answer and then explained
+ * it; converting the explanation would overwrite the answer with 1.8 again by
+ * luck, or with something else by rounding.
+ *
+ * Milligrams are handled here too, because sodium is the one row that arrives
+ * in them — US packaging states 'Sodium 280mg' where a UK one would say
+ * 'Salt 0.7g'.
+ */
+const SALT_PER_SODIUM = 2.5;
+
+function statesSodium(line: string): boolean {
+  return /sodium/i.test(line) && !/\bsalt\b/i.test(line);
+}
+
+function saltFromSodium(values: number[], line: string): number[] {
+  const inGrams = /\d\s*mg\b/i.test(line) ? 1000 : 1;
+  return values.map(
+    // Two places, which is as fine as any label states salt.
+    v => Math.round((v / inGrams) * SALT_PER_SODIUM * 100) / 100,
+  );
+}
+
+/**
  * The serving the second column is for. Labels say it several ways:
  *   'per 30g'  ·  'per serving (30 g)'  ·  'Each slice (30g) contains'
  */
@@ -189,10 +220,15 @@ export function parseLabel(lines: string[]): LabelReading {
       continue;
     }
 
-    const values =
+    const read =
       nutrient === 'energyKcal'
         ? energyFrom(line)
         : [...line.matchAll(NUMBER)].map(m => toNumber(m[1]));
+
+    const values =
+      nutrient === 'salt' && statesSodium(line)
+        ? saltFromSodium(read, line)
+        : read;
 
     if (!values.length) {
       unread.push(line);
