@@ -1,5 +1,6 @@
 import {createMMKV} from 'react-native-mmkv';
-import {mmkvStore, SETUP_KEY, storeFailure} from './mmkv';
+import {DIARY_KEY, mmkvDiary, mmkvStore, SETUP_KEY, storeFailure} from './mmkv';
+import type {DiaryEntry} from '../domain/diary';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 
 /**
@@ -174,6 +175,102 @@ describe('the MMKV store', () => {
       // Asked once, on construction. A throwing native call per read is a
       // cost paid on the path that draws the first screen.
       expect(createMMKV).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * The diary                                                           *
+ * ------------------------------------------------------------------ */
+
+const logged = (over: Partial<DiaryEntry> = {}): DiaryEntry => ({
+  id: 'e1',
+  date: '2026-09-16',
+  name: 'Porridge oats',
+  portion: '80 g',
+  kcal: 303,
+  proteinG: 10,
+  carbsG: 54,
+  fatG: 6,
+  meal: 'Breakfast',
+  ...over,
+});
+
+describe('the MMKV diary', () => {
+  it('is empty on a fresh install', async () => {
+    await expect(mmkvDiary().read()).resolves.toEqual([]);
+  });
+
+  it('gives back what was logged', async () => {
+    const diary = mmkvDiary();
+
+    await diary.add(logged());
+
+    await expect(diary.read()).resolves.toEqual([logged()]);
+  });
+
+  it('survives the process, which is the whole point', async () => {
+    await mmkvDiary().add(logged());
+
+    // A second diary over the same storage: a relaunch, as far as this seam
+    // can model one.
+    await expect(mmkvDiary().read()).resolves.toEqual([logged()]);
+  });
+
+  it('takes an entry off by id', async () => {
+    const diary = mmkvDiary();
+    await diary.add(logged({id: 'a'}));
+    await diary.add(logged({id: 'b'}));
+
+    await diary.remove('a');
+
+    expect((await diary.read()).map(e => e.id)).toEqual(['b']);
+  });
+
+  it('answers without waiting, like the setup store', async () => {
+    await mmkvDiary().add(logged());
+
+    expect(mmkvDiary().peek?.()).toEqual([logged()]);
+  });
+
+  it('reads as empty when the record will not parse', async () => {
+    mmkvMock.__setRaw(DIARY_KEY, '[{"id":"a",');
+
+    await expect(mmkvDiary().read()).resolves.toEqual([]);
+  });
+
+  it('drops a single unusable entry rather than the whole diary', async () => {
+    // One good row and one missing its calories. Counting the bad one as zero
+    // would quietly read as a day further under budget than it was.
+    mmkvMock.__setRaw(
+      DIARY_KEY,
+      JSON.stringify([logged({id: 'good'}), {id: 'bad', name: 'Mystery'}]),
+    );
+
+    const entries = await mmkvDiary().read();
+
+    expect(entries.map(e => e.id)).toEqual(['good']);
+  });
+
+  describe('when the pod never got installed', () => {
+    beforeEach(() => {
+      mmkvMock.__setMmkvNative(false);
+    });
+
+    it('reads as empty rather than taking the app down', async () => {
+      await expect(mmkvDiary().read()).resolves.toEqual([]);
+    });
+
+    it('rejects the write, so a lost meal is not silent', async () => {
+      await expect(mmkvDiary().add(logged())).rejects.toThrow(/not registered/);
+    });
+
+    it('declines to answer rather than claiming the diary is empty', () => {
+      expect(mmkvDiary().peek?.()).toBeUndefined();
+    });
+
+    it('rejects a removal too, rather than reporting a deletion that never happened', async () => {
+      await expect(mmkvDiary().remove('a')).rejects.toThrow(/not registered/);
     });
   });
 });
