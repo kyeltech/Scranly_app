@@ -1,36 +1,27 @@
-export type FoodItem = {
-  id: string;
-  name: string;
-  /** Brand and portion, as the row shows it. */
-  meta: string;
-  kcal: number;
-  /** True for foods this person has logged before — they rank above the database. */
-  yours?: boolean;
-  /** How many times it has been logged. What 'Frequent' sorts on. */
-  logged?: number;
-  /** True for a food this person created themselves, rather than matched. */
-  mine?: boolean;
-};
+export type {FoodItem} from '../domain/food';
+import {food} from '../domain/food';
+import type {FoodItem} from '../domain/food';
+export {food};
 
 /** What you have eaten this week, newest first. Stands in for the local store. */
 export const recentFoods: FoodItem[] = [
-  {id: 'oats', name: 'Porridge oats', meta: 'Quaker · 40 g · P 5 C 27 F 3', kcal: 152, yours: true, logged: 48},
-  {id: 'milk', name: 'Semi-skimmed milk', meta: 'Tesco · 200 ml · P 7 C 10 F 3', kcal: 98, yours: true, logged: 44},
-  {id: 'thigh', name: 'Chicken thigh, grilled', meta: '165 g · P 42 C 0 F 12', kcal: 287, yours: true, logged: 21},
-  {id: 'rice', name: 'Basmati rice, cooked', meta: 'Tilda · 220 g · P 6 C 62 F 1', kcal: 286, yours: true, logged: 19},
-  {id: 'yoghurt', name: 'Greek yoghurt, 0%', meta: 'Fage · 170 g · P 17 C 6 F 0', kcal: 97, yours: true, logged: 31},
-  {id: 'banana', name: 'Banana', meta: '1 medium, 118 g · P 1 C 27 F 0', kcal: 105, yours: true, logged: 26},
-  {id: 'pb', name: 'Peanut butter, smooth', meta: 'Meridian · 20 g · P 6 C 3 F 10', kcal: 122, yours: true, logged: 12},
-  {id: 'avocado', name: 'Avocado', meta: '70 g · P 1 C 6 F 10', kcal: 114, yours: true, logged: 7, mine: true},
+  food({id: 'oats', name: 'Porridge oats', brand: 'Quaker', portion: '40 g', proteinG: 5, carbsG: 27, fatG: 3, kcal: 152, yours: true, logged: 48}),
+  food({id: 'milk', name: 'Semi-skimmed milk', brand: 'Tesco', portion: '200 ml', proteinG: 7, carbsG: 10, fatG: 3, kcal: 98, yours: true, logged: 44}),
+  food({id: 'thigh', name: 'Chicken thigh, grilled', portion: '165 g', proteinG: 42, carbsG: 0, fatG: 12, kcal: 287, yours: true, logged: 21}),
+  food({id: 'rice', name: 'Basmati rice, cooked', brand: 'Tilda', portion: '220 g', proteinG: 6, carbsG: 62, fatG: 1, kcal: 286, yours: true, logged: 19}),
+  food({id: 'yoghurt', name: 'Greek yoghurt, 0%', brand: 'Fage', portion: '170 g', proteinG: 17, carbsG: 6, fatG: 0, kcal: 97, yours: true, logged: 31}),
+  food({id: 'banana', name: 'Banana', portion: '1 medium, 118 g', proteinG: 1, carbsG: 27, fatG: 0, kcal: 105, yours: true, logged: 26}),
+  food({id: 'pb', name: 'Peanut butter, smooth', brand: 'Meridian', portion: '20 g', proteinG: 6, carbsG: 3, fatG: 10, kcal: 122, yours: true, logged: 12}),
+  food({id: 'avocado', name: 'Avocado', portion: '70 g', proteinG: 1, carbsG: 6, fatG: 10, kcal: 114, yours: true, logged: 7, mine: true}),
 ];
 
 /** The database beyond your own foods. Searched only when you type. */
 export const libraryFoods: FoodItem[] = [
-  {id: 'breast', name: 'Chicken breast, grilled', meta: '100 g · P 31 C 0 F 4', kcal: 165},
-  {id: 'thigh-raw', name: 'Chicken thigh, raw', meta: '100 g · P 18 C 0 F 15', kcal: 209},
-  {id: 'tikka', name: 'Chicken tikka masala', meta: 'Tesco · 400 g · P 32 C 38 F 26', kcal: 528},
-  {id: 'roast', name: 'Roast chicken, skin on', meta: '100 g · P 27 C 0 F 12', kcal: 220},
-  {id: 'stock', name: 'Chicken stock cube', meta: 'Knorr · 1 cube · P 1 C 2 F 1', kcal: 20},
+  food({id: 'breast', name: 'Chicken breast, grilled', portion: '100 g', proteinG: 31, carbsG: 0, fatG: 4, kcal: 165}),
+  food({id: 'thigh-raw', name: 'Chicken thigh, raw', portion: '100 g', proteinG: 18, carbsG: 0, fatG: 15, kcal: 209}),
+  food({id: 'tikka', name: 'Chicken tikka masala', brand: 'Tesco', portion: '400 g', proteinG: 32, carbsG: 38, fatG: 26, kcal: 528}),
+  food({id: 'roast', name: 'Roast chicken, skin on', portion: '100 g', proteinG: 27, carbsG: 0, fatG: 12, kcal: 220}),
+  food({id: 'stock', name: 'Chicken stock cube', brand: 'Knorr', portion: '1 cube', proteinG: 1, carbsG: 2, fatG: 1, kcal: 20}),
 ];
 
 /**
@@ -48,15 +39,19 @@ export function searchFoods(query: string): FoodItem[] {
 
 /** Foods created by hand rather than matched — what 'My foods' holds. */
 export const myFoods: FoodItem[] = [
-  {
+  food({
     id: 'jollof',
     name: 'Mum\u2019s jollof rice',
-    meta: 'Mine · 250 g · P 9 C 76 F 8',
+    brand: 'Mine',
+    portion: '250 g',
+    proteinG: 9,
+    carbsG: 76,
+    fatG: 8,
     kcal: 418,
     yours: true,
     mine: true,
     logged: 9,
-  },
+  }),
   ...recentFoods.filter(f => f.mine),
 ];
 

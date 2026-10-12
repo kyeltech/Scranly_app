@@ -1,5 +1,6 @@
 import {isoDate} from '../domain/calendar';
 import type {DayMark} from '../domain/calendar';
+import {mealsFrom} from '../domain/dayState';
 import type {DayView} from '../domain/day';
 
 /** A normal day, two thirds through the budget. The board the design was approved on. */
@@ -13,11 +14,13 @@ export const aNormalDay: DayView = {
     {key: 'carbs', label: 'CARBS', eatenG: 142, targetG: 188},
     {key: 'fat', label: 'FAT', eatenG: 38, targetG: 55},
   ],
-  foods: [
+  // Grouped by the same function the real day uses, so the board the design
+  // was approved on cannot drift from what the app produces.
+  meals: mealsFrom([
     {id: '1', name: 'Porridge oats', portion: '80 g', kcal: 303, meal: 'Breakfast'},
     {id: '2', name: 'Chicken thigh, grilled', portion: '165 g', kcal: 287, meal: 'Lunch'},
     {id: '3', name: 'Basmati rice', portion: '220 g', kcal: 286, meal: 'Lunch'},
-  ],
+  ]),
 };
 
 /** Past the budget: the number goes negative and the ring goes round. */
@@ -34,10 +37,10 @@ export const anOverBudgetDay: DayView = {
   // One day over inside a week under it is not a week over, so the screen says
   // where the week stands rather than leaving the red number to speak for seven days.
   weekNote: {kcal: 320, under: true},
-  foods: [
+  meals: mealsFrom([
     {id: '1', name: 'Takeaway pizza', portion: '½ large', kcal: 784, meal: 'Dinner'},
     {id: '2', name: 'Chicken thigh, grilled', portion: '165 g', kcal: 287, meal: 'Lunch'},
-  ],
+  ]),
 };
 
 /** Nothing logged yet: the whole budget is still there to spend. */
@@ -58,7 +61,7 @@ export const aFreshDay: DayView = {
     {id: 'milk', name: 'Semi-skimmed milk', meta: 'Tesco · 200 ml', kcal: 98},
     {id: 'yoghurt', name: 'Greek yoghurt, 0%', meta: 'Fage · 170 g', kcal: 97},
   ],
-  foods: [],
+  meals: mealsFrom([]),
 };
 
 /** A day that has been and gone: a date, a stepper, and no logging to do. */
@@ -75,10 +78,10 @@ export const aPastDay: DayView = {
     {key: 'carbs', label: 'CARBS', eatenG: 160, targetG: 188},
     {key: 'fat', label: 'FAT', eatenG: 49, targetG: 55},
   ],
-  foods: [
+  meals: mealsFrom([
     {id: '1', name: 'Greek yoghurt, 0%', portion: '170 g', kcal: 97, meal: 'Breakfast'},
     {id: '2', name: 'Roast chicken', portion: '200 g', kcal: 440, meal: 'Lunch'},
-  ],
+  ]),
 };
 
 /**

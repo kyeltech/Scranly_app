@@ -1,0 +1,30 @@
+# Logging into a meal: the section you tap is what decides breakfast from
+# dinner. Everything used to land at lunch whatever you tapped.
+appId: org.reactjs.native.example.Scranly
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Set up my targets"
+    commands:
+      - tapOn: "Set up my targets"
+      - tapOn: "Continue"
+      - tapOn: "Continue"
+      - tapOn: "See my targets"
+      - tapOn: "Start logging"
+
+# Four sections, every day, whether or not there is anything in them.
+- assertVisible: "Breakfast"
+- assertVisible: "Lunch"
+- assertVisible: "Dinner"
+- assertVisible: "Snack"
+
+# In through dinner's +, and the screen it opens says where the food is going.
+- tapOn: "Add to Dinner"
+- assertVisible: "Add to Dinner"
+- tapOn: "Porridge oats"
+- tapOn: "Add 1 item"
+
+# Back on Today, with it under Dinner rather than Lunch.
+- assertVisible: "Porridge oats"
+- assertVisible: "kcal left"

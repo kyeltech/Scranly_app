@@ -52,10 +52,12 @@ export default function Viewfinder({
   live,
   sheet,
   working,
+ torch
 }: {
   title: string;
   onClose?: () => void;
   onTorch?: () => void;
+  torch?: boolean;
   /** Omitted once a sheet covers the picture and the frame would be pointless. */
   frame?: Frame;
   frameState?: FrameState;
@@ -147,8 +149,8 @@ export default function Viewfinder({
             onPress={onTorch}
             accessibilityRole="button"
             accessibilityLabel="Torch"
-            style={styles.round}>
-            <Torch colour={camera.text} size={17} />
+            style={[styles.round,{backgroundColor: torch ? brand.white : undefined}]}>
+            <Torch colour={torch ? camera.bgBottom : camera.text} size={17} />
           </Pressable>
         ) : (
           <View style={styles.round} />
