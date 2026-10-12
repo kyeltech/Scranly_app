@@ -12,6 +12,7 @@ import {
 } from '../readers/useReaders';
 import {CAMERA_NOTICE} from '../readers';
 import type {LabelRead, ScannedBarcode} from '../readers';
+import type {LabelReading} from '../readers/label';
 import {isUsable, toLabelRows} from '../readers/label';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
 import {
@@ -26,6 +27,7 @@ import type {LabelColumn} from './scan/sheets';
 import {
   BARCODE,
   labelRows,
+  labelReading,
   labelServingG,
   matchedProduct,
   packServings,
@@ -85,7 +87,8 @@ export default function Scan({
   meal?: string;
   onClose?: () => void;
   onAdd?: () => void;
-  onCreateFromLabel?: () => void;
+  /** The reading comes with it: the label was read, so the form can be filled. */
+  onCreateFromLabel?: (reading?: LabelReading) => void;
   onWeighPortion?: () => void;
   onTypeItIn?: () => void;
 }) {
@@ -306,7 +309,7 @@ export default function Scan({
               items={platedItems}
               meal={chosenMeal}
               onCorrect={onWeighPortion}
-              onAddMissing={onCreateFromLabel}
+              onAddMissing={() => onCreateFromLabel?.()}
               onAdd={onAdd}
             />
           ) : undefined
@@ -381,8 +384,8 @@ export default function Scan({
             unread={labelRead?.reading.unread}
             column={column}
             onColumn={setColumn}
-            onFix={onCreateFromLabel}
-            onSave={onCreateFromLabel}
+            onFix={() => onCreateFromLabel?.(labelRead?.reading ?? labelReading)}
+            onSave={() => onCreateFromLabel?.(labelRead?.reading ?? labelReading)}
           />
         ) : undefined
       }>

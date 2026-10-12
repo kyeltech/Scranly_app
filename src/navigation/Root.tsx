@@ -17,6 +17,7 @@ import WeightTrend from '../screens/WeightTrend';
 import Settings from '../screens/Settings';
 
 import LoadingScreen from '../components/LoadingScreen';
+import {fromReading} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 import {memoryStore} from '../store/memory';
 import type {Setup, SetupStore} from '../store/setup';
@@ -26,13 +27,15 @@ import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
 import type {ScanStage} from '../screens/Scan';
+import type {LabelReading} from '../readers/label';
 
 export type RootParams = {
   /** Setup, all of it. One screen, five faces — see screens/Onboarding. */
   Onboarding: {step?: Step} | undefined;
   Today: undefined;
   AddFood: undefined;
-  CreateFood: undefined;
+  /** Opened from the label reader, the panel it read comes with it. */
+  CreateFood: {reading?: LabelReading} | undefined;
   /** One screen, three readers. `missing` walks the unhappy barcode path. */
   Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean} | undefined;
   Portion: undefined;
@@ -181,8 +184,15 @@ export default function Root({
         </Stack.Screen>
 
         <Stack.Screen name="CreateFood">
-          {({navigation}: Props<'CreateFood'>) => (
+          {({navigation, route}: Props<'CreateFood'>) => (
             <CreateFood
+              // Filled from the label when there was one, which is what the
+              // 'Scan the label instead' shortcut has always promised.
+              initial={
+                route.params?.reading
+                  ? fromReading(route.params.reading)
+                  : undefined
+              }
               onBack={navigation.goBack}
               onScanLabel={() => navigation.navigate('Scan', {mode: 'label'})}
               onSave={navigation.goBack}
@@ -198,7 +208,9 @@ export default function Root({
               missing={route.params?.missing}
               onClose={navigation.goBack}
               onAdd={navigation.goBack}
-              onCreateFromLabel={() => navigation.navigate('CreateFood')}
+              onCreateFromLabel={reading =>
+                navigation.navigate('CreateFood', {reading})
+              }
               onWeighPortion={() => navigation.navigate('Portion')}
               onTypeItIn={() => navigation.navigate('CreateFood')}
             />
