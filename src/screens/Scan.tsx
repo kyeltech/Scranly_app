@@ -212,8 +212,6 @@ export default function Scan({
     );
   }
 
-  // console.log({'[scan] mode': mode, 'stage': stage, 'camera': camera, 'live': live, 'torch': torch, 'poorRead': poorRead, 'lastRead': lastRead, 'captureError': captureError, 'labelRead': labelRead, 'scanned': scanned, 'chosenMeal': chosenMeal, 'serving': serving, 'column': column, 'aiming': aiming, 'notice': notice, 'labelNotice': labelNotice, 'plateNotice': plateNotice});
-
   /* -------------------------------------------------- barcode -------- */
   if (mode === 'barcode') {
     const read = stage !== 'aiming';
