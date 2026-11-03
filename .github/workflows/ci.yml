@@ -1,0 +1,44 @@
+# The three checks that run anywhere. The app and the Maestro suite need real
+# hardware — ML Kit ships no arm64-simulator slice, so there is no simulator to
+# run them on, in CI or anywhere else — and stay on the Mac. See AGENTS.md.
+name: checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # What package.json asks for, with the cache keyed on yarn.lock so a
+          # run that changes no dependency installs from cache.
+          node-version: 22
+          cache: yarn
+
+      # Yarn, not npm: package-lock.json is gitignored here. Frozen, so a
+      # lockfile that has drifted from package.json fails the run rather than
+      # quietly resolving to something else.
+      - name: Install
+        id: install
+        run: yarn install --frozen-lockfile
+
+      # Each check is conditioned on the install rather than on the check
+      # before it, so one red run names every problem instead of stopping at
+      # the first.
+      - name: Typecheck
+        if: steps.install.outcome == 'success'
+        run: npx tsc --noEmit
+
+      - name: Lint
+        if: steps.install.outcome == 'success'
+        run: yarn lint
+
+      - name: Unit tests
+        if: steps.install.outcome == 'success'
+        run: yarn test --ci
