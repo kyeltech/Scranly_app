@@ -85,8 +85,42 @@ describe('the awkward lines real packaging has', () => {
     expect(reading.perServing.fibre).toBe(0.7);
   });
 
-  it('takes sodium as salt, since some labels still use it', () => {
-    expect(parseLabel(['Sodium 0.7g']).per100.salt).toBe(0.7);
+  /**
+   * Sodium is not salt. Salt is sodium chloride and weighs 2.5 times what the
+   * sodium in it does, which is the factor the regulation itself uses to state
+   * one as the other.
+   *
+   * This read sodium as salt one for one, so an imported can stating 0.72 g of
+   * sodium went into the diary as 0.72 g of salt instead of 1.8 — a bit under
+   * a third of what was really there, on the one number a reading is most
+   * likely to be checked against the pack.
+   */
+  it('converts sodium to salt, rather than reading one as the other', () => {
+    expect(parseLabel(['Sodium 0.72g']).per100.salt).toBe(1.8);
+  });
+
+  it('reads sodium stated in milligrams, which is how US packaging states it', () => {
+    expect(parseLabel(['Sodium 280mg']).per100.salt).toBe(0.7);
+  });
+
+  it('converts both columns, not just the first', () => {
+    const reading = parseLabel(['Sodium 0.5g 0.15g']);
+    expect(reading.per100.salt).toBe(1.25);
+    expect(reading.perServing.salt).toBe(0.38);
+  });
+
+  it('leaves a salt row alone, since that is already what is counted', () => {
+    expect(parseLabel(['Salt 1.8g']).per100.salt).toBe(1.8);
+  });
+
+  it('believes the salt figure on a label that prints both', () => {
+    // 'Salt 1.8g (sodium 0.72g)' states the answer and then explains it. The
+    // explanation is not a second reading to convert.
+    expect(parseLabel(['Salt 1.8g (sodium 0.72g)']).per100.salt).toBe(1.8);
+  });
+
+  it('converts a sodium threshold too', () => {
+    expect(parseLabel(['Sodium <0.1g']).per100.salt).toBe(0.25);
   });
 
   it('finds a serving stated in words rather than a column header', () => {
@@ -141,6 +175,26 @@ describe('showing a reading back', () => {
     ]);
     // Fibre was not on this label, so it is absent rather than zero.
     expect(rows.find(r => r.id === 'fibre')).toBeUndefined();
+  });
+
+  /**
+   * The sheet is where this would have been checked against the pack, so it is
+   * worth one test of the whole way through: an imported panel stating sodium
+   * comes back as a salt row, in salt's own figure.
+   */
+  it('shows a sodium panel back as the salt it amounts to', () => {
+    const rows = toLabelRows({
+      reading: parseLabel([
+        'Energy 103kcal',
+        'Protein 25g',
+        'Fat 0.8g',
+        'Sodium 280mg',
+      ]),
+    });
+    const salt = rows.find(r => r.id === 'salt');
+
+    expect(salt?.name).toBe('Salt');
+    expect(salt?.per100).toBe('0.7 g');
   });
 
   it('carries the units the label uses', () => {
@@ -206,7 +260,7 @@ describe('Prose under the panel', () => {
     // The rule is positional, so check it does not swallow the ordinary shape.
     expect(parseLabel(['Energy (kJ/kcal) 1515/362 606/145']).per100.energyKcal).toBe(362);
     expect(parseLabel(['of which saturates 21.7g 6.5g']).per100.saturates).toBe(21.7);
-    expect(parseLabel(['Sodium 0.5g 0.15g']).per100.salt).toBe(0.5);
+    expect(parseLabel(['Sodium 0.5g 0.15g']).per100.salt).toBe(1.25);
   });
 
   it('reports a numeric line it cannot place, which is a different thing', () => {
@@ -246,5 +300,101 @@ describe('Whether a reading is a panel or a scrap of one', () => {
     expect(
       isUsable(parseLabel(['Energy 416kcal', 'Fat 34.9g', 'Carbohydrate 0.1g'])),
     ).toBe(true);
+  });
+});
+
+/**
+ * A panel printed as a run of text rather than a table.
+ *
+ * Small tins, pouches and bottles have no room for a grid, so the figures run
+ * along one line: "Typical values per 100g: Energy 440kJ/103kcal, Protein
+ * 25.0g, …". Kyel photographed a tuna can and got nothing at all back.
+ *
+ * The parser had a rule that a nutrient named *after* the first number on its
+ * line is prose — a footnote rather than a row — and that rule is right, and
+ * it swallowed these whole: the line opens with "per 100g", so every nutrient
+ * on it sits after a digit and the lot was discarded in silence.
+ *
+ * So a line carrying several nutrients, each with figures of its own, is a
+ * panel laid out sideways: it gets cut up at the nutrient names and each piece
+ * read as its own row. A line carrying one is still a footnote.
+ */
+describe('A panel printed as a run of text', () => {
+  const RUN =
+    'Typical values per 100g: Energy 440kJ/103kcal, Protein 25.0g, ' +
+    'Carbohydrate 0.5g, of which sugars 0.5g, Fat 0.8g, ' +
+    'of which saturates 0.2g, Salt 1.0g';
+
+  it('reads a whole panel off one line', () => {
+    const reading = parseLabel([RUN]);
+
+    expect(reading.per100.energyKcal).toBe(103);
+    expect(reading.per100.protein).toBe(25);
+    expect(reading.per100.carbs).toBe(0.5);
+    expect(reading.per100.fat).toBe(0.8);
+    expect(reading.per100.salt).toBe(1);
+  });
+
+  it('keeps the sub-rows apart from the rows they sit under', () => {
+    const reading = parseLabel([RUN]);
+
+    expect(reading.per100.sugars).toBe(0.5);
+    expect(reading.per100.saturates).toBe(0.2);
+    // The parent rows are not overwritten by the 'of which' that follows them.
+    expect(reading.per100.carbs).toBe(0.5);
+    expect(reading.per100.fat).toBe(0.8);
+  });
+
+  it('counts as a panel rather than a scrap, so the sheet offers it', () => {
+    expect(isUsable(parseLabel([RUN]))).toBe(true);
+  });
+
+  it('reads a run that OCR wrapped across lines', () => {
+    const reading = parseLabel([
+      'Nutrition per 100g: Energy 440kJ/103kcal, Protein 25.0g,',
+      'Fat 0.8g, Salt 1.0g',
+    ]);
+
+    expect(reading.per100.protein).toBe(25);
+    expect(reading.per100.salt).toBe(1);
+  });
+
+  it('does not take the per 100g at the front of a run as a serving size', () => {
+    expect(parseLabel([RUN]).servingG).toBeUndefined();
+  });
+
+  it('converts a run that states sodium, the same as a table would', () => {
+    const reading = parseLabel([
+      'Per 100g: Energy 103kcal, Protein 25g, Fat 0.8g, Sodium 280mg',
+    ]);
+
+    expect(reading.per100.salt).toBe(0.7);
+  });
+
+  it('reports nothing unread, because the whole line was placed', () => {
+    expect(parseLabel([RUN]).unread).toEqual([]);
+  });
+
+  /**
+   * The footnote rule stays. One nutrient on a line that mentions it after the
+   * numbers is still the small print under a panel, and reading it as a row is
+   * how a photo of the small print alone came back looking like a finished
+   * panel.
+   */
+  it('still passes over a footnote, which names one nutrient and no more', () => {
+    const reading = parseLabel(['Each slice (30g) contains 75kcal']);
+
+    expect(reading.per100.energyKcal).toBeUndefined();
+    expect(reading.unread).toEqual([]);
+  });
+
+  it('still lets the table win where a label has both', () => {
+    const reading = parseLabel([
+      'Energy 1041kJ/249kcal 312kJ/75kcal',
+      'Each slice (30g) contains 75kcal',
+    ]);
+
+    expect(reading.per100.energyKcal).toBe(249);
+    expect(reading.perServing.energyKcal).toBe(75);
   });
 });
