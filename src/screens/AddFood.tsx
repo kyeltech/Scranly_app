@@ -1,12 +1,19 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {Button, Screen, useActionBarInset} from '../ui';
 import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons';
 import {withThousands} from '../lib/format';
 import {brand, type as type_, useTheme} from '../theme';
 import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
+import {fromProduct, searchProducts, servingsFor} from '../readers/product';
+import type {SearchResult} from '../readers/product';
 import type {FoodItem} from '../domain/food';
 import type {MealName} from '../domain/day';
+
+/** Below this, a search is too broad to spend one of the minute's ten on. */
+const MIN_QUERY = 2;
+/** Wait for a pause in typing before searching — never one call per keystroke. */
+const DEBOUNCE_MS = 450;
 
 import {addFood as styles} from '../styles';
 
@@ -24,6 +31,7 @@ export default function AddFood({
   onScan,
   onCreate,
   onAdd,
+  search = searchProducts,
 }: {
   /** Which meal this is going to. The head says so — it is never a surprise. */
   meal?: MealName;
@@ -36,14 +44,52 @@ export default function AddFood({
   onScan?: () => void;
   onCreate?: () => void;
   onAdd?: (items: FoodItem[]) => void;
+  /** How a typed query reaches Open Food Facts. Injected so a test need not touch the network. */
+  search?: (query: string) => Promise<SearchResult>;
 }) {
   const t = useTheme();
   const barInset = useActionBarInset();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState(FILTERS[0]);
   const [picked, setPicked] = useState<string[]>([]);
+  /** Open Food Facts results for the current query, and whether it could be reached. */
+  const [remote, setRemote] = useState<FoodItem[]>([]);
+  const [remoteError, setRemoteError] = useState(false);
 
   const searching = query.trim().length > 0;
+
+  /**
+   * Search Open Food Facts once typing pauses, never per keystroke — it is
+   * rate-limited and the docs warn against it (ADR-0010). A query too short to
+   * be worth a call clears the results instead.
+   */
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < MIN_QUERY) {
+      setRemote([]);
+      setRemoteError(false);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      search(q).then(result => {
+        if (cancelled) {
+          return;
+        }
+        if (result.status === 'ok') {
+          setRemoteError(false);
+          setRemote(result.products.map(p => fromProduct(p, servingsFor(p)[0])));
+        } else {
+          setRemoteError(true);
+          setRemote([]);
+        }
+      });
+    }, DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, search]);
 
   /** Foods made here, newest first — you created one because nothing else was it. */
   const mine = useMemo(() => [...created].reverse(), [created]);
@@ -51,19 +97,19 @@ export default function AddFood({
   const rows = useMemo(
     () =>
       searching
-        ? [...matching(mine, query), ...searchFoods(query)]
+        ? [...matching(mine, query), ...searchFoods(query), ...remote]
         : filter === 'Meals'
         ? foodsFor(filter)
         : [...mine, ...foodsFor(filter)],
-    [query, searching, filter, mine],
+    [query, searching, filter, mine, remote],
   );
   const copy = FILTER_COPY[filter] ?? FILTER_COPY.Recent;
   const chosen = useMemo(
     () =>
-      [...mine, ...recentFoods, ...searchFoods(query)].filter(f =>
+      [...mine, ...recentFoods, ...searchFoods(query), ...remote].filter(f =>
         picked.includes(f.id),
       ),
-    [picked, query, mine],
+    [picked, query, mine, remote],
   );
   const total = chosen.reduce((sum, f) => sum + f.kcal, 0);
 
@@ -174,6 +220,12 @@ export default function AddFood({
             </Pressable>
           )}
         </View>
+
+        {searching && remoteError ? (
+          <Text style={[styles.none, {color: t.textMuted}]}>
+            Couldn’t reach Open Food Facts — showing your foods only.
+          </Text>
+        ) : null}
 
         {rows.length === 0 ? (
           <Text style={[styles.none, {color: t.textMuted}]}>

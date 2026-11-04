@@ -135,6 +135,11 @@ export type LookupResult =
   | {status: 'not-found'}
   | {status: 'error'};
 
+/** What a search came to: the products it found (maybe none), or a failure. */
+export type SearchResult =
+  | {status: 'ok'; products: Product[]}
+  | {status: 'error'};
+
 /** Only the slice of `fetch` this uses, so a test can hand over a stand-in. */
 type Fetcher = (
   url: string,
@@ -142,6 +147,7 @@ type Fetcher = (
 ) => Promise<{ok: boolean; status: number; json: () => Promise<any>}>;
 
 const ENDPOINT = 'https://world.openfoodfacts.org/api/v2/product';
+const SEARCH = 'https://world.openfoodfacts.org/cgi/search.pl';
 const FIELDS = 'code,product_name,brands,serving_size,nutriments';
 
 /**
@@ -203,4 +209,35 @@ export async function lookupBarcode(
   }
   const product = body.product ? productFromOff(body.product) : undefined;
   return product ? {status: 'found', product} : {status: 'not-found'};
+}
+
+/**
+ * Search Open Food Facts by name, called straight from the phone.
+ *
+ * Search is rate-limited harder than a read — about ten a minute — and the docs
+ * warn against firing one per keystroke, so the caller debounces (ADR-0010).
+ * Nameless or dataless hits are dropped: a search throws up plenty, and one
+ * that cannot be shown or logged is no result at all.
+ */
+export async function searchProducts(
+  query: string,
+  fetcher: Fetcher = fetch as unknown as Fetcher,
+): Promise<SearchResult> {
+  const url =
+    `${SEARCH}?search_terms=${encodeURIComponent(query)}` +
+    `&search_simple=1&action=process&json=1&fields=${FIELDS}&page_size=20`;
+  try {
+    const res = await fetcher(url, {headers: {'User-Agent': USER_AGENT}});
+    if (!res.ok) {
+      return {status: 'error'};
+    }
+    const body = await res.json();
+    const raw: OffProduct[] = Array.isArray(body.products) ? body.products : [];
+    const products = raw
+      .map(productFromOff)
+      .filter((p): p is Product => p !== undefined);
+    return {status: 'ok', products};
+  } catch {
+    return {status: 'error'};
+  }
 }

@@ -2,6 +2,7 @@ import {
   fromProduct,
   lookupBarcode,
   productFromOff,
+  searchProducts,
   servingMacros,
   servingsFor,
 } from './product';
@@ -210,6 +211,54 @@ describe('the servings a scanned product offers', () => {
       {id: 'per-100', label: 'Per 100 g', grams: 100, kcal: 481},
       {id: 'per-serving', label: 'Per serving (50 g)', grams: 50, kcal: 240},
     ]);
+  });
+});
+
+describe('searching Open Food Facts by name', () => {
+  const usable = (name: string, code: string) => ({
+    code,
+    product_name: name,
+    brands: 'Mars',
+    nutriments: {'energy-kcal_100g': 489, proteins_100g: 8, carbohydrates_100g: 60, fat_100g: 24},
+  });
+
+  it('returns the usable products a search found', async () => {
+    const fetcher = fetchStub(200, {
+      products: [usable('Snickers', '1'), usable('Snickers Duo', '2')],
+    });
+
+    const result = await searchProducts('snickers', fetcher);
+
+    expect(result).toEqual({
+      status: 'ok',
+      products: [
+        expect.objectContaining({name: 'Snickers', barcode: '1'}),
+        expect.objectContaining({name: 'Snickers Duo', barcode: '2'}),
+      ],
+    });
+  });
+
+  // Search throws up nameless, dataless entries; they are dropped, not shown.
+  it('drops results with nothing to show or log', async () => {
+    const fetcher = fetchStub(200, {
+      products: [usable('Snickers', '1'), {brands: 'Snickers', nutriments: {}}],
+    });
+
+    const result = await searchProducts('snickers', fetcher);
+
+    expect(result.status === 'ok' && result.products).toHaveLength(1);
+  });
+
+  it('is an error when the rate limit is hit', async () => {
+    await expect(searchProducts('snickers', fetchStub(429, {}))).resolves.toEqual({
+      status: 'error',
+    });
+  });
+
+  it('is an error when the network cannot be reached', async () => {
+    const offline = () => Promise.reject(new Error('Network request failed'));
+
+    await expect(searchProducts('snickers', offline)).resolves.toEqual({status: 'error'});
   });
 });
 
