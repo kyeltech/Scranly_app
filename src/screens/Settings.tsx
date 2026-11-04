@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, Switch, Text, View} from 'react-native';
+import {Linking, Pressable, ScrollView, Switch, Text, View} from 'react-native';
 import {Header, Screen} from '../ui';
 import {ChevronRight} from '../ui/icons';
 import {brand, type as type_, useTheme} from '../theme';
@@ -97,6 +97,17 @@ export default function Settings({onBack}: {onBack?: () => void}) {
         <Text style={[styles.footer, {color: t.textMuted}]}>
           No account to upgrade, nothing to subscribe to, and nothing here sells
           your diary on. That is the whole business model.
+        </Text>
+        {/* ODbL requires the licence named and Open Food Facts credited with a
+            link wherever its data is used. The scanned numbers come from there,
+            so the credit lives here (ADR-0010). */}
+        <Text
+          accessibilityRole="link"
+          onPress={() => Linking.openURL('https://openfoodfacts.org')}
+          style={[styles.credit, {color: t.textMuted}]}>
+          Food data from{' '}
+          <Text style={styles.creditLink}>Open Food Facts</Text>, licensed under
+          the ODbL.
         </Text>
       </ScrollView>
     </Screen>

@@ -99,6 +99,46 @@ export function NoMatchSheet({
   );
 }
 
+/**
+ * Not a miss, but a failure to ask: offline, a timeout, or Open Food Facts's
+ * rate limit (ADR-0006). Told apart from "Not in the database" on purpose —
+ * the food may well be there, so the way out is to try again, not to add it.
+ */
+export function CantReachSheet({
+  barcode,
+  onRetry,
+  onTypeItIn,
+}: {
+  barcode: string;
+  onRetry?: () => void;
+  onTypeItIn?: () => void;
+}) {
+  const t = useTheme();
+  return (
+    <Sheet>
+      <View style={styles.failHead}>
+        <View style={[styles.failIcon, {backgroundColor: t.verdict.fast}]}>
+          <Warning colour={t.status.over} size={18} />
+        </View>
+        <View style={styles.failText}>
+          <Text style={[type_.cardTitle, {color: t.text}]}>
+            Can’t reach the food database
+          </Text>
+          <Text style={[type_.caption, {color: t.textMuted}]}>{barcode}</Text>
+        </View>
+      </View>
+      <Text style={[styles.body, {color: t.textMuted}]}>
+        You’re offline, or Open Food Facts is busy. Your scan is fine — try
+        again in a moment.
+      </Text>
+      <View style={styles.gapLg} />
+      <Button label="Try again" onPress={onRetry} />
+      <View style={styles.gapSm} />
+      <Button label="Type it in instead" variant="ghost" onPress={onTypeItIn} />
+    </Sheet>
+  );
+}
+
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 /** A match, its numbers, and the two choices left: how much, and which meal. */

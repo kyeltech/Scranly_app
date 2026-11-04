@@ -603,6 +603,8 @@ export const settings = StyleSheet.create({
   rowText: {flex: 1},
   note: {...type_.caption, lineHeight: 18, marginTop: 2},
   footer: {...type_.caption, lineHeight: 18, marginTop: 18},
+  credit: {...type_.caption, lineHeight: 18, marginTop: 14},
+  creditLink: {textDecorationLine: 'underline'},
 });
 
 /* ---- src/ui/Sheet.tsx ---- */
@@ -1104,6 +1106,13 @@ export const weightTrend = StyleSheet.create({
   verdictLine: {...type_.body, marginTop: 10},
   verdictDetail: {...type_.caption, lineHeight: 19, marginTop: 6},
   actions: {paddingHorizontal: spacing.lg, paddingBottom: 12},
+});
+
+/* ---- src/components/ErrorBoundary.tsx ---- */
+export const errorBoundary = StyleSheet.create({
+  body: {flex: 1, justifyContent: 'center', paddingHorizontal: 26},
+  detail: {...type_.body, lineHeight: 24, marginTop: 12},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 20},
 });
 
 /* ---- src/screens/Welcome.tsx ---- */
