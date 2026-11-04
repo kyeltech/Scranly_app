@@ -334,6 +334,10 @@ export default function Root({
               missing={route.params?.missing}
               onClose={navigation.goBack}
               onAdd={navigation.goBack}
+              onLog={(item, meal) => {
+                log([item], meal);
+                navigation.goBack();
+              }}
               onCreateFromLabel={reading =>
                 navigation.navigate('CreateFood', {reading})
               }

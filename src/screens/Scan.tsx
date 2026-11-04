@@ -14,8 +14,10 @@ import {CAMERA_NOTICE} from '../readers';
 import type {LabelRead, ScannedBarcode} from '../readers';
 import type {LabelReading} from '../readers/label';
 import {isUsable, toLabelRows} from '../readers/label';
-import {lookupBarcode, servingsFor} from '../readers/product';
+import {fromProduct, lookupBarcode, servingsFor} from '../readers/product';
 import type {LookupResult, Product} from '../readers/product';
+import type {FoodItem} from '../domain/food';
+import type {MealName} from '../domain/day';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
 import {
   CantReachSheet,
@@ -84,6 +86,7 @@ export default function Scan({
   lookup = lookupBarcode,
   onClose,
   onAdd,
+  onLog,
   onCreateFromLabel,
   onWeighPortion,
   onTypeItIn,
@@ -95,6 +98,8 @@ export default function Scan({
   lookup?: (barcode: string) => Promise<LookupResult>;
   onClose?: () => void;
   onAdd?: () => void;
+  /** Log a scanned product at the chosen serving, to the chosen meal. */
+  onLog?: (item: FoodItem, meal: MealName) => void;
   /** The reading comes with it: the label was read, so the form can be filled. */
   onCreateFromLabel?: (reading?: LabelReading) => void;
   onWeighPortion?: () => void;
@@ -315,7 +320,9 @@ export default function Scan({
               meal={chosenMeal}
               onMeal={setChosenMeal}
               onServing={() => setStage('serving')}
-              onAdd={onAdd}
+              onAdd={() =>
+                onLog?.(fromProduct(shownProduct, serving), chosenMeal as MealName)
+              }
             />
           ) : undefined
         }>

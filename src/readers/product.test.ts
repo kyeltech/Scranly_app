@@ -1,4 +1,10 @@
-import {lookupBarcode, productFromOff, servingMacros, servingsFor} from './product';
+import {
+  fromProduct,
+  lookupBarcode,
+  productFromOff,
+  servingMacros,
+  servingsFor,
+} from './product';
 
 /**
  * A real Open Food Facts response, captured 3 November 2026 from
@@ -204,6 +210,40 @@ describe('the servings a scanned product offers', () => {
       {id: 'per-100', label: 'Per 100 g', grams: 100, kcal: 481},
       {id: 'per-serving', label: 'Per serving (50 g)', grams: 50, kcal: 240},
     ]);
+  });
+});
+
+describe('a scanned product, as a food the diary can log', () => {
+  const coke = {
+    barcode: '5449000000996',
+    name: 'Coca-Cola Original',
+    brand: 'Coca-Cola',
+    kcal: 42.4,
+    proteinG: 0,
+    carbsG: 10.6,
+    fatG: 0,
+  };
+
+  it('becomes a loggable food at the chosen serving', () => {
+    const item = fromProduct(coke, {
+      id: 'per-100',
+      label: 'Per 100 g',
+      grams: 100,
+      kcal: 42.4,
+    });
+
+    expect(item).toEqual(
+      expect.objectContaining({
+        name: 'Coca-Cola Original',
+        brand: 'Coca-Cola',
+        portion: '100 g',
+        kcal: 42.4,
+        proteinG: 0,
+        carbsG: 10.6,
+        fatG: 0,
+        yours: true,
+      }),
+    );
   });
 });
 

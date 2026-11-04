@@ -65,6 +65,26 @@ describe('With a working camera, a scanned barcode', () => {
     expect(screen.getByText('Add to lunch')).toBeTruthy();
   });
 
+  it('logs the scanned product at its serving and meal when added', async () => {
+    const onLog = jest.fn();
+    await render(
+      <Scan lookup={answers({status: 'found', product: coke})} onLog={onLog} />,
+    );
+    await scanBarcode('5449000000996');
+    await screen.findByText('Coca-Cola Original');
+
+    await fireEvent.press(screen.getByText('Add to lunch'));
+
+    expect(onLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Coca-Cola Original',
+        portion: '100 g',
+        kcal: 42.4,
+      }),
+      'Lunch',
+    );
+  });
+
   it('offers the pack serving as a second row when the product has one', async () => {
     await render(<Scan lookup={answers({status: 'found', product: snickers})} />);
     await scanBarcode('5000159461122');

@@ -10,6 +10,9 @@
  * phone.
  */
 
+import {food} from '../domain/food';
+import type {FoodItem} from '../domain/food';
+
 /** A packaged food, per 100 g, as a scan hands it over. */
 export type Product = {
   barcode: string;
@@ -69,6 +72,27 @@ export function servingMacros(
     carbsG: product.carbsG * scale,
     fatG: product.fatG * scale,
   };
+}
+
+/**
+ * A scanned product at a chosen serving, as a food the diary can log. The
+ * energy is the serving's; the macros are scaled to it. The id is the barcode,
+ * so the same product reads as the same food — the diary gives each entry its
+ * own id when it is logged.
+ */
+export function fromProduct(product: Product, serving: Serving): FoodItem {
+  const macros = servingMacros(product, serving);
+  return food({
+    id: `off-${product.barcode}`,
+    name: product.name,
+    brand: product.brand || undefined,
+    portion: `${serving.grams} g`,
+    kcal: serving.kcal,
+    proteinG: macros.proteinG,
+    carbsG: macros.carbsG,
+    fatG: macros.fatG,
+    yours: true,
+  });
 }
 
 /**

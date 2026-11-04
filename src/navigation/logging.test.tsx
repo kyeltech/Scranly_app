@@ -103,6 +103,43 @@ describe('logging a food', () => {
 });
 
 /**
+ * Logging a scanned product.
+ *
+ * Every save in Scan was `navigation.goBack`: you could scan a barcode, see the
+ * product and its numbers, tap "Add", and nothing was written. This is the last
+ * mile that makes a scan actually land in the diary.
+ */
+describe('logging a scanned product', () => {
+  it('writes the scanned food to the diary at its serving and meal', async () => {
+    const diary = memoryDiary();
+    await launch(<Root store={setUp()} diary={diary} initialRoute="Scan" />);
+
+    // No camera in a test, so the drawn stand-in walks itself to a match: two
+    // steps, aiming -> looking -> found, with the effect in between.
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    await screen.findByText('Mature Cheddar');
+
+    await fireEvent.press(screen.getByText('Add to lunch'));
+
+    const [entry] = await diary.read();
+    expect(entry).toEqual(
+      expect.objectContaining({
+        name: 'Mature Cheddar',
+        brand: 'Cathedral City',
+        portion: '30 g',
+        kcal: 125,
+        meal: 'Lunch',
+      }),
+    );
+  });
+});
+
+/**
  * Create a food, and find it afterwards.
  *
  * The screen collected every field and `Root` dropped it on the floor: you
