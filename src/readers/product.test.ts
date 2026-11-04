@@ -1,4 +1,4 @@
-import {lookupBarcode, productFromOff, servingsFor} from './product';
+import {lookupBarcode, productFromOff, servingMacros, servingsFor} from './product';
 
 /**
  * A real Open Food Facts response, captured 3 November 2026 from
@@ -204,6 +204,26 @@ describe('the servings a scanned product offers', () => {
       {id: 'per-100', label: 'Per 100 g', grams: 100, kcal: 481},
       {id: 'per-serving', label: 'Per serving (50 g)', grams: 50, kcal: 240},
     ]);
+  });
+});
+
+describe("a serving's macros, scaled from per 100 g", () => {
+  // Independent truth: at per 100 g the serving carries the product's own
+  // energy, so the macros are the product's own, unscaled.
+  it('are the product’s own when the serving is per 100 g', () => {
+    expect(
+      servingMacros(
+        {kcal: 481, proteinG: 8.6, carbsG: 60.5, fatG: 22.5},
+        {kcal: 481},
+      ),
+    ).toEqual({proteinG: 8.6, carbsG: 60.5, fatG: 22.5});
+  });
+
+  // Independent truth: half the energy is half the food, so half the macros.
+  it('halve when the serving carries half the energy', () => {
+    expect(
+      servingMacros({kcal: 200, proteinG: 10, carbsG: 20, fatG: 8}, {kcal: 100}),
+    ).toEqual({proteinG: 5, carbsG: 10, fatG: 4});
   });
 });
 

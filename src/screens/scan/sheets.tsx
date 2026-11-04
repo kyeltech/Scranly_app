@@ -4,6 +4,7 @@ import Sheet from '../../ui/Sheet';
 import {Button, Note, Segmented} from '../../ui';
 import {Check, ChevronDown, ChevronRight, Info, Plus, Warning} from '../../ui/icons';
 import {withThousands} from '../../lib/format';
+import {servingMacros} from '../../readers/product';
 import {brand, type as type_, useTheme} from '../../theme';
 import type {LabelRow, PlateItem, Product, Serving} from '../../fixtures/scan';
 
@@ -158,11 +159,11 @@ export function FoundSheet({
   onAdd?: () => void;
 }) {
   const t = useTheme();
-  const scale = serving.kcal / product.kcal;
+  const m = servingMacros(product, serving);
   const macros: [string, number][] = [
-    ['PROT', product.proteinG * scale],
-    ['CARB', product.carbsG * scale],
-    ['FAT', product.fatG * scale],
+    ['PROT', m.proteinG],
+    ['CARB', m.carbsG],
+    ['FAT', m.fatG],
   ];
 
   return (

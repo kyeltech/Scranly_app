@@ -55,6 +55,23 @@ export function servingsFor(product: Product): Serving[] {
 }
 
 /**
+ * A serving's macros, scaled from the product's per-100 g figures by how much
+ * energy the serving carries. At per 100 g the scale is one and the macros are
+ * the product's own; a smaller serving is a smaller share of all three.
+ */
+export function servingMacros(
+  product: Pick<Product, 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>,
+  serving: Pick<Serving, 'kcal'>,
+): {proteinG: number; carbsG: number; fatG: number} {
+  const scale = serving.kcal / product.kcal;
+  return {
+    proteinG: product.proteinG * scale,
+    carbsG: product.carbsG * scale,
+    fatG: product.fatG * scale,
+  };
+}
+
+/**
  * The pack serving in grams, when Open Food Facts states one. A serving in
  * millilitres is not grams and the app logs grams, so it is left to the weigh
  * path rather than guessed at. The energy is the pack's own if stated, else
