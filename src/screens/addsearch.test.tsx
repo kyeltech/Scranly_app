@@ -62,6 +62,30 @@ describe('searching Open Food Facts from Add food', () => {
     // The local library match is still there.
     expect(screen.getByText('Chicken breast, grilled')).toBeTruthy();
   });
+
+  it('does not show the unreachable note until a search has actually run', async () => {
+    const search = jest.fn().mockResolvedValue({status: 'error'} as SearchResult);
+    await render(<AddFood search={search} />);
+
+    await type('snickers');
+    // Mid-typing, before the debounce fires: no verdict yet, so no note.
+    expect(screen.queryByText(/Couldn.t reach Open Food Facts/)).toBeNull();
+
+    await settle(DEBOUNCE);
+    expect(screen.getByText(/Couldn.t reach Open Food Facts/)).toBeTruthy();
+  });
+
+  it('clears the unreachable note the moment you type again', async () => {
+    const search = jest.fn().mockResolvedValue({status: 'error'} as SearchResult);
+    await render(<AddFood search={search} />);
+    await type('snickers');
+    await settle(DEBOUNCE);
+    expect(screen.getByText(/Couldn.t reach Open Food Facts/)).toBeTruthy();
+
+    // Keep typing: the stale failure goes at once, before the next search runs.
+    await type('snickers bar');
+    expect(screen.queryByText(/Couldn.t reach Open Food Facts/)).toBeNull();
+  });
 });
 
 const DEBOUNCE = 500;

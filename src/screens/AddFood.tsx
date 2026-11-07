@@ -70,6 +70,10 @@ export default function AddFood({
       setRemoteError(false);
       return;
     }
+    // A fresh keystroke: drop the last query's failure until this one has
+    // actually been tried, so the note only ever reflects a search that ran and
+    // failed — never the gap between a keystroke and its debounce.
+    setRemoteError(false);
     let cancelled = false;
     const timer = setTimeout(() => {
       search(q).then(result => {
