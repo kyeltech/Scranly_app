@@ -391,3 +391,45 @@ describe('which meal it lands in', () => {
     expect((await diary.read())[0].meal).toBe('Snack');
   });
 });
+
+/**
+ * The serving guide, the whole way through.
+ *
+ * A pack states per 100 g and leaves you holding it. The guide answers in
+ * hands — and because every card knows its weight, the answer goes into the
+ * amount rather than being left as a gesture to convert yourself.
+ */
+describe('what a portion looks like', () => {
+  /** One o'clock, so the meal the bottom button guesses is lunch. */
+  const lunchtime = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0);
+  };
+
+  it('sets the amount from the card, and logs what that comes to', async () => {
+    const diary = memoryDiary();
+    await launch(
+      <Root store={setUp()} diary={diary} now={lunchtime()} initialRoute="Today" />,
+    );
+
+    await fireEvent.press(screen.getByText('Log food'));
+    // A banana: one medium, 118 g, 105 kcal.
+    await fireEvent.press(screen.getByText('Banana'));
+    expect(screen.getByText('1 medium, 118 g')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('See what a portion looks like'));
+    // No category on a fixture food, so the guide opens on its first card.
+    await fireEvent.press(screen.getByText('Use 40 g'));
+
+    // Back on the food, at the weight the card set: 105 × 40 / 118 = 36.
+    await waitFor(() => expect(screen.getByText('40 g')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Add to lunch'));
+    await waitFor(() => expect(screen.getByText('1,779')).toBeTruthy());
+
+    const [entry] = await diary.read();
+    expect(entry).toEqual(
+      expect.objectContaining({name: 'Banana', portion: '40 g', kcal: 36}),
+    );
+  });
+});

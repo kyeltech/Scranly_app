@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {Linking} from 'react-native';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -9,6 +10,7 @@ import Today from '../screens/Today';
 import AddFood from '../screens/AddFood';
 import CreateFood from '../screens/CreateFood';
 import FoodDetail from '../screens/FoodDetail';
+import ServingGuide from '../screens/ServingGuide';
 import Scan from '../screens/Scan';
 import ScalePhoto from '../screens/ScalePhoto';
 import DayPicker from '../screens/DayPicker';
@@ -23,6 +25,7 @@ import {dayMarksFrom, dayState} from '../domain/dayState';
 import type {DiaryEntry} from '../domain/diary';
 import {fromForm, fromReading} from '../domain/food';
 import {mealAt} from '../domain/meal';
+import {scaleTo, toForm} from '../domain/portion';
 import type {FoodItem, NewFood} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 import {memoryDiary, memoryFoods, memoryStore} from '../store/memory';
@@ -46,11 +49,15 @@ export type RootParams = {
   AddFood: {meal?: MealName} | undefined;
   /** A food in full, reached by tapping a row. The meal rides in to log it to. */
   FoodDetail: {food: FoodItem; meal: MealName};
+  /** What a portion looks like, over the food it was opened from. */
+  ServingGuide: {food: FoodItem; meal: MealName};
   /**
    * Opened from the label reader, the panel it read comes with it; opened from
    * a meal, so does the meal.
    */
-  CreateFood: {reading?: LabelReading; meal?: MealName} | undefined;
+  CreateFood:
+    | {reading?: LabelReading; meal?: MealName; food?: FoodItem}
+    | undefined;
   /** One screen, three readers. `missing` walks the unhappy barcode path. */
   Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean; meal?: MealName} | undefined;
   Portion: undefined;
@@ -300,11 +307,65 @@ export default function Root({
             <FoodDetail
               food={route.params.food}
               meal={route.params.meal}
+              // The day it will land on, named the way Today names it, so a
+              // food logged while looking at Saturday says Saturday.
+              day={dayIso === todayIso ? 'Today' : day.dateLabel}
+              onDay={() => navigation.navigate('DayPicker')}
+              onGuide={item =>
+                navigation.navigate('ServingGuide', {
+                  food: item,
+                  meal: route.params.meal,
+                })
+              }
+              // The numbers are the entry's, and the entry can be wrong. This
+              // opens the form on them so the person holding the packet can
+              // say otherwise.
+              onEdit={item =>
+                navigation.navigate('CreateFood', {
+                  food: item,
+                  meal: route.params.meal,
+                })
+              }
+              onSource={item =>
+                item.source?.barcode
+                  ? Linking.openURL(
+                      `https://world.openfoodfacts.org/product/${item.source.barcode}`,
+                    ).catch((error: unknown) => {
+                      console.warn(
+                        `[scranly] could not open the entry: ${String(error)}`,
+                      );
+                    })
+                  : undefined
+              }
               onBack={navigation.goBack}
               onLog={(item, chosen) => {
                 log([item], chosen);
                 // Logged: back to Today, the job the tap started is finished.
                 navigation.navigate('Today');
+              }}
+            />
+          )}
+        </Stack.Screen>
+
+        {/* A sheet over the food, not a place of its own: the screen behind
+            stays visible, which is how it reads as answering a question about
+            the food rather than leaving it. */}
+        <Stack.Screen
+          name="ServingGuide"
+          options={{presentation: 'transparentModal', animation: 'fade'}}>
+          {({navigation, route}: Props<'ServingGuide'>) => (
+            <ServingGuide
+              food={route.params.food}
+              onClose={navigation.goBack}
+              onUse={grams => {
+                // The card's weight, applied. `scaleTo` refuses a food whose
+                // portion weighs nothing it can name, and then the food goes
+                // back unchanged rather than wrongly.
+                const scaled = scaleTo(route.params.food, grams);
+                navigation.navigate('FoodDetail', {
+                  food: scaled ?? route.params.food,
+                  meal: route.params.meal,
+                });
               }}
             />
           )}
@@ -316,7 +377,11 @@ export default function Root({
               // Filled from the label when there was one, which is what the
               // 'Scan the label instead' shortcut has always promised.
               initial={
-                route.params?.reading
+                // Editing a food opens the form on its own numbers; a label
+                // read opens it on the panel. Neither, and the form is blank.
+                route.params?.food
+                  ? toForm(route.params.food)
+                  : route.params?.reading
                   ? fromReading(route.params.reading)
                   : undefined
               }
