@@ -110,12 +110,15 @@ describe('logging a food', () => {
  * mile that makes a scan actually land in the diary.
  */
 describe('logging a scanned product', () => {
-  it('writes the scanned food to the diary at its serving and meal', async () => {
-    const diary = memoryDiary();
-    await launch(<Root store={setUp()} diary={diary} initialRoute="Scan" />);
+  /** Today, at a fixed hour, so the clock-guessed meal is not the wall clock's. */
+  const at = (hour: number) => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 30);
+  };
 
-    // No camera in a test, so the drawn stand-in walks itself to a match: two
-    // steps, aiming -> looking -> found, with the effect in between.
+  /** Walk the drawn stand-in (no camera in a test) from aiming to a match. */
+  const walkToMatch = async () => {
+    // Two steps, aiming -> looking -> found, with the effect in between.
     await act(async () => {
       jest.advanceTimersByTime(1500);
     });
@@ -123,7 +126,16 @@ describe('logging a scanned product', () => {
       jest.advanceTimersByTime(1500);
     });
     await screen.findByText('Mature Cheddar');
+  };
 
+  it('writes the scanned food to the diary at its serving and meal', async () => {
+    const diary = memoryDiary();
+    // A bare scan with no meal falls back to the clock; pin it to lunchtime.
+    await launch(
+      <Root store={setUp()} diary={diary} now={at(12)} initialRoute="Scan" />,
+    );
+
+    await walkToMatch();
     await fireEvent.press(screen.getByText('Add to lunch'));
 
     const [entry] = await diary.read();
@@ -136,6 +148,28 @@ describe('logging a scanned product', () => {
         meal: 'Lunch',
       }),
     );
+  });
+
+  it('scans into the meal you opened the scanner from, not always lunch', async () => {
+    const diary = memoryDiary();
+    // Noon, so the clock would say lunch — but opening through Snack must win.
+    await launch(
+      <Root
+        store={setUp()}
+        diary={diary}
+        foods={memoryFoods()}
+        now={at(12)}
+        initialRoute="Today"
+      />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Add to Snack'));
+    await fireEvent.press(screen.getByLabelText('Scan a barcode'));
+
+    await walkToMatch();
+    await fireEvent.press(screen.getByText('Add to snack'));
+
+    expect((await diary.read())[0].meal).toBe('Snack');
   });
 });
 

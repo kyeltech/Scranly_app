@@ -49,7 +49,7 @@ export type RootParams = {
    */
   CreateFood: {reading?: LabelReading; meal?: MealName} | undefined;
   /** One screen, three readers. `missing` walks the unhappy barcode path. */
-  Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean} | undefined;
+  Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean; meal?: MealName} | undefined;
   Portion: undefined;
   DayPicker: undefined;
   WeighIn: undefined;
@@ -276,9 +276,9 @@ export default function Root({
                 created={created}
                 meal={meal}
                 onBack={navigation.goBack}
-                onScan={() => navigation.navigate('Scan')}
-                // The meal travels on: you came in through Snack, so the food
-                // you are about to type in is a snack.
+                // The meal travels on, to the scanner too: you came in through
+                // Snack, so what you scan is a snack.
+                onScan={() => navigation.navigate('Scan', {meal})}
                 onCreate={() => navigation.navigate('CreateFood', {meal})}
                 onAdd={items => {
                   log(items, meal);
@@ -332,6 +332,10 @@ export default function Root({
               mode={route.params?.mode}
               stage={route.params?.stage}
               missing={route.params?.missing}
+              // The meal travels in, same as Add food: scan from the Snack
+              // section and it is a snack (PRD flow 3). The found sheet can still
+              // switch it. A bare scan from Today falls back to the clock.
+              meal={route.params?.meal ?? guessedMeal}
               onClose={navigation.goBack}
               onAdd={navigation.goBack}
               onLog={(item, meal) => {
