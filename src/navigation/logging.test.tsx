@@ -31,7 +31,7 @@ describe('logging a food', () => {
     expect(screen.getByText('1,815')).toBeTruthy();
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     // 1,815 - 152 = 1,663, worked out from the fixture rather than by the code.
@@ -44,7 +44,7 @@ describe('logging a food', () => {
     await launch(<Root store={setUp()} diary={diary} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     // Wait on the screen, not on the store: an async waitFor callback leaves a
@@ -70,8 +70,8 @@ describe('logging a food', () => {
     await launch(<Root store={setUp()} diary={diary} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
-    await fireEvent.press(screen.getByText('Semi-skimmed milk'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Semi-skimmed milk'));
     await fireEvent.press(screen.getByText('Add 2 items'));
 
     // 1,815 - 152 - 98 = 1,565.
@@ -87,7 +87,7 @@ describe('logging a food', () => {
     );
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -170,6 +170,37 @@ describe('logging a scanned product', () => {
     await fireEvent.press(screen.getByText('Add to snack'));
 
     expect((await diary.read())[0].meal).toBe('Snack');
+  });
+});
+
+/**
+ * Opening a food before logging it.
+ *
+ * Tapping a row used to log it straight off. Now the row opens the food in full
+ * — its numbers, including fibre — and the detail's button is what logs it; the
+ * + on the row stays the quick path.
+ */
+describe('opening a food from the list', () => {
+  it('shows the food and logs it from the detail, to the right meal', async () => {
+    const diary = memoryDiary();
+    const noon = new Date();
+    noon.setHours(12, 30, 0, 0); // the clock would guess lunch
+    await launch(
+      <Root store={setUp()} diary={diary} now={noon} initialRoute="Today" />,
+    );
+
+    await fireEvent.press(screen.getByText('Log food'));
+    // Tap the row, not the +, so the detail opens rather than logging.
+    await fireEvent.press(screen.getByText('Porridge oats'));
+
+    // On the detail: its energy, and the meal it will log to.
+    expect(screen.getByText('152')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Add to lunch'));
+
+    const [entry] = await diary.read();
+    expect(entry).toEqual(
+      expect.objectContaining({name: 'Porridge oats', meal: 'Lunch'}),
+    );
   });
 });
 
@@ -301,7 +332,7 @@ describe('which meal it lands in', () => {
     // The screen it opens says where the food is going.
     expect(screen.getByText('Add to Dinner')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -317,7 +348,7 @@ describe('which meal it lands in', () => {
     await fireEvent.press(screen.getByText('Log food'));
     expect(screen.getByText('Add to Dinner')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -331,7 +362,7 @@ describe('which meal it lands in', () => {
     );
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 

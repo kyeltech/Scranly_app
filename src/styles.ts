@@ -122,6 +122,7 @@ export const addFood = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  rowMain: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12},
   rowText: {flex: 1},
   nameRow: {flexDirection: 'row', alignItems: 'center', gap: 7},
   yours: {...type_.label, fontSize: 10, letterSpacing: 0.8},
@@ -1106,6 +1107,21 @@ export const weightTrend = StyleSheet.create({
   verdictLine: {...type_.body, marginTop: 10},
   verdictDetail: {...type_.caption, lineHeight: 19, marginTop: 6},
   actions: {paddingHorizontal: spacing.lg, paddingBottom: 12},
+});
+
+/* ---- src/screens/FoodDetail.tsx ---- */
+export const foodDetail = StyleSheet.create({
+  body: {paddingHorizontal: spacing.lg, paddingTop: 10},
+  sub: {...type_.caption, marginTop: 3},
+  figureRow: {flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginTop: 22},
+  figure: {...type_.figureLg, fontSize: 44, lineHeight: 44},
+  unit: {...type_.caption, fontWeight: '600', paddingBottom: 6},
+  chips: {flexDirection: 'row', gap: 8, marginTop: 22},
+  chip: {flex: 1, alignItems: 'center', borderRadius: 14, paddingVertical: 12},
+  chipLabel: {...type_.label, fontSize: 10, letterSpacing: 0.8},
+  chipValue: {...type_.figureSm, marginTop: 3},
+  meals: {marginTop: 26},
+  actions: {marginTop: 'auto', paddingHorizontal: spacing.lg, paddingBottom: 20},
 });
 
 /* ---- src/components/ErrorBoundary.tsx ---- */

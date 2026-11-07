@@ -43,10 +43,10 @@ describe('Add food', () => {
     const onAdd = jest.fn();
     await render(<AddFood onAdd={onAdd} />);
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     expect(screen.getByText('Add 1 item')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('Semi-skimmed milk'));
+    await fireEvent.press(screen.getByLabelText('Add Semi-skimmed milk'));
     expect(screen.getByText('Add 2 items')).toBeTruthy();
     expect(screen.getByText('250 kcal')).toBeTruthy();
 
@@ -58,11 +58,25 @@ describe('Add food', () => {
     ]);
   });
 
+  it('opens the food rather than logging it when you tap the row', async () => {
+    const onOpenDetail = jest.fn();
+    await render(<AddFood onOpenDetail={onOpenDetail} />);
+
+    await fireEvent.press(screen.getByText('Porridge oats'));
+
+    expect(onOpenDetail).toHaveBeenCalledWith(
+      expect.objectContaining({id: 'oats'}),
+    );
+    // Tapping the row did not select it — only the + does that.
+    expect(screen.queryByText('Add 1 item')).toBeNull();
+  });
+
   it('lets you change your mind about an item', async () => {
     await render(<AddFood />);
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    // The + adds it; the control then offers to take it back off.
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Remove Porridge oats'));
 
     expect(screen.queryByText('Add 1 item')).toBeNull();
   });
@@ -193,7 +207,7 @@ describe('your own foods', () => {
     const onAdd = jest.fn();
     await render(<AddFood created={[tuna]} onAdd={onAdd} />);
 
-    await fireEvent.press(screen.getByText('Skipjack tuna'));
+    await fireEvent.press(screen.getByLabelText('Add Skipjack tuna'));
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     expect(onAdd).toHaveBeenCalledWith([expect.objectContaining({name: 'Skipjack tuna'})]);

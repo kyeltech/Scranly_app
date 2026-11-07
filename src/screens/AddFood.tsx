@@ -31,6 +31,7 @@ export default function AddFood({
   onScan,
   onCreate,
   onAdd,
+  onOpenDetail,
   search = searchProducts,
 }: {
   /** Which meal this is going to. The head says so — it is never a surprise. */
@@ -44,6 +45,8 @@ export default function AddFood({
   onScan?: () => void;
   onCreate?: () => void;
   onAdd?: (items: FoodItem[]) => void;
+  /** Tap a row to see the food in full before logging; the + still logs direct. */
+  onOpenDetail?: (food: FoodItem) => void;
   /** How a typed query reaches Open Food Facts. Injected so a test need not touch the network. */
   search?: (query: string) => Promise<SearchResult>;
 }) {
@@ -242,23 +245,32 @@ export default function AddFood({
         {rows.map(food => {
           const on = picked.includes(food.id);
           return (
-            <Pressable
+            <View
               key={food.id}
-              onPress={() => toggle(food.id)}
-              accessibilityRole="button"
-              accessibilityState={{selected: on}}
               style={[styles.row, {borderBottomColor: t.line}]}>
-              <View style={styles.rowText}>
-                <View style={styles.nameRow}>
-                  <Text style={[type_.bodyStrong, {color: t.text}]}>{food.name}</Text>
-                  {searching && food.yours ? (
-                    <Text style={[styles.yours, {color: t.status.under}]}>YOURS</Text>
-                  ) : null}
+              {/* The row opens the food; only the + logs it. Tapping the name to
+                  log by accident was the old behaviour this splits apart. */}
+              <Pressable
+                onPress={() => onOpenDetail?.(food)}
+                accessibilityRole="button"
+                accessibilityLabel={food.name}
+                style={styles.rowMain}>
+                <View style={styles.rowText}>
+                  <View style={styles.nameRow}>
+                    <Text style={[type_.bodyStrong, {color: t.text}]}>{food.name}</Text>
+                    {searching && food.yours ? (
+                      <Text style={[styles.yours, {color: t.status.under}]}>YOURS</Text>
+                    ) : null}
+                  </View>
+                  <Text style={[type_.caption, {color: t.textMuted}]}>{food.meta}</Text>
                 </View>
-                <Text style={[type_.caption, {color: t.textMuted}]}>{food.meta}</Text>
-              </View>
-              <Text style={[type_.figureMd, {color: t.text}]}>{food.kcal}</Text>
-              <View
+                <Text style={[type_.figureMd, {color: t.text}]}>{food.kcal}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => toggle(food.id)}
+                accessibilityRole="button"
+                accessibilityState={{selected: on}}
+                accessibilityLabel={on ? `Remove ${food.name}` : `Add ${food.name}`}
                 style={[
                   styles.control,
                   {backgroundColor: on ? brand.lime : t.fill},
@@ -268,8 +280,8 @@ export default function AddFood({
                 ) : (
                   <Plus colour={t.text} size={15} />
                 )}
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           );
         })}
       </ScrollView>

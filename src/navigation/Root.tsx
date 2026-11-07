@@ -8,6 +8,7 @@ import type {Step} from '../screens/Onboarding';
 import Today from '../screens/Today';
 import AddFood from '../screens/AddFood';
 import CreateFood from '../screens/CreateFood';
+import FoodDetail from '../screens/FoodDetail';
 import Scan from '../screens/Scan';
 import ScalePhoto from '../screens/ScalePhoto';
 import DayPicker from '../screens/DayPicker';
@@ -43,6 +44,8 @@ export type RootParams = {
   Today: undefined;
   /** Opened from a meal's +, that meal comes with it. */
   AddFood: {meal?: MealName} | undefined;
+  /** A food in full, reached by tapping a row. The meal rides in to log it to. */
+  FoodDetail: {food: FoodItem; meal: MealName};
   /**
    * Opened from the label reader, the panel it read comes with it; opened from
    * a meal, so does the meal.
@@ -284,9 +287,27 @@ export default function Root({
                   log(items, meal);
                   navigation.goBack();
                 }}
+                onOpenDetail={item =>
+                  navigation.navigate('FoodDetail', {food: item, meal})
+                }
               />
             );
           }}
+        </Stack.Screen>
+
+        <Stack.Screen name="FoodDetail">
+          {({navigation, route}: Props<'FoodDetail'>) => (
+            <FoodDetail
+              food={route.params.food}
+              meal={route.params.meal}
+              onBack={navigation.goBack}
+              onLog={(item, chosen) => {
+                log([item], chosen);
+                // Logged: back to Today, the job the tap started is finished.
+                navigation.navigate('Today');
+              }}
+            />
+          )}
         </Stack.Screen>
 
         <Stack.Screen name="CreateFood">
