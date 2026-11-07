@@ -33,7 +33,7 @@ describe('Scan — the three readers', () => {
     await render(<Scan />);
     await fireEvent.press(screen.getByText('Plate'));
 
-    expect(screen.getByText(/Fit the whole plate in frame/)).toBeTruthy();
+    expect(screen.getByText(/point at the plate and tap the shutter/)).toBeTruthy();
     expect(screen.queryByText('Mature Cheddar')).toBeNull();
   });
 });

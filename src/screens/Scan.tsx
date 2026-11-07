@@ -341,7 +341,7 @@ export default function Scan({
         onTorch={() => setTorch(on => !on)}
         frame={aiming ? FRAMES.plate : undefined}
         scrim={aiming ? 0 : stage === 'working' ? 0.62 : 0.5}
-        hint={aiming ? 'Fit the whole plate in frame, from above' : undefined}
+        hint={'coming soon 😂 — point at the plate and tap the shutter \n please note: you can only simulate this feature for now'}
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
         footnote={aiming ? plateNotice : undefined}
