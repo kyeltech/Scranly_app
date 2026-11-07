@@ -4,6 +4,8 @@ import type {DiaryStore} from './diary';
 import type {DiaryEntry} from '../domain/diary';
 import type {FoodStore} from './foods';
 import type {FoodItem} from '../domain/food';
+import type {WeightStore} from './weight';
+import type {WeightEntry} from '../domain/weight';
 
 /**
  * Setup held in memory for the lifetime of the process.
@@ -80,6 +82,19 @@ export function memoryFoods(initial: FoodItem[] = []): FoodStore {
     peek: () => held.map(f => ({...f})),
     add: async item => {
       held = [...held, {...item}];
+    },
+  };
+}
+
+/** The weigh-ins, held in memory. Same standing as the others. */
+export function memoryWeight(initial: WeightEntry[] = []): WeightStore {
+  let held: WeightEntry[] = initial.map(e => ({...e}));
+
+  return {
+    read: async () => held.map(e => ({...e})),
+    peek: () => held.map(e => ({...e})),
+    add: async entry => {
+      held = [...held, {...entry}];
     },
   };
 }

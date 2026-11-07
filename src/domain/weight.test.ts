@@ -1,5 +1,26 @@
-import {sevenDayAverage, trend, weekByWeek} from './weight';
+import {readingsFrom, sevenDayAverage, trend, weekByWeek} from './weight';
 import {fourWeeks} from '../fixtures/weight';
+
+describe('readings from stored weigh-ins', () => {
+  it('indexes days from the earliest, so the newest sits highest', () => {
+    const entries = [
+      {date: '2026-09-01', kg: 82},
+      {date: '2026-09-08', kg: 81},
+      {date: '2026-09-02', kg: 81.5},
+    ];
+
+    // A week and a day apart, counted from 1 September.
+    expect(readingsFrom(entries)).toEqual([
+      {dayIndex: 0, kg: 82},
+      {dayIndex: 7, kg: 81},
+      {dayIndex: 1, kg: 81.5},
+    ]);
+  });
+
+  it('is empty when nothing has been logged', () => {
+    expect(readingsFrom([])).toEqual([]);
+  });
+});
 
 describe('sevenDayAverage', () => {
   it('averages the last seven readings, not the last one', () => {
