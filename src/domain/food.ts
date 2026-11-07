@@ -16,6 +16,8 @@ export type FoodItem = {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Fibre, when it is known. Not every food carries it; the day counts it when it does. */
+  fibreG?: number;
   /** True for foods this person has logged before — they rank above the database. */
   yours?: boolean;
   /** How many times it has been logged. What 'Frequent' sorts on. */

@@ -447,6 +447,7 @@ function asEntry(item: FoodItem, meal: MealName, date: string): DiaryEntry {
     proteinG: item.proteinG,
     carbsG: item.carbsG,
     fatG: item.fatG,
+    fibreG: item.fibreG,
     meal,
   };
 }

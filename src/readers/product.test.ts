@@ -73,6 +73,27 @@ describe('a product, read from an Open Food Facts response', () => {
     },
   };
 
+  // Open Food Facts carries fibre as `fiber_100g`; the app tracks a fibre
+  // target, so a scan has to bring it back (the almonds: 12.5 g per 100 g).
+  it('reads fibre when Open Food Facts states it', () => {
+    const almonds = {
+      code: '4088600441689',
+      product_name: 'Almonds',
+      brands: 'The Foodie Market',
+      nutriments: {
+        'energy-kcal_100g': 597,
+        proteins_100g: 21.2,
+        carbohydrates_100g: 9.1,
+        fat_100g: 49.9,
+        fiber_100g: 12.5,
+      },
+    };
+
+    expect(productFromOff(almonds)).toEqual(
+      expect.objectContaining({fibreG: 12.5}),
+    );
+  });
+
   it('reads the pack serving when it is stated in grams', () => {
     expect(productFromOff(snickers)).toEqual({
       barcode: '5000159461122',
@@ -302,17 +323,20 @@ describe("a serving's macros, scaled from per 100 g", () => {
   it('are the product’s own when the serving is per 100 g', () => {
     expect(
       servingMacros(
-        {kcal: 481, proteinG: 8.6, carbsG: 60.5, fatG: 22.5},
+        {kcal: 481, proteinG: 8.6, carbsG: 60.5, fatG: 22.5, fibreG: 12.5},
         {kcal: 481},
       ),
-    ).toEqual({proteinG: 8.6, carbsG: 60.5, fatG: 22.5});
+    ).toEqual({proteinG: 8.6, carbsG: 60.5, fatG: 22.5, fibreG: 12.5});
   });
 
   // Independent truth: half the energy is half the food, so half the macros.
   it('halve when the serving carries half the energy', () => {
     expect(
-      servingMacros({kcal: 200, proteinG: 10, carbsG: 20, fatG: 8}, {kcal: 100}),
-    ).toEqual({proteinG: 5, carbsG: 10, fatG: 4});
+      servingMacros(
+        {kcal: 200, proteinG: 10, carbsG: 20, fatG: 8, fibreG: 6},
+        {kcal: 100},
+      ),
+    ).toEqual({proteinG: 5, carbsG: 10, fatG: 4, fibreG: 3});
   });
 });
 

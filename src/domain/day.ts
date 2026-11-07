@@ -75,6 +75,14 @@ export type DayView = {
   /** Negative once past the budget. The screen shows this number, not zero. */
   kcalRemaining: number;
   macros: MacroView[];
+  /**
+   * Fibre eaten against its target. Kept apart from `macros` on purpose: fibre
+   * is a slice inside carbohydrate, not a fourth macro on top of it (see
+   * `targets.ts`), so how Today shows it is a separate question from the three
+   * bars. The number is worked out here either way. Optional so the approved
+   * board fixtures need not carry it.
+   */
+  fibre?: {eatenG: number; targetG: number};
   /** Always four, in `MEALS` order. The flat list this replaced could not say
       which section a food belonged in. */
   meals: MealView[];

@@ -22,6 +22,8 @@ export type Product = {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Fibre, when Open Food Facts states it. The app tracks a fibre target. */
+  fibreG?: number;
   /** The pack's own serving, in grams, when Open Food Facts states one. */
   serving?: {grams: number; kcal: number};
 };
@@ -63,14 +65,15 @@ export function servingsFor(product: Product): Serving[] {
  * the product's own; a smaller serving is a smaller share of all three.
  */
 export function servingMacros(
-  product: Pick<Product, 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>,
+  product: Pick<Product, 'kcal' | 'proteinG' | 'carbsG' | 'fatG' | 'fibreG'>,
   serving: Pick<Serving, 'kcal'>,
-): {proteinG: number; carbsG: number; fatG: number} {
+): {proteinG: number; carbsG: number; fatG: number; fibreG: number} {
   const scale = serving.kcal / product.kcal;
   return {
     proteinG: product.proteinG * scale,
     carbsG: product.carbsG * scale,
     fatG: product.fatG * scale,
+    fibreG: (product.fibreG ?? 0) * scale,
   };
 }
 
@@ -91,6 +94,7 @@ export function fromProduct(product: Product, serving: Serving): FoodItem {
     proteinG: macros.proteinG,
     carbsG: macros.carbsG,
     fatG: macros.fatG,
+    fibreG: product.fibreG === undefined ? undefined : macros.fibreG,
     yours: true,
   });
 }
@@ -170,6 +174,7 @@ export function productFromOff(product: OffProduct): Product | undefined {
     return undefined;
   }
   const serving = servingOf(product, kcal);
+  const fibre = nutriments.fiber_100g;
   return {
     barcode: product.code ?? '',
     name,
@@ -178,6 +183,7 @@ export function productFromOff(product: OffProduct): Product | undefined {
     proteinG: nutriments.proteins_100g as number,
     carbsG: nutriments.carbohydrates_100g as number,
     fatG: nutriments.fat_100g as number,
+    ...(typeof fibre === 'number' ? {fibreG: fibre} : {}),
     ...(serving ? {serving} : {}),
   };
 }
