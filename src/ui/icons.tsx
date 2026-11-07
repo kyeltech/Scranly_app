@@ -26,6 +26,15 @@ export const Plus = stroke('M12 5v14M5 12h14', 2.6);
 export const Check = stroke('M5 12.5l4.5 4.5L19 7', 3);
 export const Search = stroke('M20 20l-3.6-3.6', 2.2);
 export const Close = stroke('M6 6l12 12M18 6L6 18', 2.6);
+/**
+ * The hand on 'See what a portion looks like'. The same open hand the serving
+ * guide's cards are drawn from — see components/measures.tsx — cut down to an
+ * icon so the link and the sheet it opens are plainly the same thing.
+ */
+export const Hand = stroke(
+  'M8.5 11V5.8a1.4 1.4 0 012.8 0V11M11.3 10.6V4.6a1.4 1.4 0 012.8 0v6M14.1 10.8V6.4a1.4 1.4 0 012.8 0V15c0 3.6-2.8 6.2-6.4 6.2S5.7 18.6 5.7 15v-3.4a1.4 1.4 0 012.8 0v1',
+  1.8,
+);
 export const Barcode = stroke(
   'M4 7V5.5A1.5 1.5 0 015.5 4H7M17 4h1.5A1.5 1.5 0 0120 5.5V7M20 17v1.5a1.5 1.5 0 01-1.5 1.5H17M7 20H5.5A1.5 1.5 0 014 18.5V17M8 9v6M11.5 9v6M15.5 9v6',
   2,
