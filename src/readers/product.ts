@@ -11,7 +11,7 @@
  */
 
 import {food} from '../domain/food';
-import type {FoodItem} from '../domain/food';
+import type {FoodItem, MoreNutrition, Source} from '../domain/food';
 
 /** A packaged food, per 100 g, as a scan hands it over. */
 export type Product = {
@@ -24,6 +24,22 @@ export type Product = {
   fatG: number;
   /** Fibre, when Open Food Facts states it. The app tracks a fibre target. */
   fibreG?: number;
+  /**
+   * The rest of the panel, and what the entry says besides numbers. None of it
+   * is counted; all of it is shown on the food's own screen, which is the
+   * difference between a row and a food.
+   */
+  kJ?: number;
+  satFatG?: number;
+  sugarsG?: number;
+  addedSugarsG?: number;
+  saltG?: number;
+  sodiumG?: number;
+  imageUrl?: string;
+  nutriScore?: string;
+  novaGroup?: number;
+  category?: string;
+  ingredients?: string;
   /** The pack's own serving, in grams, when Open Food Facts states one. */
   serving?: {grams: number; kcal: number};
 };
@@ -85,6 +101,7 @@ export function servingMacros(
  */
 export function fromProduct(product: Product, serving: Serving): FoodItem {
   const macros = servingMacros(product, serving);
+  const scale = serving.kcal / product.kcal;
   return food({
     id: `off-${product.barcode}`,
     name: product.name,
@@ -95,8 +112,46 @@ export function fromProduct(product: Product, serving: Serving): FoodItem {
     carbsG: macros.carbsG,
     fatG: macros.fatG,
     fibreG: product.fibreG === undefined ? undefined : macros.fibreG,
+    portionG: serving.grams,
+    more: moreOf(product, scale),
+    source: sourceOf(product),
     yours: true,
   });
+}
+
+/** The rest of the panel, scaled to the serving the way the macros are. */
+function moreOf(product: Product, scale: number): MoreNutrition | undefined {
+  const more: MoreNutrition = {
+    ...only('kJ', product.kJ, scale),
+    ...only('satFatG', product.satFatG, scale),
+    ...only('sugarsG', product.sugarsG, scale),
+    ...only('addedSugarsG', product.addedSugarsG, scale),
+    ...only('saltG', product.saltG, scale),
+    ...only('sodiumG', product.sodiumG, scale),
+  };
+  return Object.keys(more).length ? more : undefined;
+}
+
+/** A field, scaled, or nothing at all — never a zero standing in for silence. */
+function only(
+  key: keyof MoreNutrition,
+  value: number | undefined,
+  scale: number,
+): Partial<MoreNutrition> {
+  return value === undefined ? {} : {[key]: value * scale};
+}
+
+function sourceOf(product: Product): Source | undefined {
+  const source: Source = {
+    from: 'Open Food Facts',
+    ...(product.barcode ? {barcode: product.barcode} : {}),
+    ...(product.imageUrl ? {imageUrl: product.imageUrl} : {}),
+    ...(product.nutriScore ? {nutriScore: product.nutriScore} : {}),
+    ...(product.novaGroup === undefined ? {} : {novaGroup: product.novaGroup}),
+    ...(product.category ? {category: product.category} : {}),
+    ...(product.ingredients ? {ingredients: product.ingredients} : {}),
+  };
+  return source;
 }
 
 /**
@@ -117,9 +172,9 @@ function servingOf(
   if (!Number.isFinite(grams) || grams <= 0) {
     return undefined;
   }
-  const stated = product.nutriments?.['energy-kcal_serving'];
+  const ownKcal = product.nutriments?.['energy-kcal_serving'];
   const kcal =
-    typeof stated === 'number' ? stated : Math.round((per100Kcal * grams) / 100);
+    typeof ownKcal === 'number' ? ownKcal : Math.round((per100Kcal * grams) / 100);
   return {grams, kcal};
 }
 
@@ -130,8 +185,47 @@ type OffProduct = {
   brands?: string;
   /** How the pack states its serving: "50 g", "1 portion (330 ml)". */
   serving_size?: string;
+  /** Broad to specific, comma separated: 'Plant-based foods, Nuts, Whole almonds'. */
+  categories?: string;
+  ingredients_text?: string;
+  image_front_small_url?: string;
+  /** 'a' to 'e', or 'unknown' / 'not-applicable' for an entry it cannot grade. */
+  nutriscore_grade?: string;
+  nova_group?: number;
   nutriments?: Record<string, unknown>;
 };
+
+/** A nutriment, when the entry states one. A missing field is not a zero. */
+function stated(nutriments: Record<string, unknown>, key: string): number | undefined {
+  const value = nutriments[key];
+  return typeof value === 'number' ? value : undefined;
+}
+
+/** Only where it is a number, so the field is absent rather than undefined. */
+function when(key: string, value: number | undefined): Record<string, number> {
+  return value === undefined ? {} : {[key]: value};
+}
+
+/**
+ * The most specific category, which is the last one listed: 'Plant-based
+ * foods' is true of half the database, 'Whole almonds' is the one worth
+ * printing — and the one that picks the serving guide's card.
+ */
+function categoryOf(categories: string | undefined): string | undefined {
+  const named = (categories ?? '')
+    .split(',')
+    .map(one => one.trim())
+    .filter(Boolean);
+  return named.at(-1);
+}
+
+/**
+ * The grade, in the case the badge shows it. Open Food Facts answers 'unknown'
+ * or 'not-applicable' for an entry it cannot grade, and neither is a letter.
+ */
+function gradeOf(grade: string | undefined): string | undefined {
+  return grade && /^[a-e]$/i.test(grade) ? grade.toUpperCase() : undefined;
+}
 
 /** What a lookup came to: a food, a confirmed miss, or a failure to reach it. */
 export type LookupResult =
@@ -152,7 +246,9 @@ type Fetcher = (
 
 const ENDPOINT = 'https://world.openfoodfacts.org/api/v2/product';
 const SEARCH = 'https://world.openfoodfacts.org/cgi/search.pl';
-const FIELDS = 'code,product_name,brands,serving_size,nutriments';
+const FIELDS =
+  'code,product_name,brands,serving_size,nutriments,categories,ingredients_text,' +
+  'image_front_small_url,nutriscore_grade,nova_group';
 
 /**
  * Open Food Facts asks every request to name itself; reads need nothing more.
@@ -174,7 +270,9 @@ export function productFromOff(product: OffProduct): Product | undefined {
     return undefined;
   }
   const serving = servingOf(product, kcal);
-  const fibre = nutriments.fiber_100g;
+  const category = categoryOf(product.categories);
+  const grade = gradeOf(product.nutriscore_grade);
+  const ingredients = product.ingredients_text?.trim();
   return {
     barcode: product.code ?? '',
     name,
@@ -183,7 +281,20 @@ export function productFromOff(product: OffProduct): Product | undefined {
     proteinG: nutriments.proteins_100g as number,
     carbsG: nutriments.carbohydrates_100g as number,
     fatG: nutriments.fat_100g as number,
-    ...(typeof fibre === 'number' ? {fibreG: fibre} : {}),
+    ...when('fibreG', stated(nutriments, 'fiber_100g')),
+    // The rest of the panel. Absent where the entry is silent, kept where it
+    // states a zero — almonds really do have no added sugar.
+    ...when('kJ', stated(nutriments, 'energy-kj_100g')),
+    ...when('satFatG', stated(nutriments, 'saturated-fat_100g')),
+    ...when('sugarsG', stated(nutriments, 'sugars_100g')),
+    ...when('addedSugarsG', stated(nutriments, 'added-sugars_100g')),
+    ...when('saltG', stated(nutriments, 'salt_100g')),
+    ...when('sodiumG', stated(nutriments, 'sodium_100g')),
+    ...(product.image_front_small_url ? {imageUrl: product.image_front_small_url} : {}),
+    ...(grade ? {nutriScore: grade} : {}),
+    ...(product.nova_group === undefined ? {} : {novaGroup: product.nova_group}),
+    ...(category ? {category} : {}),
+    ...(ingredients ? {ingredients} : {}),
     ...(serving ? {serving} : {}),
   };
 }

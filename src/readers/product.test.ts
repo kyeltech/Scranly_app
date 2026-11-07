@@ -377,3 +377,125 @@ describe('a scan, from the response to the servings it offers', () => {
     ]);
   });
 });
+
+/**
+ * A filled-in entry, with everything the detail screen draws.
+ *
+ * The figures are the almonds this project has already checked against the
+ * pack: 597 kcal, 49.9 g fat, 9.1 g carbohydrate, 21.2 g protein, 12.5 g fibre
+ * per 100 g. The mapper read five of those and dropped the rest of the panel
+ * on the floor.
+ */
+const almondsOff = {
+  code: '4088600441689',
+  product_name: 'Almonds',
+  brands: 'The Foodie Market',
+  categories: 'Plant-based foods, Nuts and their products, Whole almonds',
+  ingredients_text: 'Almonds (100%)',
+  image_front_small_url: 'https://images.openfoodfacts.org/almonds.200.jpg',
+  nutriscore_grade: 'a',
+  nova_group: 1,
+  nutriments: {
+    'energy-kcal_100g': 597,
+    'energy-kj_100g': 2491,
+    proteins_100g: 21.2,
+    carbohydrates_100g: 9.1,
+    fat_100g: 49.9,
+    'saturated-fat_100g': 3.84,
+    sugars_100g: 4.4,
+    'added-sugars_100g': 0,
+    fiber_100g: 12.5,
+    salt_100g: 0.01,
+    sodium_100g: 0.004,
+  },
+};
+
+describe('the rest of the panel, which the mapper used to drop', () => {
+  it('reads every nutrient the entry states, not only the five we totalled', () => {
+    expect(productFromOff(almondsOff)).toEqual(
+      expect.objectContaining({
+        kJ: 2491,
+        satFatG: 3.84,
+        sugarsG: 4.4,
+        addedSugarsG: 0,
+        saltG: 0.01,
+        sodiumG: 0.004,
+        fibreG: 12.5,
+      }),
+    );
+  });
+
+  it('leaves out what the entry is silent about, rather than calling it zero', () => {
+    const thin = productFromOff(cocaCola);
+
+    expect(thin).not.toHaveProperty('satFatG');
+    expect(thin).not.toHaveProperty('saltG');
+    expect(thin).not.toHaveProperty('kJ');
+  });
+
+  it('keeps a stated zero, which is a different thing from silence', () => {
+    // Almonds really do have no added sugar, and the entry says so.
+    expect(productFromOff(almondsOff)?.addedSugarsG).toBe(0);
+  });
+
+  it('carries the pack photo, the scores and the words', () => {
+    expect(productFromOff(almondsOff)).toEqual(
+      expect.objectContaining({
+        imageUrl: 'https://images.openfoodfacts.org/almonds.200.jpg',
+        nutriScore: 'A',
+        novaGroup: 1,
+        ingredients: 'Almonds (100%)',
+      }),
+    );
+  });
+
+  it('takes the most specific category, which is the one worth printing', () => {
+    // 'Plant-based foods' is true of half the database; 'Whole almonds' is the
+    // one that tells you anything, and it is the one that picks the serving
+    // guide's card.
+    expect(productFromOff(almondsOff)?.category).toBe('Whole almonds');
+  });
+
+  it('grades in the case the badge shows, so no screen has to remember', () => {
+    expect(productFromOff({...almondsOff, nutriscore_grade: 'c'})?.nutriScore).toBe('C');
+  });
+
+  it('passes over a grade the entry could not work out', () => {
+    // Open Food Facts answers 'unknown' or 'not-applicable' for entries it
+    // cannot grade, and neither is a letter to put in a badge.
+    expect(productFromOff({...almondsOff, nutriscore_grade: 'unknown'})?.nutriScore).toBeUndefined();
+    expect(productFromOff({...almondsOff, nutriscore_grade: 'not-applicable'})?.nutriScore).toBeUndefined();
+  });
+});
+
+describe('a scanned product, as a food with its whole panel', () => {
+  const product = productFromOff(almondsOff)!;
+
+  it('hands the detail screen everything the entry gave', () => {
+    const logged = fromProduct(product, {id: 'per-100', label: 'Per 100 g', grams: 100, kcal: 597});
+
+    expect(logged.more).toEqual({
+      kJ: 2491,
+      satFatG: 3.84,
+      sugarsG: 4.4,
+      addedSugarsG: 0,
+      saltG: 0.01,
+      sodiumG: 0.004,
+    });
+    expect(logged.source).toEqual({
+      from: 'Open Food Facts',
+      barcode: '4088600441689',
+      imageUrl: 'https://images.openfoodfacts.org/almonds.200.jpg',
+      nutriScore: 'A',
+      novaGroup: 1,
+      category: 'Whole almonds',
+      ingredients: 'Almonds (100%)',
+    });
+  });
+
+  it('knows what the portion weighs, so the amount can be changed', () => {
+    const logged = fromProduct(product, {id: 'per-100', label: 'Per 100 g', grams: 100, kcal: 597});
+
+    expect(logged.portionG).toBe(100);
+  });
+})

@@ -1,4 +1,35 @@
 /**
+ * The rest of the nutrition panel, when the source stated it.
+ *
+ * Every field is optional and a blank stays blank: a pack that never mentioned
+ * salt has not said it has none, and a zero here is a claim the entry made.
+ */
+export type MoreNutrition = {
+  kJ?: number;
+  satFatG?: number;
+  sugarsG?: number;
+  addedSugarsG?: number;
+  saltG?: number;
+  /** The sodium behind the salt. UK packs print salt; some entries print both. */
+  sodiumG?: number;
+};
+
+/** Where a food came from, and what that entry carries besides numbers. */
+export type Source = {
+  /** Named rather than coded, because it is shown: 'Open Food Facts'. */
+  from?: string;
+  barcode?: string;
+  imageUrl?: string;
+  /** A to E, in the case a badge shows it. */
+  nutriScore?: string;
+  /** 1 to 4: how processed the entry reckons it is. */
+  novaGroup?: number;
+  /** The most specific category the entry gives: 'Whole almonds'. */
+  category?: string;
+  ingredients?: string;
+};
+
+/**
  * A food, as the app knows it.
  *
  * Lives in the domain rather than in `fixtures/` because created foods are now
@@ -12,6 +43,12 @@ export type FoodItem = {
   brand?: string;
   /** How much, as the row offers it: '40 g', '1 medium, 118 g', '1 cube'. */
   portion: string;
+  /**
+   * What that portion weighs, when it is known. The label above is for reading;
+   * this is for arithmetic — see domain/portion.ts, which falls back to reading
+   * a weight out of the label when a food carries none.
+   */
+  portionG?: number;
   kcal: number;
   proteinG: number;
   carbsG: number;
@@ -24,6 +61,10 @@ export type FoodItem = {
   logged?: number;
   /** True for a food this person created themselves, rather than matched. */
   mine?: boolean;
+  /** The rest of the panel. The diary counts none of it; the detail screen shows it. */
+  more?: MoreNutrition;
+  /** Where it came from. Absent on a food typed in by hand. */
+  source?: Source;
   /**
    * Brand, portion and macros as the row shows them. Built by `food` rather
    * than typed out: written by hand, the macros existed only as display text,
@@ -135,4 +176,22 @@ export function fromReading(reading: {
 /** A number as the form holds it, or blank when there was nothing to show. */
 function asText(value: number | undefined): string {
   return value === undefined ? '' : String(value);
+}
+
+/**
+ * How processed the entry reckons a food is, as the badge says it.
+ *
+ * NOVA is a number on the entry — 1 to 4 — and a word on the screen. Turned
+ * into the word here so that no screen has to remember what 3 means, and so
+ * that a group outside the four says nothing at all rather than 'NOVA 7'.
+ */
+export function novaWord(group: number): string | undefined {
+  return (
+    {
+      1: 'UNPROCESSED',
+      2: 'CULINARY INGREDIENT',
+      3: 'PROCESSED',
+      4: 'ULTRA-PROCESSED',
+    } as Record<number, string>
+  )[group];
 }
