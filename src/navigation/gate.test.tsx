@@ -150,6 +150,20 @@ describe('Change goal', () => {
     // Back on the weight trend — its legend is there whatever the readings say.
     expect(screen.getByText('7-day average')).toBeTruthy();
   });
+
+  it('edits the goal and saves it, the thing that did not stick before', async () => {
+    const store = memoryStore({profile: kyel, goal: kyelsGoal});
+    await launch(
+      <Root diary={memoryDiary()} store={store} initialRoute="Weight" />,
+    );
+
+    await fireEvent.press(screen.getByText('Change the goal'));
+    await fireEvent.changeText(screen.getByLabelText('GOAL'), '79');
+    await fireEvent.press(screen.getByText('Save goal'));
+
+    // Kept on disk, not lost to a half-walked flow.
+    expect((await store.read())?.goal.targetWeightKg).toBe(79);
+  });
 });
 
 /**
