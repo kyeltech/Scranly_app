@@ -6,9 +6,14 @@ import {withThousands} from '../lib/format';
 import {brand, type as type_, useTheme} from '../theme';
 
 import {settings as styles} from '../styles';
+/**
+ * A row. `soon` is for the ones that are designed and not built: they keep
+ * their place in the list, say so where the value would be, and stop being
+ * tappable — honest at a glance, rather than after a tap that goes nowhere.
+ */
 type Row =
-  | {kind: 'link'; label: string; value?: string; note?: string; onPress?: () => void}
-  | {kind: 'toggle'; label: string; note?: string; on: boolean}
+  | {kind: 'link'; label: string; value?: string; note?: string; soon?: boolean; onPress?: () => void}
+  | {kind: 'toggle'; label: string; note?: string; on: boolean; soon?: boolean}
   | {kind: 'plain'; label: string; value: string};
 
 /** Matches package.json. A placeholder number here was read as a real version. */
@@ -21,6 +26,9 @@ export default function Settings({
   foodsAdded = 0,
   onBack,
   onGoal,
+  onTargets,
+  onMethod,
+  onFoods,
 }: {
   /** The real daily budget, goal, and count — not the figures the board was drawn with. */
   targetsKcal?: number;
@@ -30,6 +38,11 @@ export default function Settings({
   onBack?: () => void;
   /** Edit the goal, through the same screen Change goal uses. */
   onGoal?: () => void;
+  /** The setup steps these rows show the answers from. */
+  onTargets?: () => void;
+  onMethod?: () => void;
+  /** The foods you typed in yourself. */
+  onFoods?: () => void;
 }) {
   const t = useTheme();
   const [countExercise, setCountExercise] = useState(false);
@@ -38,8 +51,13 @@ export default function Settings({
     {
       title: 'YOU',
       rows: [
-        {kind: 'link', label: 'Targets', value: `${withThousands(targetsKcal)} kcal`},
-        {kind: 'link', label: 'Method', value: 'Mifflin–St Jeor'},
+        {
+          kind: 'link',
+          label: 'Targets',
+          value: `${withThousands(targetsKcal)} kcal`,
+          onPress: onTargets,
+        },
+        {kind: 'link', label: 'Method', value: 'Mifflin–St Jeor', onPress: onMethod},
         {
           kind: 'link',
           label: 'Goal',
@@ -51,28 +69,34 @@ export default function Settings({
     {
       title: 'LOGGING',
       rows: [
-        {kind: 'link', label: 'Units', value: 'Metric'},
+        {kind: 'link', label: 'Units', soon: true},
         {
           kind: 'toggle',
           label: 'Count exercise toward the budget',
+          soon: true,
           note: 'Off. Both your food and your watch overestimate, in opposite directions — eating it back usually wipes out the day.',
           on: false,
         },
-        {kind: 'link', label: 'Week starts', value: 'Monday'},
+        {kind: 'link', label: 'Week starts', soon: true},
       ],
     },
-    {title: 'APPEARANCE', rows: [{kind: 'link', label: 'Theme', value: 'Follow device'}]},
+    {title: 'APPEARANCE', rows: [{kind: 'link', label: 'Theme', soon: true}]},
     {
       title: 'DATA',
       rows: [
-        {kind: 'link', label: 'Export everything', value: 'CSV'},
-        {kind: 'link', label: 'Foods you added', value: String(foodsAdded)},
+        {kind: 'link', label: 'Export everything', soon: true},
+        {
+          kind: 'link',
+          label: 'Foods you added',
+          value: String(foodsAdded),
+          onPress: onFoods,
+        },
       ],
     },
     {
       title: 'SCRANLY',
       rows: [
-        {kind: 'link', label: 'Invite a friend', value: '3 left'},
+        {kind: 'link', label: 'Invite a friend', soon: true},
         {kind: 'plain', label: 'Version', value: APP_VERSION},
       ],
     },
@@ -87,19 +111,31 @@ export default function Settings({
             <Text style={[type_.label, styles.legend, {color: t.textMuted}]}>
               {section.title}
             </Text>
-            {section.rows.map(row => (
+            {section.rows.map(row => {
+              const soon = 'soon' in row && row.soon === true;
+              return (
               <Pressable
                 key={row.label}
-                onPress={row.kind === 'link' ? row.onPress : undefined}
+                onPress={row.kind === 'link' && !soon ? row.onPress : undefined}
+                disabled={soon}
                 accessibilityRole={row.kind === 'plain' ? 'text' : 'button'}
+                accessibilityLabel={row.label}
+                accessibilityState={soon ? {disabled: true} : undefined}
                 style={[styles.row, {borderBottomColor: t.line}]}>
                 <View style={styles.rowText}>
-                  <Text style={[type_.bodyStrong, {color: t.text}]}>{row.label}</Text>
+                  <Text
+                    style={[type_.bodyStrong, {color: soon ? t.textMuted : t.text}]}>
+                    {row.label}
+                  </Text>
                   {'note' in row && row.note ? (
                     <Text style={[styles.note, {color: t.textMuted}]}>{row.note}</Text>
                   ) : null}
                 </View>
-                {row.kind === 'toggle' ? (
+                {soon ? (
+                  <View style={[styles.soon, {borderColor: t.line}]}>
+                    <Text style={[styles.soonLabel, {color: t.textMuted}]}>SOON</Text>
+                  </View>
+                ) : row.kind === 'toggle' ? (
                   <Switch
                     value={countExercise}
                     onValueChange={setCountExercise}
@@ -117,7 +153,8 @@ export default function Settings({
                   </>
                 )}
               </Pressable>
-            ))}
+              );
+            })}
           </View>
         ))}
         <Text style={[styles.footer, {color: t.textMuted}]}>

@@ -591,6 +591,14 @@ export const scanSheets = StyleSheet.create({
 
 /* ---- src/screens/Settings.tsx ---- */
 export const settings = StyleSheet.create({
+  /** What a row says instead of a value when the feature is not built. */
+  soon: {
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  soonLabel: {...type_.label, fontSize: 10, letterSpacing: 1},
   screen: {flex: 1},
   body: {paddingHorizontal: spacing.lg, paddingBottom: 40},
   legend: {marginTop: 22},
@@ -609,6 +617,49 @@ export const settings = StyleSheet.create({
 });
 
 /* ---- src/ui/Sheet.tsx ---- */
+/* ---- src/screens/MyFoods.tsx ---- */
+export const myFoods = StyleSheet.create({
+  body: {paddingHorizontal: spacing.lg, paddingTop: 10, paddingBottom: 120},
+  lede: {...type_.caption, lineHeight: 19},
+  count: {...type_.label, fontSize: 11, letterSpacing: 1.4, marginTop: 20},
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowText: {flex: 1, minWidth: 0},
+  meta: {...type_.caption, marginTop: 1},
+  logged: {...type_.caption, fontSize: 12, marginTop: 2},
+  kcal: {...type_.figureMd},
+  /** The empty state sits where the eye lands, not at the top of a blank page. */
+  empty: {paddingHorizontal: 26, paddingTop: 120},
+  emptyTitle: {...type_.productTitle},
+  emptyBody: {...type_.body, fontSize: 15, lineHeight: 23, marginTop: 10},
+  emptyNote: {...type_.caption, fontSize: 14, lineHeight: 21, marginTop: 10},
+  fade: {position: 'absolute', left: 0, right: 0, bottom: 104, height: 52},
+  actions: {position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: 30},
+});
+
+/* ---- src/screens/ComingSoon.tsx ---- */
+export const comingSoon = StyleSheet.create({
+  /** Dark in both themes: a shadow over the screen, not a surface of its own. */
+  scrim: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(8,10,7,0.55)'},
+  head: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
+  title: {...type_.sheetTitle, flex: 1},
+  close: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: {...type_.body, fontSize: 15, lineHeight: 22, marginTop: 12},
+  meanwhile: {...type_.caption, fontSize: 14, lineHeight: 21, marginTop: 10},
+  tail: {height: 14},
+});
+
 /* ---- src/screens/ServingGuide.tsx ---- */
 export const servingGuide = StyleSheet.create({
   /**
