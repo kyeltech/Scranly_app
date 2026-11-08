@@ -593,7 +593,14 @@ export default function Root({
 
         <Stack.Screen name="Settings">
           {({navigation}: Props<'Settings'>) => (
-            <Settings onBack={navigation.goBack} />
+            <Settings
+              targetsKcal={targets.kcal}
+              goalKg={goal.targetWeightKg}
+              goalDate={goalDate}
+              foodsAdded={created.length}
+              onBack={navigation.goBack}
+              onGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
+            />
           )}
         </Stack.Screen>
       </Stack.Navigator>

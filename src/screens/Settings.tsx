@@ -2,62 +2,87 @@ import React, {useState} from 'react';
 import {Linking, Pressable, ScrollView, Switch, Text, View} from 'react-native';
 import {Header, Screen} from '../ui';
 import {ChevronRight} from '../ui/icons';
+import {withThousands} from '../lib/format';
 import {brand, type as type_, useTheme} from '../theme';
 
 import {settings as styles} from '../styles';
 type Row =
-  | {kind: 'link'; label: string; value?: string; note?: string}
+  | {kind: 'link'; label: string; value?: string; note?: string; onPress?: () => void}
   | {kind: 'toggle'; label: string; note?: string; on: boolean}
   | {kind: 'plain'; label: string; value: string};
 
-const SECTIONS: {title: string; rows: Row[]}[] = [
-  {
-    title: 'YOU',
-    rows: [
-      {kind: 'link', label: 'Targets', value: '1,815 kcal'},
-      {kind: 'link', label: 'Method', value: 'Bodyweight'},
-      {kind: 'link', label: 'Goal', value: '75.0 kg by 24 Nov'},
-    ],
-  },
-  {
-    title: 'LOGGING',
-    rows: [
-      {kind: 'link', label: 'Units', value: 'Metric'},
-      {
-        kind: 'toggle',
-        label: 'Count exercise toward the budget',
-        note: 'Off. Both your food and your watch overestimate, in opposite directions — eating it back usually wipes out the day.',
-        on: false,
-      },
-      {kind: 'link', label: 'Week starts', value: 'Monday'},
-    ],
-  },
-  {title: 'APPEARANCE', rows: [{kind: 'link', label: 'Theme', value: 'Follow device'}]},
-  {
-    title: 'DATA',
-    rows: [
-      {kind: 'link', label: 'Export everything', value: 'CSV'},
-      {kind: 'link', label: 'Foods you added', value: '12'},
-    ],
-  },
-  {
-    title: 'SCRANLY',
-    rows: [
-      {kind: 'link', label: 'Invite a friend', value: '3 left'},
-      {kind: 'plain', label: 'Version', value: '0.1.0'},
-    ],
-  },
-];
+/** Matches package.json. A placeholder number here was read as a real version. */
+const APP_VERSION = '0.0.1';
 
-export default function Settings({onBack}: {onBack?: () => void}) {
+export default function Settings({
+  targetsKcal = 0,
+  goalKg = 0,
+  goalDate = '',
+  foodsAdded = 0,
+  onBack,
+  onGoal,
+}: {
+  /** The real daily budget, goal, and count — not the figures the board was drawn with. */
+  targetsKcal?: number;
+  goalKg?: number;
+  goalDate?: string;
+  foodsAdded?: number;
+  onBack?: () => void;
+  /** Edit the goal, through the same screen Change goal uses. */
+  onGoal?: () => void;
+}) {
   const t = useTheme();
   const [countExercise, setCountExercise] = useState(false);
+
+  const sections: {title: string; rows: Row[]}[] = [
+    {
+      title: 'YOU',
+      rows: [
+        {kind: 'link', label: 'Targets', value: `${withThousands(targetsKcal)} kcal`},
+        {kind: 'link', label: 'Method', value: 'Mifflin–St Jeor'},
+        {
+          kind: 'link',
+          label: 'Goal',
+          value: `${goalKg.toFixed(1)} kg by ${goalDate}`,
+          onPress: onGoal,
+        },
+      ],
+    },
+    {
+      title: 'LOGGING',
+      rows: [
+        {kind: 'link', label: 'Units', value: 'Metric'},
+        {
+          kind: 'toggle',
+          label: 'Count exercise toward the budget',
+          note: 'Off. Both your food and your watch overestimate, in opposite directions — eating it back usually wipes out the day.',
+          on: false,
+        },
+        {kind: 'link', label: 'Week starts', value: 'Monday'},
+      ],
+    },
+    {title: 'APPEARANCE', rows: [{kind: 'link', label: 'Theme', value: 'Follow device'}]},
+    {
+      title: 'DATA',
+      rows: [
+        {kind: 'link', label: 'Export everything', value: 'CSV'},
+        {kind: 'link', label: 'Foods you added', value: String(foodsAdded)},
+      ],
+    },
+    {
+      title: 'SCRANLY',
+      rows: [
+        {kind: 'link', label: 'Invite a friend', value: '3 left'},
+        {kind: 'plain', label: 'Version', value: APP_VERSION},
+      ],
+    },
+  ];
 
   return (
     <Screen>
       <Header title="Settings" onBack={onBack} />
       <ScrollView contentContainerStyle={styles.body}>
-        {SECTIONS.map(section => (
+        {sections.map(section => (
           <View key={section.title}>
             <Text style={[type_.label, styles.legend, {color: t.textMuted}]}>
               {section.title}
@@ -65,6 +90,7 @@ export default function Settings({onBack}: {onBack?: () => void}) {
             {section.rows.map(row => (
               <Pressable
                 key={row.label}
+                onPress={row.kind === 'link' ? row.onPress : undefined}
                 accessibilityRole={row.kind === 'plain' ? 'text' : 'button'}
                 style={[styles.row, {borderBottomColor: t.line}]}>
                 <View style={styles.rowText}>

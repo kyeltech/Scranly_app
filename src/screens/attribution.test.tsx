@@ -26,3 +26,26 @@ describe('the Open Food Facts attribution', () => {
     open.mockRestore();
   });
 });
+
+describe('Settings shows your real numbers, not the board figures', () => {
+  it('shows the budget, goal and foods count it is handed', async () => {
+    await render(
+      <Settings targetsKcal={1815} goalKg={75} goalDate="24 November" foodsAdded={3} />,
+    );
+
+    expect(screen.getByText('1,815 kcal')).toBeTruthy();
+    expect(screen.getByText('75.0 kg by 24 November')).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
+  });
+
+  it('opens the goal editor from the Goal row', async () => {
+    const onGoal = jest.fn();
+    await render(
+      <Settings onGoal={onGoal} goalKg={75} goalDate="24 November" targetsKcal={1815} />,
+    );
+
+    await fireEvent.press(screen.getByText('75.0 kg by 24 November'));
+
+    expect(onGoal).toHaveBeenCalledTimes(1);
+  });
+});
