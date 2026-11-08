@@ -82,11 +82,23 @@ export default function Onboarding({
       );
 
     case 'goal':
+      /**
+       * Opened straight at the goal — "Change goal" on the weight trend — is an
+       * edit, not the setup flow: pre-fill what is already set, and save it on
+       * its own rather than marching on through method and targets, which is
+       * what lost the change before.
+       */
       return (
         <GoalStep
           profile={profile}
+          goal={entry === 'goal' ? goal : undefined}
+          submitLabel={entry === 'goal' ? 'Save goal' : 'Continue'}
           onBack={back}
           onContinue={next => {
+            if (entry === 'goal') {
+              onDone?.({profile, goal: next});
+              return;
+            }
             setGoal(next);
             setStep('method');
           }}

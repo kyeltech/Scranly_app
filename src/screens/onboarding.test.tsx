@@ -3,6 +3,7 @@ import {fireEvent, render, screen} from '@testing-library/react-native';
 import Welcome from './Welcome';
 import AboutYou from './AboutYou';
 import Goal from './Goal';
+import Onboarding from './Onboarding';
 import Method from './Method';
 import Targets from './Targets';
 import {kyel, kyelsGoal} from '../fixtures/profile';
@@ -141,5 +142,37 @@ describe('Targets', () => {
     expect(screen.getByText(/targets follow/)).toBeTruthy();
     // The design has a second, quieter way out of this screen.
     expect(screen.getByText('Set them myself instead')).toBeTruthy();
+  });
+});
+
+describe('editing the goal from the weight trend', () => {
+  it('opens Goal on the goal already set, not the 75.0 default', async () => {
+    await render(
+      <Goal profile={kyel} goal={{targetWeightKg: 78, weeks: 9}} submitLabel="Save goal" />,
+    );
+
+    expect(screen.getByDisplayValue('78.0')).toBeTruthy();
+    expect(screen.getByText('Save goal')).toBeTruthy();
+  });
+
+  it('saves the edited goal straight off, not after walking method and targets', async () => {
+    const onDone = jest.fn();
+    await render(
+      <Onboarding
+        profile={kyel}
+        goal={{targetWeightKg: 78, weeks: 9}}
+        step="goal"
+        onDone={onDone}
+      />,
+    );
+
+    await fireEvent.changeText(screen.getByLabelText('GOAL'), '77');
+    await fireEvent.press(screen.getByText('Save goal'));
+
+    // Saved there and then, with the current weeks kept — no detour.
+    expect(onDone).toHaveBeenCalledWith({
+      profile: kyel,
+      goal: {targetWeightKg: 77, weeks: 9},
+    });
   });
 });
