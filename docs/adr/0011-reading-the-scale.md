@@ -72,3 +72,29 @@ dependency to watch, per the flag-every-dependency rule).
 F14 is P1 and the typed weigh-in already works. This is a convenience whose hard
 half is a trained model. If the model-sourcing turns out to be a slog, deferring
 F14 and shipping on the typed path is a legitimate call.
+
+## Amendment — 8 November 2026: the kitchen test, and it failed
+
+Kyel's own scale was photographed (a blue backlit seven-segment LCD, reading
+e.g. 79.25 and 36.30 kg, with KG, a temperature and a battery icon on the same
+display). The display region was cropped and run through the easiest free path —
+Tesseract with the seven-segment `ssd` model (and plain Tesseract as a baseline).
+
+**It did not read it.** The weight 79.25 came back blank or as "1 1"; 36.30 came
+back as "9"; plain Tesseract gave "| al". Four reasons, all in the photos: glare
+reflections brighter than the digits (a global threshold grabs the glare), the
+low contrast of light-blue digits on a dark-blue backlight, the clutter of the
+temperature and battery beside the weight, and a domain mismatch — the `ssd`
+model is trained on red/black meter displays, not a blue phone-era LCD.
+
+So the free OCR path is out, as predicted. A reader that works on this scale
+means a **trained model on displays of this style**, which is a data-collection
+and training effort, plus the native wiring. The one thing that reads it
+trivially is a vision LLM — but that is cloud, per-scan cost and the privacy
+line, exactly what ADR-0009 ruled out for the plate.
+
+**Recommendation: defer F14.** The typed weigh-in is real and already moves the
+budget; the photo reader is an ML project out of proportion to a P1 convenience.
+Pick it up when there is reason to, with real training data of the target
+display. `domain/scale.ts` (`toWeight`) stays — it is the gate any future reader
+feeds, and it reads this scale's format correctly.
