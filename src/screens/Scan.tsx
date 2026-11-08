@@ -341,7 +341,13 @@ export default function Scan({
         onTorch={() => setTorch(on => !on)}
         frame={aiming ? FRAMES.plate : undefined}
         scrim={aiming ? 0 : stage === 'working' ? 0.62 : 0.5}
-        hint={'coming soon 😂 — point at the plate and tap the shutter \n please note: you can only simulate this feature for now'}
+        /* Plain, and plainly not working. The hint used to read like an
+           instruction with an emoji after it; what someone standing over a
+           plate needs to know is that nothing here is measured. */
+        hint={
+          'Plates are not read yet. The shutter walks the flow through with ' +
+          'invented numbers — nothing here is measured, and nothing is logged.'
+        }
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
         footnote={aiming ? plateNotice : undefined}
