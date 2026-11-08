@@ -28,13 +28,15 @@ import {mealAt} from '../domain/meal';
 import {scaleTo, toForm} from '../domain/portion';
 import type {FoodItem, NewFood} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {memoryDiary, memoryFoods, memoryStore} from '../store/memory';
+import {memoryDiary, memoryFoods, memoryStore, memoryWeight} from '../store/memory';
 import type {DiaryStore} from '../store/diary';
 import type {FoodStore} from '../store/foods';
 import type {Setup, SetupStore} from '../store/setup';
 import {stepDay} from '../fixtures/days';
 import {isoDate} from '../domain/calendar';
-import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
+import {readingsFrom, sevenDayAverage} from '../domain/weight';
+import type {WeightEntry} from '../domain/weight';
+import type {WeightStore} from '../store/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
 import type {ScanStage} from '../screens/Scan';
@@ -72,6 +74,22 @@ const Stack = createNativeStackNavigator<RootParams>();
 
 type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const SHORT_MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+/** '24 November'. */
+const longDate = (d: Date) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+/** 'Tue 25 Sep', for the weigh-in header. */
+const shortDate = (d: Date) => `${SHORT_DAYS[d.getDay()]} ${d.getDate()} ${SHORT_MONTHS[d.getMonth()]}`;
+const addDays = (d: Date, n: number) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
 /**
  * One stack, no tab bar: logging happens many times a day and navigating
  * rarely, so the bottom bar stays with Scan and Log food and Today's header
@@ -81,6 +99,7 @@ export default function Root({
   store: given,
   diary: givenDiary,
   foods: givenFoods,
+  weight: givenWeight,
   now,
   initialRoute,
 }: {
@@ -94,6 +113,8 @@ export default function Root({
   diary?: DiaryStore;
   /** The foods this person created. */
   foods?: FoodStore;
+  /** The weigh-ins, from which the trend and the current weight are read. */
+  weight?: WeightStore;
   /**
    * Where setup is kept. ADR-0007: the gate, not the store. The app passes one
    * that outlives this component; left out, setup lasts as long as the mount,
@@ -110,6 +131,8 @@ export default function Root({
   const diary = givenDiary ?? diaryFallback;
   const [foodsFallback] = useState(memoryFoods);
   const foods = givenFoods ?? foodsFallback;
+  const [weightFallback] = useState(memoryWeight);
+  const weight = givenWeight ?? weightFallback;
 
   /** The foods made here, so Add food can offer them back. */
   const [created, setCreated] = useState<FoodItem[]>(() => foods.peek?.() ?? []);
@@ -199,6 +222,26 @@ export default function Root({
     };
   }, [diary]);
 
+  /** The weigh-ins, read once and kept here. Written through `logWeight` below. */
+  const [weightLog, setWeightLog] = useState<WeightEntry[]>(
+    () => weight.peek?.() ?? [],
+  );
+
+  useEffect(() => {
+    let live = true;
+    weight
+      .read()
+      .catch(() => [])
+      .then(logged => {
+        if (live) {
+          setWeightLog(logged);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [weight]);
+
   /**
    * The meal a screen opened without one falls back to. Only the Log food
    * button at the bottom of Today has no meal behind it; every other way in
@@ -217,6 +260,43 @@ export default function Root({
         );
       });
     }
+  };
+
+  /**
+   * The weigh-ins the trend reads. Seeded with the setup weight when none have
+   * been logged, so the chart has a baseline rather than crashing on nothing,
+   * and so the current weight is always the latest the app knows.
+   */
+  const weighIns: WeightEntry[] = weightLog.length
+    ? weightLog
+    : [{date: todayIso, kg: profile.weightKg}];
+  const readings = readingsFrom(weighIns);
+  const currentKg = weighIns[weighIns.length - 1].kg;
+  const lastIndex = Math.max(...readings.map(r => r.dayIndex));
+  const averageKg = sevenDayAverage(readings, lastIndex);
+  const yesterdayKg =
+    readings.find(r => r.dayIndex === lastIndex - 1)?.kg ?? currentKg;
+  const goalDate = longDate(addDays(today, goal.weeks * 7));
+
+  /**
+   * Log a weigh-in, and let it move the budget. The bodyweight method derives
+   * every target from weight (PRD Method A), so a new morning's number becomes
+   * the current weight, the day re-derives from it, and the reading is kept for
+   * the trend.
+   */
+  const logWeight = (kg: number) => {
+    const entry = {date: todayIso, kg};
+    setWeightLog(current => [...current, entry]);
+    weight.add(entry).catch((error: unknown) => {
+      console.warn(`[scranly] weigh-in could not be saved: ${String(error)}`);
+    });
+    const nextSetup = {profile: {...profile, weightKg: kg}, goal};
+    setSetup(nextSetup);
+    store.write(nextSetup).catch((error: unknown) => {
+      console.warn(
+        `[scranly] weight could not be saved to setup: ${String(error)}`,
+      );
+    });
   };
 
   const {targets} = dailyPlan(profile, goal);
@@ -467,13 +547,16 @@ export default function Root({
         <Stack.Screen name="WeighIn">
           {({navigation}: Props<'WeighIn'>) => (
             <WeighIn
-              startKg={todaysReading}
-              yesterdayKg={yesterdaysReading}
-              averageKg={79.8}
-              date="Fri 25 Sep"
+              startKg={currentKg}
+              yesterdayKg={yesterdayKg}
+              averageKg={averageKg}
+              date={shortDate(today)}
               onBack={navigation.goBack}
               onPhoto={() => navigation.navigate('ScalePhoto')}
-              onSave={navigation.goBack}
+              onSave={kg => {
+                logWeight(kg);
+                navigation.goBack();
+              }}
             />
           )}
         </Stack.Screen>
@@ -481,10 +564,10 @@ export default function Root({
         <Stack.Screen name="Weight">
           {({navigation}: Props<'Weight'>) => (
             <WeightTrend
-              readings={fourWeeks}
+              readings={readings}
               goalKg={goal.targetWeightKg}
               weeksRemaining={goal.weeks}
-              goalDate="24 November"
+              goalDate={goalDate}
               onBack={navigation.goBack}
               onAdd={() => navigation.navigate('WeighIn')}
               onChangeGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
@@ -495,11 +578,14 @@ export default function Root({
         <Stack.Screen name="ScalePhoto" options={{presentation: 'fullScreenModal'}}>
           {({navigation}: Props<'ScalePhoto'>) => (
             <ScalePhoto
-              reading={todaysReading}
-              yesterdayKg={yesterdaysReading}
-              averageKg={79.8}
+              reading={currentKg}
+              yesterdayKg={yesterdayKg}
+              averageKg={averageKg}
               onClose={navigation.goBack}
-              onSave={navigation.goBack}
+              onSave={kg => {
+                logWeight(kg);
+                navigation.goBack();
+              }}
               onFix={navigation.goBack}
             />
           )}

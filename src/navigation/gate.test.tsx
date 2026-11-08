@@ -147,7 +147,8 @@ describe('Change goal', () => {
     await fireEvent.press(screen.getByText('Change the goal'));
     await fireEvent.press(screen.getByLabelText('Back'));
 
-    expect(screen.getByText('On track')).toBeTruthy();
+    // Back on the weight trend — its legend is there whatever the readings say.
+    expect(screen.getByText('7-day average')).toBeTruthy();
   });
 });
 

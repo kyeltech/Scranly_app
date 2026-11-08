@@ -1,9 +1,10 @@
 import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react-native';
 import Root from './Root';
-import {memoryDiary} from '../store/memory';
+import {memoryDiary, memoryStore, memoryWeight} from '../store/memory';
 import {aLoggedWeek} from '../fixtures/diary';
 import {dayMarks} from '../fixtures/days';
+import {kyel, kyelsGoal} from '../fixtures/profile';
 
 describe('the app', () => {
   it('walks from the welcome through onboarding to Today', async () => {
@@ -42,7 +43,8 @@ describe('the app', () => {
     await render(<Root diary={memoryDiary(aLoggedWeek(new Date()))} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Week'));
-    expect(screen.getByText('On track')).toBeTruthy();
+    // On the weight trend; its legend is there whatever the readings say.
+    expect(screen.getByText('7-day average')).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText('Back'));
     await fireEvent.press(screen.getByLabelText('Settings'));
@@ -51,6 +53,28 @@ describe('the app', () => {
     await fireEvent.press(screen.getByLabelText('Back'));
     await fireEvent.press(screen.getByText('Log food'));
     expect(screen.getByText('EATEN THIS WEEK')).toBeTruthy();
+  });
+
+  it('saves a weigh-in, and the budget follows the new weight', async () => {
+    const weight = memoryWeight();
+    const store = memoryStore({profile: kyel, goal: kyelsGoal});
+    await render(
+      <Root
+        store={store}
+        diary={memoryDiary()}
+        weight={weight}
+        initialRoute="WeighIn"
+      />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Raise by 0.1 kg'));
+    await fireEvent.press(screen.getByText(/^Save /));
+
+    // Kyel weighs 83; a tenth up is kept as a real weigh-in...
+    const log = await weight.read();
+    expect(log).toEqual([expect.objectContaining({kg: 83.1})]);
+    // ...and becomes the current weight, so the budget re-derives (PRD Method A).
+    expect((await store.read())?.profile.weightKg).toBe(83.1);
   });
 
   it('carries the activity level chosen in onboarding into the targets', async () => {

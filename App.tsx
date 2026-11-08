@@ -6,7 +6,13 @@ import AnimatedSplash from './src/components/AnimatedSplash';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import LoadingScreen from './src/components/LoadingScreen';
 import Root from './src/navigation/Root';
-import {mmkvDiary, mmkvFoods, mmkvStore, storeFailure} from './src/store/mmkv';
+import {
+  mmkvDiary,
+  mmkvFoods,
+  mmkvStore,
+  mmkvWeight,
+  storeFailure,
+} from './src/store/mmkv';
 import {useTheme} from './src/theme';
 
 type Phase = 'splash' | 'loading' | 'ready';
@@ -30,6 +36,9 @@ const diaryStore = mmkvDiary();
 
 /** The foods made in Create a food, so they are there to log again tomorrow. */
 const foodStore = mmkvFoods();
+
+/** The weigh-ins, so the trend is a real one and the budget follows the scale. */
+const weightStore = mmkvWeight();
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('splash');
@@ -80,7 +89,12 @@ function Shell() {
       {/* Setup, diary and created foods all run on MMKV, on disk: what you log
           survives a relaunch, and the store decides whether setup is asked
           (ADR-0007). */}
-      <Root store={setupStore} diary={diaryStore} foods={foodStore} />
+      <Root
+        store={setupStore}
+        diary={diaryStore}
+        foods={foodStore}
+        weight={weightStore}
+      />
     </View>
   );
 }
