@@ -11,6 +11,8 @@ import AddFood from '../screens/AddFood';
 import CreateFood from '../screens/CreateFood';
 import FoodDetail from '../screens/FoodDetail';
 import ServingGuide from '../screens/ServingGuide';
+import ComingSoon from '../screens/ComingSoon';
+import MyFoods from '../screens/MyFoods';
 import Scan from '../screens/Scan';
 import ScalePhoto from '../screens/ScalePhoto';
 import DayPicker from '../screens/DayPicker';
@@ -53,6 +55,10 @@ export type RootParams = {
   FoodDetail: {food: FoodItem; meal: MealName};
   /** What a portion looks like, over the food it was opened from. */
   ServingGuide: {food: FoodItem; meal: MealName};
+  /** Something designed and not built, said over the screen that asked for it. */
+  ComingSoon: {title: string; body: string; meanwhile?: string};
+  /** The foods this person typed in themselves. */
+  MyFoods: undefined;
   /**
    * Opened from the label reader, the panel it read comes with it; opened from
    * a meal, so does the meal.
@@ -71,6 +77,21 @@ export type RootParams = {
 };
 
 const Stack = createNativeStackNavigator<RootParams>();
+
+/**
+ * The one thing on Add food that is drawn and not built. Named rather than
+ * 'coming soon', and with what to do meanwhile, because the person tapping it
+ * is mid-task and wanted something.
+ */
+const SAVED_MEALS = {
+  title: 'Saved meals',
+  body:
+    'Not built yet. A meal will remember a set of foods you log together — ' +
+    'porridge, milk and a banana as one tap.',
+  meanwhile:
+    'Until then, log them one at a time. They stay at the top of Recent, ' +
+    'which is two taps each.',
+};
 
 type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
 
@@ -370,6 +391,7 @@ export default function Root({
                 // Snack, so what you scan is a snack.
                 onScan={() => navigation.navigate('Scan', {meal})}
                 onCreate={() => navigation.navigate('CreateFood', {meal})}
+                onSoon={() => navigation.navigate('ComingSoon', SAVED_MEALS)}
                 onAdd={items => {
                   log(items, meal);
                   navigation.goBack();
@@ -447,6 +469,29 @@ export default function Root({
                   meal: route.params.meal,
                 });
               }}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen name="MyFoods">
+          {({navigation}: Props<'MyFoods'>) => (
+            <MyFoods
+              foods={created}
+              onBack={navigation.goBack}
+              onCreate={() => navigation.navigate('CreateFood', {meal: guessedMeal})}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen
+          name="ComingSoon"
+          options={{presentation: 'transparentModal', animation: 'fade'}}>
+          {({navigation, route}: Props<'ComingSoon'>) => (
+            <ComingSoon
+              title={route.params.title}
+              body={route.params.body}
+              meanwhile={route.params.meanwhile}
+              onClose={navigation.goBack}
             />
           )}
         </Stack.Screen>
@@ -600,6 +645,11 @@ export default function Root({
               foodsAdded={created.length}
               onBack={navigation.goBack}
               onGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
+              // These rows show an answer from setup, so they open the step
+              // that answer came from — the same way Goal already did.
+              onTargets={() => navigation.navigate('Onboarding', {step: 'targets'})}
+              onMethod={() => navigation.navigate('Onboarding', {step: 'method'})}
+              onFoods={() => navigation.navigate('MyFoods')}
             />
           )}
         </Stack.Screen>

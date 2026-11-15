@@ -433,3 +433,73 @@ describe('what a portion looks like', () => {
     );
   });
 });
+
+/**
+ * The middle of the three ways the app says a thing is not built: a chip
+ * tapped mid-task, answered over the screen it was tapped from.
+ */
+describe('a feature that is designed and not built', () => {
+  it('names it, and says what to do instead', async () => {
+    await launch(<Root store={setUp()} diary={memoryDiary()} initialRoute="Today" />);
+
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Meals'));
+
+    expect(screen.getByText('Saved meals')).toBeTruthy();
+    expect(screen.getByText(/log them one at a time/i)).toBeTruthy();
+  });
+
+  /**
+   * Whether the list is visible *behind* the sheet is a native presentation
+   * detail the test renderer does not model, so what is checked here is the
+   * part that matters to the person: closing puts them back exactly where they
+   * were, mid-task, rather than somewhere up the stack.
+   */
+  it('puts you back on the list you were working in', async () => {
+    await launch(<Root store={setUp()} diary={memoryDiary()} initialRoute="Today" />);
+
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Meals'));
+    await fireEvent.press(screen.getByLabelText('Close'));
+
+    expect(screen.getByText('Porridge oats')).toBeTruthy();
+    expect(screen.queryByText('Saved meals')).toBeNull();
+  });
+});
+
+/**
+ * Settings counted the foods you had added and the row went nowhere, which is
+ * the same lie as a row that says SOON without saying it.
+ */
+describe('the foods you added, from Settings', () => {
+  it('opens the list, with the food you just made in it', async () => {
+    const foods = memoryFoods();
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} foods={foods} initialRoute="Today" />,
+    );
+
+    // Make one, the way the screen does.
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Create a food'));
+    await fireEvent.changeText(screen.getByLabelText('NAME'), 'Mum’s jollof rice');
+    await fireEvent.changeText(screen.getByLabelText('CALORIES'), '412');
+    await fireEvent.press(screen.getByText('Save food'));
+    await waitFor(() => expect(screen.getByText('1,403')).toBeTruthy());
+
+    await fireEvent.press(screen.getByLabelText('Settings'));
+    await fireEvent.press(screen.getByLabelText('Foods you added'));
+
+    expect(screen.getByText('1 FOOD')).toBeTruthy();
+    expect(screen.getByText('Mum’s jollof rice')).toBeTruthy();
+  });
+
+  it('offers the empty state before anything has been typed in', async () => {
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} foods={memoryFoods()} initialRoute="Settings" />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Foods you added'));
+
+    expect(screen.getByText('Nothing yet')).toBeTruthy();
+  });
+});

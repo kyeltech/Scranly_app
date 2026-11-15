@@ -13,6 +13,7 @@ import {processColor, StyleSheet} from 'react-native';
 import {render, screen} from '@testing-library/react-native';
 import Today from './Today';
 import ServingGuide from './ServingGuide';
+import ComingSoon from './ComingSoon';
 import {food} from '../domain/food';
 import {aFreshDay, aNormalDay, anOverBudgetDay} from '../fixtures/days';
 import {palettes} from '../theme';
@@ -153,5 +154,15 @@ describe('the serving guide, in the dark', () => {
     const view = await render(<ServingGuide food={almonds} />);
 
     expect(JSON.stringify(view.toJSON())).toContain(dark.text);
+  });
+});
+
+/** The coming soon sheet, in the dark — a lifted surface, not an inverted one. */
+describe('coming soon, in the dark', () => {
+  it('sets the sheet on the dark surface and keeps the text readable', async () => {
+    await render(<ComingSoon title="Saved meals" body="Not built yet." />);
+
+    const title = screen.getByText('Saved meals');
+    expect(StyleSheet.flatten(title.props.style).color).toBe(dark.text);
   });
 });
