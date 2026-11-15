@@ -24,10 +24,19 @@ function matching(foods: FoodItem[], query: string): FoodItem[] {
 }
 const FILTERS = ['Recent', 'Frequent', 'My foods', 'Meals'];
 
+/**
+ * Chips that are drawn but not built. The chip keeps its place — a row of
+ * three where there were four would be a different design, not an honest one —
+ * and tapping it says what the thing is instead of switching the list to an
+ * empty one, which read as a bug.
+ */
+const UNBUILT = ['Meals'];
+
 export default function AddFood({
   meal = 'Lunch',
   created = [],
   onBack,
+  onSoon,
   onScan,
   onCreate,
   onAdd,
@@ -42,6 +51,8 @@ export default function AddFood({
    */
   created?: FoodItem[];
   onBack?: () => void;
+  /** A chip that is designed and not built, by name. */
+  onSoon?: (filter: string) => void;
   onScan?: () => void;
   onCreate?: () => void;
   onAdd?: (items: FoodItem[]) => void;
@@ -190,7 +201,9 @@ export default function AddFood({
             return (
               <Pressable
                 key={name}
-                onPress={() => setFilter(name)}
+                onPress={() =>
+                  UNBUILT.includes(name) ? onSoon?.(name) : setFilter(name)
+                }
                 accessibilityRole="button"
                 accessibilityState={{selected: on}}
                 style={[

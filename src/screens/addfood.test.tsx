@@ -153,14 +153,6 @@ describe('The filter chips on Add food', () => {
     expect(rows[0].props.children).toBe('Porridge oats');
   });
 
-  it('says why an empty chip is empty rather than showing a blank list', async () => {
-    await render(<AddFood />);
-
-    await fireEvent.press(screen.getByText('Meals'));
-    expect(screen.getByText('SAVED MEALS')).toBeTruthy();
-    expect(screen.getByText(/No saved meals yet/)).toBeTruthy();
-  });
-
   it('keeps the chips out of the way while searching', async () => {
     await render(<AddFood />);
     await fireEvent.changeText(
@@ -211,5 +203,39 @@ describe('your own foods', () => {
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     expect(onAdd).toHaveBeenCalledWith([expect.objectContaining({name: 'Skipjack tuna'})]);
+  });
+});
+
+/**
+ * Saved meals is designed and not built, and the chip sits in a row of three
+ * that work. Tapping it mid-search is a commitment, so it says what the thing
+ * is rather than switching the list to an empty one — which is what it used to
+ * do, and read as a bug.
+ */
+describe('a filter that is not built', () => {
+  it('asks for the sheet rather than showing an empty list', async () => {
+    const onSoon = jest.fn();
+    await render(<AddFood onSoon={onSoon} />);
+
+    await fireEvent.press(screen.getByText('Meals'));
+
+    expect(onSoon).toHaveBeenCalledWith('Meals');
+  });
+
+  it('leaves the list on what it was showing', async () => {
+    await render(<AddFood onSoon={jest.fn()} />);
+
+    await fireEvent.press(screen.getByText('Meals'));
+
+    // Still the recent foods, not a blank screen behind the sheet.
+    expect(screen.getByText('Porridge oats')).toBeTruthy();
+  });
+
+  it('keeps the chips that do work switching the list', async () => {
+    await render(<AddFood onSoon={jest.fn()} />);
+
+    await fireEvent.press(screen.getByText('My foods'));
+
+    expect(screen.getByText(/YOUR OWN|MY FOODS/i)).toBeTruthy();
   });
 });
