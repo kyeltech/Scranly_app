@@ -83,15 +83,32 @@ const Stack = createNativeStackNavigator<RootParams>();
  * 'coming soon', and with what to do meanwhile, because the person tapping it
  * is mid-task and wanted something.
  */
-const SAVED_MEALS = {
-  title: 'Saved meals',
-  body:
-    'Not built yet. A meal will remember a set of foods you log together — ' +
-    'porridge, milk and a banana as one tap.',
-  meanwhile:
-    'Until then, log them one at a time. They stay at the top of Recent, ' +
-    'which is two taps each.',
+const SOON: Record<string, {title: string; body: string; meanwhile?: string}> = {
+  Meals: {
+    title: 'Saved meals',
+    body:
+      'Not built yet. A meal will remember a set of foods you log together — ' +
+      'porridge, milk and a banana as one tap.',
+    meanwhile:
+      'Until then, log them one at a time. They stay at the top of Recent, ' +
+      'which is two taps each.',
+  },
 };
+
+/**
+ * Which sheet an unbuilt filter gets. Keyed by the filter, because the tap used
+ * to arrive with its name and be thrown away: a second unbuilt tab would have
+ * shown the saved-meals copy and been wrong about what it was promising.
+ */
+function soonFor(filter: string) {
+  return (
+    SOON[filter] ?? {
+      title: filter,
+      body: `Not built yet. ${filter} is drawn on Add food, with nothing behind the tab.`,
+      meanwhile: 'Search, or use Recent and Yours, which are both live.',
+    }
+  );
+}
 
 type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
 
@@ -391,7 +408,7 @@ export default function Root({
                 // Snack, so what you scan is a snack.
                 onScan={() => navigation.navigate('Scan', {meal})}
                 onCreate={() => navigation.navigate('CreateFood', {meal})}
-                onSoon={() => navigation.navigate('ComingSoon', SAVED_MEALS)}
+                onSoon={filter => navigation.navigate('ComingSoon', soonFor(filter))}
                 onAdd={items => {
                   log(items, meal);
                   navigation.goBack();
