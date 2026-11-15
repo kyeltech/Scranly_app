@@ -123,6 +123,30 @@ The fix may be smaller than it sounds — the sentence is specifically about the
 on that screen, so it could become honest again by being precise rather than by being deleted.
 But it has to change, deliberately, and not be discovered afterwards.
 
+### What gets switched on with it — noted 15 November 2026
+
+Two GitHub security settings are off, deliberately left until this is decided so that they are
+turned on as part of the same piece of work rather than remembered afterwards. Both are repository
+settings, not workflow changes, and both are free while the repository is public.
+
+| Setting | What it does | State on 15 November 2026 |
+| --- | --- | --- |
+| Code scanning (CodeQL default setup) | Reads Scranly's own code on each pull request for injection, unsafe data handling and the like. GitHub detects TypeScript, Kotlin/Java, Swift and Ruby here | Not configured |
+| Dependabot alerts and security updates | Raises an alert, and a pull request with the fix, when a dependency already installed gets a new advisory | Both off |
+
+Already in place and not waiting on this: secret scanning with push protection (on), and — added
+the same day — a weekly `yarn audit` job in `.github/workflows/ci.yml` and version updates through
+`.github/dependabot.yml`. Those cover known advisories in what is installed; they do not read
+Scranly's own code, which is what the first row is for.
+
+**Why it waits for the backend:** accounts, a hosted profile and a shared library are where code
+of Scranly's own starts handling other people's data and credentials, which is what code scanning
+is good at finding mistakes in. Until then the only call out of the app is the keyless Open Food
+Facts read in `src/readers/product.ts`.
+
+**If the repository goes private first**, code scanning and secret scanning become paid features,
+and that cost belongs in this decision.
+
 ## Recommendation, not a decision
 
 Start at number 2. An Open Food Facts client called from the phone needs no backend, no account,
@@ -182,6 +206,8 @@ MMKV already.
       User-Agent on iOS; some Android stacks override it. Needs checking at runtime, because
       Open Food Facts asks for one on every request.
 - [ ] **What the About you sentence should say** under each option.
+- [ ] **Switch on code scanning and Dependabot alerts** when the backend (number 4) is decided —
+      see "What gets switched on with it" above.
 
 ## Not decided here
 
