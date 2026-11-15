@@ -176,3 +176,21 @@ describe('editing the goal from the weight trend', () => {
     });
   });
 });
+
+describe('editing your profile from Settings', () => {
+  it('saves the edited details straight off, not after walking the rest of setup', async () => {
+    const onDone = jest.fn();
+    await render(
+      <Onboarding profile={kyel} goal={kyelsGoal} step="about" onDone={onDone} />,
+    );
+
+    await fireEvent.changeText(screen.getByLabelText('WEIGHT TODAY'), '81.5');
+    await fireEvent.press(screen.getByText('Save details'));
+
+    // Saved there and then, goal untouched — no detour through goal/method/targets.
+    expect(onDone).toHaveBeenCalledWith({
+      profile: {...kyel, weightKg: 81.5},
+      goal: kyelsGoal,
+    });
+  });
+});

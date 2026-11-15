@@ -23,10 +23,13 @@ const LEVELS: {key: Activity; name: string; detail: string}[] = [
 
 export default function AboutYou({
   profile,
+  submitLabel = 'Continue',
   onBack,
   onContinue,
 }: {
   profile: Profile;
+  /** 'Continue' in setup; 'Save details' when editing an existing profile. */
+  submitLabel?: string;
   onBack?: () => void;
   onContinue?: (profile: Profile) => void;
 }) {
@@ -126,7 +129,7 @@ export default function AboutYou({
       </ScrollView>
       <View style={styles.actions}>
         <Button
-          label="Continue"
+          label={submitLabel}
           onPress={() =>
             onContinue?.({
               ...profile,
