@@ -1,4 +1,4 @@
-# The three checks that run anywhere. The app and the Maestro suite need real
+# The three checks that run anywhere, and a dependency audit beside them. The app and the Maestro suite need real
 # hardware — ML Kit ships no arm64-simulator slice, so there is no simulator to
 # run them on, in CI or anywhere else — and stay on the Mac. See AGENTS.md.
 name: checks
@@ -7,9 +7,14 @@ on:
   push:
     branches: [master]
   pull_request:
+  # Mondays, 06:00 UTC — for the audit, which can go red with no commit.
+  schedule:
+    - cron: '0 6 * * 1'
 
 jobs:
   checks:
+    # Nothing here changes on a timer; the schedule is for the audit below.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,4 +46,36 @@ jobs:
 
       - name: Unit tests
         if: steps.install.outcome == 'success'
-        run: yarn test --ci
+        # With coverage, so the floor in jest.config.js is checked: tests can
+        # no longer be deleted without the run noticing.
+        run: yarn test --ci --coverage --coverageReporters=text-summary
+
+  # Known advisories in what ships with the app (not devDependencies). Its own
+  # job, and on a weekly timer as well, because an advisory is published
+  # against code that has not changed — it should not turn an unrelated pull
+  # request's checks red, and it should be seen without anyone pushing.
+  audit:
+    runs-on: ubuntu-latest
+    # Report only, for now: on 15 November 2026 this found one high (sharp, via
+    # react-native-bootsplash) and one critical (shell-quote, via
+    # react-devtools-core), both build-time tools that are not in the shipped
+    # app. Take this line out once they are cleared and the job fails for real.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No install: yarn audit reads package.json and yarn.lock. Its exit code
+      # is a sum — 1 info, 2 low, 4 moderate, 8 high, 16 critical — so 8 or
+      # more means something high or critical is in there.
+      - name: Audit
+        run: |
+          code=0
+          yarn audit --groups dependencies || code=$?
+          if [ "$code" -ge 8 ]; then
+            echo "::error::yarn audit found a high or critical advisory (exit $code)"
+            exit 1
+          fi

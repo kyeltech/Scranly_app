@@ -1,0 +1,35 @@
+# Dependency updates, weekly, as pull requests — which run the checks in
+# workflows/ci.yml like any other. Security updates come as their own pull
+# requests whenever an advisory lands, outside this timetable.
+version: 2
+
+updates:
+  # package.json and yarn.lock.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Minor and patch bumps in one pull request a week rather than twenty.
+      # A major version comes on its own, because it wants reading.
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # React Native moves with its template, native projects and all — a
+      # version bump on its own is half an upgrade.
+      - dependency-name: react-native
+      - dependency-name: react
+      - dependency-name: '@react-native/*'
+      # Nitro's generated C++ is version-coupled to what MMKV expects, so
+      # these two move together and by hand. See AGENTS.md.
+      - dependency-name: react-native-nitro-modules
+      - dependency-name: react-native-mmkv
+
+  # The actions the workflow itself uses.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
