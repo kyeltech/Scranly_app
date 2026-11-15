@@ -10,6 +10,8 @@
  * phone.
  */
 
+import {TIMEOUT_MS, codeForError, codeForStatus, retryAfterFrom} from '../domain/failure';
+import type {Failure} from '../domain/failure';
 import {food} from '../domain/food';
 import type {FoodItem, MoreNutrition, Source} from '../domain/food';
 
@@ -227,22 +229,34 @@ function gradeOf(grade: string | undefined): string | undefined {
   return grade && /^[a-e]$/i.test(grade) ? grade.toUpperCase() : undefined;
 }
 
-/** What a lookup came to: a food, a confirmed miss, or a failure to reach it. */
+/**
+ * What a lookup came to: a food, a confirmed miss, or a failure to reach it.
+ *
+ * The failure carries a code rather than a message, because the words belong to
+ * the sheet that shows it and not to the reader (`domain/failure.ts`). A miss
+ * stays its own answer: the barcode was asked about and the database said no.
+ */
 export type LookupResult =
   | {status: 'found'; product: Product}
   | {status: 'not-found'}
-  | {status: 'error'};
+  | {status: 'error'; failure: Failure};
 
 /** What a search came to: the products it found (maybe none), or a failure. */
 export type SearchResult =
   | {status: 'ok'; products: Product[]}
-  | {status: 'error'};
+  | {status: 'error'; failure: Failure};
 
 /** Only the slice of `fetch` this uses, so a test can hand over a stand-in. */
 type Fetcher = (
   url: string,
-  init?: {headers?: Record<string, string>},
-) => Promise<{ok: boolean; status: number; json: () => Promise<any>}>;
+  init?: {headers?: Record<string, string>; signal?: AbortSignal},
+) => Promise<{
+  ok: boolean;
+  status: number;
+  /** Present on a real response; a stand-in need not bother. */
+  headers?: {get: (name: string) => string | null};
+  json: () => Promise<any>;
+}>;
 
 const ENDPOINT = 'https://world.openfoodfacts.org/api/v2/product';
 const SEARCH = 'https://world.openfoodfacts.org/cgi/search.pl';
@@ -309,23 +323,69 @@ export async function lookupBarcode(
   barcode: string,
   fetcher: Fetcher = fetch as unknown as Fetcher,
 ): Promise<LookupResult> {
-  let body: {product?: OffProduct};
-  try {
-    const res = await fetcher(`${ENDPOINT}/${barcode}.json?fields=${FIELDS}`, {
-      headers: {'User-Agent': USER_AGENT},
-    });
-    // 429 is the rate limit, any other non-2xx a server problem: a failure to
-    // reach the data, not a verdict on the barcode. A miss is a 200 that says
-    // so in the body, handled below.
-    if (!res.ok) {
-      return {status: 'error'};
-    }
-    body = await res.json();
-  } catch {
-    return {status: 'error'};
+  const answer = await ask(`${ENDPOINT}/${barcode}.json?fields=${FIELDS}`, fetcher, barcode);
+  if (!answer.ok) {
+    // A 404 is the database saying it has never heard of this barcode, which is
+    // a miss and not a failure to reach it — the same answer as a 200 that says
+    // so in the body. Everything else is a failure, with its own code.
+    return answer.failure.code === 'notFound'
+      ? {status: 'not-found'}
+      : {status: 'error', failure: answer.failure};
   }
-  const product = body.product ? productFromOff(body.product) : undefined;
-  return product ? {status: 'found', product} : {status: 'not-found'};
+  const body = answer.body as {product?: OffProduct};
+  if (!body.product) {
+    return {status: 'not-found'};
+  }
+  const product = productFromOff(body.product);
+  // An entry that exists but carries no name or no energy: the barcode is
+  // known, so this is not a miss. There is nothing to count, and the way out is
+  // the label rather than another scan.
+  return product
+    ? {status: 'found', product}
+    : {status: 'error', failure: {code: 'badResponse', subject: barcode}};
+}
+
+/**
+ * One request, with the deadline and the mapping both in one place.
+ *
+ * Without the deadline a lookup can hang for as long as the platform allows,
+ * which is the 'timeout' state the board designed and nothing could ever reach.
+ * Ten seconds is long enough for a slow shop connection and short enough that
+ * nobody thinks the app has died (`TIMEOUT_MS`).
+ */
+async function ask(
+  url: string,
+  fetcher: Fetcher,
+  subject: string,
+): Promise<{ok: true; body: any} | {ok: false; failure: Failure}> {
+  const deadline = new AbortController();
+  const timer = setTimeout(() => deadline.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetcher(url, {
+      headers: {'User-Agent': USER_AGENT},
+      signal: deadline.signal,
+    });
+    if (!res.ok) {
+      const code = codeForStatus(res.status);
+      const wait = retryAfterFrom(res.headers?.get('retry-after'));
+      return {
+        ok: false,
+        failure: {
+          code,
+          subject,
+          detail: res.status,
+          ...(code === 'rateLimited' && wait !== undefined ? {retryAfter: wait} : {}),
+        },
+      };
+    }
+    return {ok: true, body: await res.json()};
+  } catch (error) {
+    // The thrown error goes in `detail`, for the log and for __DEV__. It never
+    // reaches a user: the sheet shows a code's words instead.
+    return {ok: false, failure: {code: codeForError(error), subject, detail: error}};
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -343,18 +403,11 @@ export async function searchProducts(
   const url =
     `${SEARCH}?search_terms=${encodeURIComponent(query)}` +
     `&search_simple=1&action=process&json=1&fields=${FIELDS}&page_size=20`;
-  try {
-    const res = await fetcher(url, {headers: {'User-Agent': USER_AGENT}});
-    if (!res.ok) {
-      return {status: 'error'};
-    }
-    const body = await res.json();
-    const raw: OffProduct[] = Array.isArray(body.products) ? body.products : [];
-    const products = raw
-      .map(productFromOff)
-      .filter((p): p is Product => p !== undefined);
-    return {status: 'ok', products};
-  } catch {
-    return {status: 'error'};
+  const answer = await ask(url, fetcher, query);
+  if (!answer.ok) {
+    return {status: 'error', failure: answer.failure};
   }
+  const raw: OffProduct[] = Array.isArray(answer.body.products) ? answer.body.products : [];
+  const products = raw.map(productFromOff).filter((p): p is Product => p !== undefined);
+  return {status: 'ok', products};
 }

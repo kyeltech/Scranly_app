@@ -39,7 +39,7 @@ describe('When the camera is refused for good', () => {
     await render(<Scan />);
 
     expect(screen.getByText('Scranly cannot see')).toBeTruthy();
-    expect(screen.getByText(/never leaves|thrown away|not uploaded|no photo/i)).toBeTruthy();
+    expect(screen.getByText(/leaves your phone/i)).toBeTruthy();
   });
 
   it('sends you to Settings, because the app can no longer ask', async () => {
@@ -116,5 +116,25 @@ describe('When the camera has not been asked yet', () => {
 
     expect(screen.getByText('Allow the camera')).toBeTruthy();
     expect(screen.queryByText('Open Settings')).toBeNull();
+  });
+
+  it('actually asks the system when that button is pressed', async () => {
+    // The button existing is not the same as the button working. It was drawn
+    // and wired to nothing at all: `onAsk` was declared on the sheet and never
+    // passed, so the one way out of a not-yet-granted camera did nothing.
+    await render(<Scan />);
+
+    await fireEvent.press(screen.getByText('Allow the camera'));
+
+    // Once on the way in, once for the press.
+    expect(mockPermission.requestPermission).toHaveBeenCalledTimes(2);
+  });
+
+  it('never dead-ends here either: the food can still be typed in', async () => {
+    const onTypeItIn = jest.fn();
+    await render(<Scan onTypeItIn={onTypeItIn} />);
+
+    await fireEvent.press(screen.getByText('Type the food in instead'));
+    expect(onTypeItIn).toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import {Pressable, ScrollView, Text, View} from 'react-native';
 import Sheet from '../../ui/Sheet';
 import {Button, Note, Segmented} from '../../ui';
-import {Check, ChevronDown, ChevronRight, Info, Plus, Warning} from '../../ui/icons';
+import {Check, ChevronDown, ChevronRight, Info, Plus} from '../../ui/icons';
 import {withThousands} from '../../lib/format';
 import {servingMacros} from '../../readers/product';
 import {brand, type as type_, useTheme} from '../../theme';
@@ -64,81 +64,11 @@ export function LookingUpSheet({
   );
 }
 
-/** A barcode the database has never heard of. */
-export function NoMatchSheet({
-  barcode,
-  onFromLabel,
-  onRetry,
-}: {
-  barcode: string;
-  onFromLabel?: () => void;
-  onRetry?: () => void;
-}) {
-  const t = useTheme();
-  return (
-    <Sheet>
-      <View style={styles.failHead}>
-        <View style={[styles.failIcon, {backgroundColor: t.verdict.fast}]}>
-          <Warning colour={t.status.over} size={18} />
-        </View>
-        <View style={styles.failText}>
-          <Text style={[type_.cardTitle, {color: t.text}]}>
-            Not in the database
-          </Text>
-          <Text style={[type_.caption, {color: t.textMuted}]}>{barcode}</Text>
-        </View>
-      </View>
-      <Text style={[styles.body, {color: t.textMuted}]}>
-        Open Food Facts has most UK branded food, but not all of it. Add this
-        one from the label and it is yours from now on — and everyone else’s.
-      </Text>
-      <View style={styles.gapLg} />
-      <Button label="Add it from the label" onPress={onFromLabel} />
-      <View style={styles.gapSm} />
-      <Button label="Scan something else" variant="ghost" onPress={onRetry} />
-    </Sheet>
-  );
-}
-
-/**
- * Not a miss, but a failure to ask: offline, a timeout, or Open Food Facts's
- * rate limit (ADR-0006). Told apart from "Not in the database" on purpose —
- * the food may well be there, so the way out is to try again, not to add it.
+/*
+ * A miss and a failure to reach once had a sheet each here. Both now come from
+ * the one failure sheet, which owns the words for every code — see
+ * `FailureSheet.tsx` and `domain/failure.ts`.
  */
-export function CantReachSheet({
-  barcode,
-  onRetry,
-  onTypeItIn,
-}: {
-  barcode: string;
-  onRetry?: () => void;
-  onTypeItIn?: () => void;
-}) {
-  const t = useTheme();
-  return (
-    <Sheet>
-      <View style={styles.failHead}>
-        <View style={[styles.failIcon, {backgroundColor: t.verdict.fast}]}>
-          <Warning colour={t.status.over} size={18} />
-        </View>
-        <View style={styles.failText}>
-          <Text style={[type_.cardTitle, {color: t.text}]}>
-            Can’t reach the food database
-          </Text>
-          <Text style={[type_.caption, {color: t.textMuted}]}>{barcode}</Text>
-        </View>
-      </View>
-      <Text style={[styles.body, {color: t.textMuted}]}>
-        You’re offline, or Open Food Facts is busy. Your scan is fine — try
-        again in a moment.
-      </Text>
-      <View style={styles.gapLg} />
-      <Button label="Try again" onPress={onRetry} />
-      <View style={styles.gapSm} />
-      <Button label="Type it in instead" variant="ghost" onPress={onTypeItIn} />
-    </Sheet>
-  );
-}
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 

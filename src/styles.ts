@@ -176,6 +176,26 @@ export const cameraRefused = StyleSheet.create({
   gapSm: {height: 10},
 });
 
+/* ---- src/screens/scan/FailureSheet.tsx ---- */
+export const failureSheet = StyleSheet.create({
+  head: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  /* Fixed in every variant: the tile means "this did not work", nothing finer.
+     Severity is never encoded in colour, because none of these is more
+     alarming than another. */
+  icon: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {flex: 1},
+  body: {...type_.body, fontSize: 14, marginTop: 14},
+  gap: {height: 20},
+  gapSm: {height: 10},
+  reference: {...type_.caption, fontSize: 11, marginTop: 14, textAlign: 'center'},
+});
+
 /* ---- src/screens/CreateFood.tsx ---- */
 export const createFood = StyleSheet.create({
   screen: {flex: 1},

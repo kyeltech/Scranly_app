@@ -14,6 +14,7 @@ import {render, screen} from '@testing-library/react-native';
 import Today from './Today';
 import ServingGuide from './ServingGuide';
 import ComingSoon from './ComingSoon';
+import FailureSheet from './scan/FailureSheet';
 import {food} from '../domain/food';
 import {aFreshDay, aNormalDay, anOverBudgetDay} from '../fixtures/days';
 import {palettes} from '../theme';
@@ -164,5 +165,29 @@ describe('coming soon, in the dark', () => {
 
     const title = screen.getByText('Saved meals');
     expect(StyleSheet.flatten(title.props.style).color).toBe(dark.text);
+  });
+});
+
+describe('A failure in the dark', () => {
+  it('keeps the warning tile a pale ground with a red glyph, not a red slab', async () => {
+    await render(
+      <FailureSheet failure={{code: 'offline'}} on={{retry: jest.fn(), typeItIn: jest.fn()}} />,
+    );
+
+    // The tile is the one fixed part of every variant. On dark its ground is
+    // the dark palette's own, not the light one's and not the sheet's — a tile
+    // the same colour as the sheet is no tile at all.
+    const tile = screen.getByTestId('failure-tile');
+    expect(StyleSheet.flatten(tile.props.style).backgroundColor).toBe(dark.verdict.fast);
+    expect(StyleSheet.flatten(tile.props.style).backgroundColor).not.toBe(dark.bg);
+  });
+
+  it('leaves the way out lime and the ghost a surface, as in the light', async () => {
+    await render(
+      <FailureSheet failure={{code: 'offline'}} on={{retry: jest.fn(), typeItIn: jest.fn()}} />,
+    );
+
+    expect(backgroundOf('Try again')).toBe('#C2F24D');
+    expect(backgroundOf('Type the food in instead')).toBe(dark.fill);
   });
 });

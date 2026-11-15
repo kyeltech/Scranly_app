@@ -37,7 +37,21 @@ const FOOD_CODES: ScannedObjectType[] = ['ean-13', 'ean-8', 'upc-e', 'code-128']
  * With the native modules                                            *
  * ------------------------------------------------------------------ */
 
-function useNativeCameraState(): CameraState {
+/**
+ * What the camera can do, and the only way to change it.
+ *
+ * `ask` comes back with the state because the screen that reports a refusal is
+ * the screen that has to offer the way out of it: the sheet's own button used to
+ * be wired to nothing at all, because there was nothing to wire it to. It is
+ * undefined once the app may no longer ask — from then on only Settings can
+ * grant it, and the sheet says so instead.
+ */
+export type Camera = {
+  state: CameraState;
+  ask?: () => void;
+};
+
+function useNativeCamera(): Camera {
   const {hasPermission, canRequestPermission, requestPermission} =
     visionCamera!.useCameraPermission();
   const device = visionCamera!.useCameraDevice('back');
@@ -49,10 +63,16 @@ function useNativeCameraState(): CameraState {
     }
   }, [hasPermission, canRequestPermission, requestPermission]);
 
+  const ask = useCallback(() => {
+    requestPermission().catch(() => {});
+  }, [requestPermission]);
+
   if (!hasPermission) {
-    return canRequestPermission ? 'no-permission' : 'refused';
+    return canRequestPermission
+      ? {state: 'no-permission', ask}
+      : {state: 'refused'};
   }
-  return device ? 'ready' : 'unavailable';
+  return {state: device ? 'ready' : 'unavailable'};
 }
 
 function useNativeBarcodeReader(
@@ -140,7 +160,7 @@ function useNativeLabelReader() {
  * ------------------------------------------------------------------ */
 
 /** No native module at all: a different problem from no camera, and says so. */
-const NO_CAMERA = () => 'no-reader' as CameraState;
+const NO_CAMERA = (): Camera => ({state: 'no-reader'});
 const NO_OUTPUT = () => undefined;
 const NO_LABEL_READER = () => ({
   photoOutput: undefined,
@@ -152,7 +172,7 @@ const NO_LABEL_READER = () => ({
  * Whichever this build has                                           *
  * ------------------------------------------------------------------ */
 
-export const useCameraState = visionCamera ? useNativeCameraState : NO_CAMERA;
+export const useCamera = visionCamera ? useNativeCamera : NO_CAMERA;
 
 /**
  * Whether this build can read a label at all. Separate from the camera, because

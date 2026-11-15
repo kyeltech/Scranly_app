@@ -7,6 +7,8 @@ import {brand, type as type_, useTheme} from '../theme';
 import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
 import {fromProduct, searchProducts, servingsFor} from '../readers/product';
 import type {SearchResult} from '../readers/product';
+import {noteFor} from '../domain/failure';
+import type {Failure} from '../domain/failure';
 import type {FoodItem} from '../domain/food';
 import type {MealName} from '../domain/day';
 
@@ -66,9 +68,14 @@ export default function AddFood({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState(FILTERS[0]);
   const [picked, setPicked] = useState<string[]>([]);
-  /** Open Food Facts results for the current query, and whether it could be reached. */
+  /** Open Food Facts results for the current query, and why there are none. */
   const [remote, setRemote] = useState<FoodItem[]>([]);
-  const [remoteError, setRemoteError] = useState(false);
+  /**
+   * The last search's failure, kept as a code rather than a flag: offline and
+   * "too many searches just now" are different things to be told, and the line
+   * under the heading says which (`domain/failure.ts`).
+   */
+  const [remoteFailure, setRemoteFailure] = useState<Failure | undefined>();
 
   const searching = query.trim().length > 0;
 
@@ -81,13 +88,13 @@ export default function AddFood({
     const q = query.trim();
     if (q.length < MIN_QUERY) {
       setRemote([]);
-      setRemoteError(false);
+      setRemoteFailure(undefined);
       return;
     }
     // A fresh keystroke: drop the last query's failure until this one has
     // actually been tried, so the note only ever reflects a search that ran and
     // failed — never the gap between a keystroke and its debounce.
-    setRemoteError(false);
+    setRemoteFailure(undefined);
     let cancelled = false;
     const timer = setTimeout(() => {
       search(q).then(result => {
@@ -95,10 +102,10 @@ export default function AddFood({
           return;
         }
         if (result.status === 'ok') {
-          setRemoteError(false);
+          setRemoteFailure(undefined);
           setRemote(result.products.map(p => fromProduct(p, servingsFor(p)[0])));
         } else {
-          setRemoteError(true);
+          setRemoteFailure(result.failure);
           setRemote([]);
         }
       });
@@ -241,9 +248,9 @@ export default function AddFood({
           )}
         </View>
 
-        {searching && remoteError ? (
+        {searching && remoteFailure ? (
           <Text style={[styles.none, {color: t.textMuted}]}>
-            Couldn’t reach Open Food Facts — showing your foods only.
+            {noteFor(remoteFailure)}
           </Text>
         ) : null}
 

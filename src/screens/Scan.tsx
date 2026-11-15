@@ -7,7 +7,7 @@ import {
   hasLabelReader,
   outputsOf,
   useBarcodeReader,
-  useCameraState,
+  useCamera,
   useLabelReader,
 } from '../readers/useReaders';
 import {CAMERA_NOTICE} from '../readers';
@@ -16,15 +16,15 @@ import type {LabelReading} from '../readers/label';
 import {isUsable, toLabelRows} from '../readers/label';
 import {fromProduct, lookupBarcode, servingsFor} from '../readers/product';
 import type {LookupResult, Product} from '../readers/product';
+import type {Failure} from '../domain/failure';
 import type {FoodItem} from '../domain/food';
 import type {MealName} from '../domain/day';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
+import FailureSheet from './scan/FailureSheet';
 import {
-  CantReachSheet,
   FoundSheet,
   LabelResultSheet,
   LookingUpSheet,
-  NoMatchSheet,
   PlateResultSheet,
   ServingSheet,
 } from './scan/sheets';
@@ -113,13 +113,18 @@ export default function Scan({
   const [torch, setTorch] = useState(false);
   /** The product a live lookup found. Undefined on the drawn stand-in, which shows the fixture. */
   const [product, setProduct] = useState<Product | undefined>();
+  /**
+   * Why the last lookup did not work. The sheet owns the words for it, so all
+   * this screen holds is the code and its context (`domain/failure.ts`).
+   */
+  const [failure, setFailure] = useState<Failure | undefined>();
 
   /**
    * What the camera can do here. 'unavailable' is the simulator, and it is not
    * an error — the drawn stand-in takes over and every state stays reachable.
    */
-  const camera = useCameraState();
-  const live = camera === 'ready';
+  const camera = useCamera();
+  const live = camera.state === 'ready';
   /** The label mode needs an OCR library as well as a camera. */
   const liveLabel = live && hasLabelReader;
   /**
@@ -128,7 +133,7 @@ export default function Scan({
    * so the screen says which. True of a user's iPad with no camera as much as of
    * a build that skipped a pod install.
    */
-  const notice = CAMERA_NOTICE[camera];
+  const notice = CAMERA_NOTICE[camera.state];
   const labelNotice =
     notice ?? (hasLabelReader ? undefined : 'No label reader in this build — showing an example');
   /**
@@ -159,7 +164,19 @@ export default function Scan({
   }, []);
 
   // Hooks, so they run in every mode; only one is fed frames at a time.
-  const barcodeOutput = useBarcodeReader(onBarcode, live && mode === 'barcode');
+  /**
+   * Reading only while there is something to aim at. The reader holds the last
+   * code it saw so that one barcode in frame is one read, and it lets go of it
+   * when it stops reading — so this is also what makes "Try again" work on the
+   * same tin: without the stage in here the guard never cleared, and the way out
+   * of a failure was to go and find a different barcode.
+   *
+   * It is also what stops a second code jumping the screen while a sheet is up.
+   */
+  const barcodeOutput = useBarcodeReader(
+    onBarcode,
+    live && mode === 'barcode' && stage === 'aiming',
+  );
   const labelReader = useLabelReader();
 
   /**
@@ -191,8 +208,11 @@ export default function Scan({
             setProduct(result.product);
             setServing(servingsFor(result.product)[0]);
             setStage('found');
+          } else if (result.status === 'not-found') {
+            setStage('nomatch');
           } else {
-            setStage(result.status === 'not-found' ? 'nomatch' : 'error');
+            setFailure(result.failure);
+            setStage('error');
           }
         });
         return () => {
@@ -239,7 +259,7 @@ export default function Scan({
    * for this — a camera can always be said no to and the design does not cover
    * it — so it is built on the same sheet as every other outcome.
    */
-  if (camera === 'no-permission' || camera === 'refused') {
+  if (camera.state === 'no-permission' || camera.state === 'refused') {
     return (
       <Viewfinder
         title={title}
@@ -247,7 +267,7 @@ export default function Scan({
         scrim={0.62}
         sheet={
           <CameraRefused
-            canAsk={camera === 'no-permission'}
+            onAsk={camera.ask}
             onTypeItIn={onTypeItIn}
             onClose={onClose}
           />
@@ -292,17 +312,21 @@ export default function Scan({
         sheet={
           stage === 'looking' ? (
             <LookingUpSheet barcode={scanned?.value ?? BARCODE} onCancel={onClose} />
-          ) : stage === 'nomatch' ? (
-            <NoMatchSheet
-              barcode={scanned?.value ?? BARCODE}
-              onFromLabel={() => changeMode('label')}
-              onRetry={() => setStage('aiming')}
-            />
-          ) : stage === 'error' ? (
-            <CantReachSheet
-              barcode={scanned?.value ?? BARCODE}
-              onRetry={() => setStage('aiming')}
-              onTypeItIn={onTypeItIn}
+          ) : stage === 'nomatch' || stage === 'error' ? (
+            /* One sheet for both, because a miss and a failure to reach are the
+               same shape and differ only in what they are honest about — which
+               is the code's business, not this screen's (ADR-0006). */
+            <FailureSheet
+              failure={
+                stage === 'nomatch'
+                  ? {code: 'notFound', subject: scanned?.value ?? BARCODE}
+                  : failure ?? {code: 'unknown', subject: scanned?.value ?? BARCODE}
+              }
+              on={{
+                retry: () => setStage('aiming'),
+                fromLabel: () => changeMode('label'),
+                typeItIn: onTypeItIn,
+              }}
             />
           ) : stage === 'serving' ? (
             <ServingSheet

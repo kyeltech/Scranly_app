@@ -122,11 +122,12 @@ describe('a product, read from an Open Food Facts response', () => {
 });
 
 /** A fake `fetch` that answers once, so no test reaches the network. */
-function fetchStub(status: number, body: unknown) {
+function fetchStub(status: number, body: unknown, headers: Record<string, string> = {}) {
   return () =>
     Promise.resolve({
       ok: status >= 200 && status < 300,
       status,
+      headers: {get: (name: string) => headers[name.toLowerCase()] ?? null},
       json: () => Promise.resolve(body),
     });
 }
@@ -160,21 +161,90 @@ describe('looking a barcode up in Open Food Facts', () => {
   });
 
   // 429 is the rate limit. It is a failure to reach the data, not a miss, so it
-  // must be told apart — the screen says "try again", not "add this food".
-  it('is an error when the rate limit is hit', async () => {
+  // must be told apart — and told apart from a server being down as well, since
+  // the way out of a rate limit is the label rather than another try.
+  it('is a rate limit when the rate limit is hit', async () => {
     const fetcher = fetchStub(429, {});
 
     await expect(lookupBarcode('5449000000996', fetcher)).resolves.toEqual({
       status: 'error',
+      failure: expect.objectContaining({code: 'rateLimited', subject: '5449000000996'}),
     });
   });
 
-  it('is an error when the network cannot be reached', async () => {
-    const offline = () => Promise.reject(new Error('Network request failed'));
+  it('carries how long the rate limit says to wait, when it says', async () => {
+    const fetcher = fetchStub(429, {}, {'retry-after': '30'});
 
-    await expect(lookupBarcode('5449000000996', offline)).resolves.toEqual({
-      status: 'error',
+    const result = await lookupBarcode('5449000000996', fetcher);
+
+    expect(result.status === 'error' && result.failure.retryAfter).toBe(30);
+  });
+
+  it('is a server failure when Open Food Facts is down', async () => {
+    const result = await lookupBarcode('5449000000996', fetchStub(503, {}));
+
+    expect(result.status === 'error' && result.failure.code).toBe('server');
+  });
+
+  // A 404 is the database saying it has never heard of the barcode. That is the
+  // same answer as a 200 with no product in it, and must not read as a failure
+  // to reach it — the way out is the label, not a retry.
+  it('is a miss when the database answers 404', async () => {
+    await expect(lookupBarcode('0000000000000', fetchStub(404, {}))).resolves.toEqual({
+      status: 'not-found',
     });
+  });
+
+  // The barcode is known and the entry is there, but there is nothing in it to
+  // count. Told apart from a miss because another scan will not help.
+  it('is a bad response when the entry carries no nutrition', async () => {
+    const fetcher = fetchStub(200, {
+      status: 1,
+      product: {code: '5000000000000', product_name: 'Houmous', nutriments: {}},
+    });
+
+    const result = await lookupBarcode('5000000000000', fetcher);
+
+    expect(result.status === 'error' && result.failure.code).toBe('badResponse');
+  });
+
+  it('is offline when the network cannot be reached', async () => {
+    const offline = () => Promise.reject(new TypeError('Network request failed'));
+
+    const result = await lookupBarcode('5449000000996', offline);
+
+    expect(result.status === 'error' && result.failure.code).toBe('offline');
+  });
+
+  // The deadline is the only thing that makes the designed 'timeout' state
+  // reachable: without it a hung request waits for as long as the platform
+  // allows and the sheet never rises.
+  it('gives up after ten seconds, and says so', async () => {
+    jest.useFakeTimers();
+    const hangs = (_url: string, init?: {signal?: AbortSignal}) =>
+      new Promise<never>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(Object.assign(new Error('Aborted'), {name: 'AbortError'})),
+        );
+      });
+
+    const lookup = lookupBarcode('5449000000996', hangs);
+    jest.advanceTimersByTime(10000);
+    const result = await lookup;
+
+    expect(result.status === 'error' && result.failure.code).toBe('timeout');
+    jest.useRealTimers();
+  });
+
+  it('does not leave the deadline running once an answer arrives', async () => {
+    // A timer per lookup, left behind, is a wake-up the phone did not need.
+    jest.useFakeTimers();
+    const fetcher = fetchStub(200, {status: 1, product: cocaCola});
+
+    await lookupBarcode('5449000000996', fetcher);
+
+    expect(jest.getTimerCount()).toBe(0);
+    jest.useRealTimers();
   });
 
   // Open Food Facts asks every request to name itself with a reachable contact,
@@ -270,16 +340,19 @@ describe('searching Open Food Facts by name', () => {
     expect(result.status === 'ok' && result.products).toHaveLength(1);
   });
 
-  it('is an error when the rate limit is hit', async () => {
+  it('is a rate limit when the rate limit is hit, and names the query', async () => {
     await expect(searchProducts('snickers', fetchStub(429, {}))).resolves.toEqual({
       status: 'error',
+      failure: expect.objectContaining({code: 'rateLimited', subject: 'snickers'}),
     });
   });
 
-  it('is an error when the network cannot be reached', async () => {
-    const offline = () => Promise.reject(new Error('Network request failed'));
+  it('is offline when the network cannot be reached', async () => {
+    const offline = () => Promise.reject(new TypeError('Network request failed'));
 
-    await expect(searchProducts('snickers', offline)).resolves.toEqual({status: 'error'});
+    const result = await searchProducts('snickers', offline);
+
+    expect(result.status === 'error' && result.failure.code).toBe('offline');
   });
 });
 

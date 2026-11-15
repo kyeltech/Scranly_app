@@ -41,7 +41,6 @@ import type {WeightEntry} from '../domain/weight';
 import type {WeightStore} from '../store/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
-import type {ScanStage} from '../screens/Scan';
 import type {LabelReading} from '../readers/label';
 import type {MealName} from '../domain/day';
 
@@ -66,8 +65,13 @@ export type RootParams = {
   CreateFood:
     | {reading?: LabelReading; meal?: MealName; food?: FoodItem}
     | undefined;
-  /** One screen, three readers. `missing` walks the unhappy barcode path. */
-  Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean; meal?: MealName} | undefined;
+  /**
+   * One screen, three readers. Only the mode and the meal travel: the screen's
+   * `stage` and `missing` props exist so a test can stand in a state the
+   * stand-in walks to on a timer, and nothing navigates with them — a route
+   * param no caller passes is a dead end dressed as a feature.
+   */
+  Scan: {mode?: Mode; meal?: MealName} | undefined;
   Portion: undefined;
   DayPicker: undefined;
   WeighIn: undefined;
@@ -558,8 +562,6 @@ export default function Root({
           {({navigation, route}: Props<'Scan'>) => (
             <Scan
               mode={route.params?.mode}
-              stage={route.params?.stage}
-              missing={route.params?.missing}
               // The meal travels in, same as Add food: scan from the Snack
               // section and it is a snack (PRD flow 3). The found sheet can still
               // switch it. A bare scan from Today falls back to the clock.
