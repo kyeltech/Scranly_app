@@ -1,79 +1,157 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, Switch, Text, View} from 'react-native';
+import {Linking, Pressable, ScrollView, Switch, Text, View} from 'react-native';
 import {Header, Screen} from '../ui';
 import {ChevronRight} from '../ui/icons';
+import {withThousands} from '../lib/format';
+import type {Activity} from '../domain/targets';
 import {brand, type as type_, useTheme} from '../theme';
+import {activityName} from './AboutYou';
 
 import {settings as styles} from '../styles';
+/**
+ * A row. `soon` is for the ones that are designed and not built: they keep
+ * their place in the list, say so where the value would be, and stop being
+ * tappable — honest at a glance, rather than after a tap that goes nowhere.
+ */
 type Row =
-  | {kind: 'link'; label: string; value?: string; note?: string}
-  | {kind: 'toggle'; label: string; note?: string; on: boolean}
+  | {kind: 'link'; label: string; value?: string; note?: string; soon?: boolean; onPress?: () => void}
+  | {kind: 'toggle'; label: string; note?: string; on: boolean; soon?: boolean}
   | {kind: 'plain'; label: string; value: string};
 
-const SECTIONS: {title: string; rows: Row[]}[] = [
-  {
-    title: 'YOU',
-    rows: [
-      {kind: 'link', label: 'Targets', value: '1,815 kcal'},
-      {kind: 'link', label: 'Method', value: 'Bodyweight'},
-      {kind: 'link', label: 'Goal', value: '75.0 kg by 24 Nov'},
-    ],
-  },
-  {
-    title: 'LOGGING',
-    rows: [
-      {kind: 'link', label: 'Units', value: 'Metric'},
-      {
-        kind: 'toggle',
-        label: 'Count exercise toward the budget',
-        note: 'Off. Both your food and your watch overestimate, in opposite directions — eating it back usually wipes out the day.',
-        on: false,
-      },
-      {kind: 'link', label: 'Week starts', value: 'Monday'},
-    ],
-  },
-  {title: 'APPEARANCE', rows: [{kind: 'link', label: 'Theme', value: 'Follow device'}]},
-  {
-    title: 'DATA',
-    rows: [
-      {kind: 'link', label: 'Export everything', value: 'CSV'},
-      {kind: 'link', label: 'Foods you added', value: '12'},
-    ],
-  },
-  {
-    title: 'SCRANLY',
-    rows: [
-      {kind: 'link', label: 'Invite a friend', value: '3 left'},
-      {kind: 'plain', label: 'Version', value: '0.1.0'},
-    ],
-  },
-];
+/** Matches package.json. A placeholder number here was read as a real version. */
+const APP_VERSION = '0.0.1';
 
-export default function Settings({onBack}: {onBack?: () => void}) {
+export default function Settings({
+  targetsKcal = 0,
+  goalKg = 0,
+  goalDate = '',
+  activity = 'moderate',
+  foodsAdded = 0,
+  onBack,
+  onGoal,
+  onProfile,
+  onTargets,
+  onMethod,
+  onFoods,
+}: {
+  /** The real daily budget, goal, and count — not the figures the board was drawn with. */
+  targetsKcal?: number;
+  goalKg?: number;
+  goalDate?: string;
+  /** How active they said they were, for the About you row's value. */
+  activity?: Activity;
+  foodsAdded?: number;
+  onBack?: () => void;
+  /** Edit the goal, through the same screen Change goal uses. */
+  onGoal?: () => void;
+  /** Height, age, sex and activity — the facts the rest is computed from. */
+  onProfile?: () => void;
+  /** The setup steps these rows show the answers from. */
+  onTargets?: () => void;
+  onMethod?: () => void;
+  /** The foods you typed in yourself. */
+  onFoods?: () => void;
+}) {
   const t = useTheme();
   const [countExercise, setCountExercise] = useState(false);
+
+  const sections: {title: string; rows: Row[]}[] = [
+    {
+      title: 'YOU',
+      rows: [
+        // Cause before effect: the facts you gave, then the method, then where
+        // you are heading, then what comes out of all three.
+        {
+          kind: 'link',
+          label: 'About you',
+          value: activityName(activity),
+          onPress: onProfile,
+        },
+        {kind: 'link', label: 'Method', value: 'Mifflin–St Jeor', onPress: onMethod},
+        {
+          kind: 'link',
+          label: 'Goal',
+          value: `${goalKg.toFixed(1)} kg by ${goalDate}`,
+          onPress: onGoal,
+        },
+        {
+          kind: 'link',
+          label: 'Targets',
+          value: `${withThousands(targetsKcal)} kcal`,
+          onPress: onTargets,
+        },
+      ],
+    },
+    {
+      title: 'LOGGING',
+      rows: [
+        {kind: 'link', label: 'Units', soon: true},
+        {
+          kind: 'toggle',
+          label: 'Count exercise toward the budget',
+          soon: true,
+          note: 'Off. Both your food and your watch overestimate, in opposite directions — eating it back usually wipes out the day.',
+          on: false,
+        },
+        {kind: 'link', label: 'Week starts', soon: true},
+      ],
+    },
+    {title: 'APPEARANCE', rows: [{kind: 'link', label: 'Theme', soon: true}]},
+    {
+      title: 'DATA',
+      rows: [
+        {kind: 'link', label: 'Export everything', soon: true},
+        {
+          kind: 'link',
+          label: 'Foods you added',
+          value: String(foodsAdded),
+          onPress: onFoods,
+        },
+      ],
+    },
+    {
+      title: 'SCRANLY',
+      rows: [
+        {kind: 'link', label: 'Invite a friend', soon: true},
+        {kind: 'plain', label: 'Version', value: APP_VERSION},
+      ],
+    },
+  ];
 
   return (
     <Screen>
       <Header title="Settings" onBack={onBack} />
       <ScrollView contentContainerStyle={styles.body}>
-        {SECTIONS.map(section => (
+        {sections.map(section => (
           <View key={section.title}>
             <Text style={[type_.label, styles.legend, {color: t.textMuted}]}>
               {section.title}
             </Text>
-            {section.rows.map(row => (
+            {section.rows.map(row => {
+              const soon = 'soon' in row && row.soon === true;
+              return (
               <Pressable
                 key={row.label}
+                onPress={row.kind === 'link' && !soon ? row.onPress : undefined}
+                disabled={soon}
                 accessibilityRole={row.kind === 'plain' ? 'text' : 'button'}
+                accessibilityLabel={row.label}
+                accessibilityState={soon ? {disabled: true} : undefined}
                 style={[styles.row, {borderBottomColor: t.line}]}>
                 <View style={styles.rowText}>
-                  <Text style={[type_.bodyStrong, {color: t.text}]}>{row.label}</Text>
+                  <Text
+                    style={[type_.bodyStrong, {color: soon ? t.textMuted : t.text}]}>
+                    {row.label}
+                  </Text>
                   {'note' in row && row.note ? (
                     <Text style={[styles.note, {color: t.textMuted}]}>{row.note}</Text>
                   ) : null}
                 </View>
-                {row.kind === 'toggle' ? (
+                {soon ? (
+                  <View style={[styles.soon, {borderColor: t.line}]}>
+                    <Text style={[styles.soonLabel, {color: t.textMuted}]}>SOON</Text>
+                  </View>
+                ) : row.kind === 'toggle' ? (
                   <Switch
                     value={countExercise}
                     onValueChange={setCountExercise}
@@ -91,12 +169,24 @@ export default function Settings({onBack}: {onBack?: () => void}) {
                   </>
                 )}
               </Pressable>
-            ))}
+              );
+            })}
           </View>
         ))}
         <Text style={[styles.footer, {color: t.textMuted}]}>
           No account to upgrade, nothing to subscribe to, and nothing here sells
           your diary on. That is the whole business model.
+        </Text>
+        {/* ODbL requires the licence named and Open Food Facts credited with a
+            link wherever its data is used. The scanned numbers come from there,
+            so the credit lives here (ADR-0010). */}
+        <Text
+          accessibilityRole="link"
+          onPress={() => Linking.openURL('https://openfoodfacts.org')}
+          style={[styles.credit, {color: t.textMuted}]}>
+          Food data from{' '}
+          <Text style={styles.creditLink}>Open Food Facts</Text>, licensed under
+          the ODbL.
         </Text>
       </ScrollView>
     </Screen>

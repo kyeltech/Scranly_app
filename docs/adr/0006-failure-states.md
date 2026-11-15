@@ -1,7 +1,9 @@
 # ADR-0006: What the app says when something fails
 
-- **Status:** OPEN — options only. To be decided when API work starts; see
-  [ADR-0010](0010-where-the-data-lives.md), which is where that work is being scoped.
+- **Status:** MOSTLY DECIDED — the lookup, search, camera and crash states are
+  built (see the amendment of 3 November 2026 below). Two questions stay open:
+  Q4 (a cached answer offline) and Q5 (the About you copy), both waiting on work
+  not yet done. The options survey that follows is kept as the record of why.
 - **Raised by:** Kyel, 5 October 2026
 
 ## Why this exists now
@@ -77,3 +79,24 @@ the questions above being settled.
 
 Nothing. This is a list of what has to be answered, not an answer. The data
 layer, persistence and the plate reader (ADR-0004) all touch it.
+
+## Amendment — 3 November 2026: the barcode lookup's failures
+
+With the first real lookup written (Open Food Facts, ADR-0010), questions 1–3
+are answered for the barcode path. The rest of the list stands.
+
+- **Q1 / Q2 — a failure to reach is its own state, not a variant of "Not in the
+  database."** A miss and a can't-reach are different events: the food may well
+  be there, so the way out is to try again, not to add it from the label. A new
+  `CantReachSheet` says what happened (offline, or Open Food Facts busy — the
+  429 rate limit included) and offers two ways on: try again, or type it in. It
+  holds to the standard the boards set — it never says "something went wrong."
+- **Q3 — retry is manual.** The sheet's "Try again" returns to aiming; there is
+  no silent auto-retry, which this ADR already argued is worse than a visible
+  one.
+- **The error boundary is built.** `src/components/ErrorBoundary.tsx` wraps the
+  app in `App.tsx`: a throw during render becomes a screen that says Scranly hit
+  a problem and offers "Try again", rather than the blank screen a missing pod
+  once caused. The one thing this ADR said was worth doing regardless is done.
+- **Still open:** Q4 (a cached answer offline — waits on more of the persistence
+  work) and Q5 (the About you copy).

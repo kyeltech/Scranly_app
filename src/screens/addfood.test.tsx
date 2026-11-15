@@ -43,10 +43,10 @@ describe('Add food', () => {
     const onAdd = jest.fn();
     await render(<AddFood onAdd={onAdd} />);
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     expect(screen.getByText('Add 1 item')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('Semi-skimmed milk'));
+    await fireEvent.press(screen.getByLabelText('Add Semi-skimmed milk'));
     expect(screen.getByText('Add 2 items')).toBeTruthy();
     expect(screen.getByText('250 kcal')).toBeTruthy();
 
@@ -58,11 +58,25 @@ describe('Add food', () => {
     ]);
   });
 
+  it('opens the food rather than logging it when you tap the row', async () => {
+    const onOpenDetail = jest.fn();
+    await render(<AddFood onOpenDetail={onOpenDetail} />);
+
+    await fireEvent.press(screen.getByText('Porridge oats'));
+
+    expect(onOpenDetail).toHaveBeenCalledWith(
+      expect.objectContaining({id: 'oats'}),
+    );
+    // Tapping the row did not select it — only the + does that.
+    expect(screen.queryByText('Add 1 item')).toBeNull();
+  });
+
   it('lets you change your mind about an item', async () => {
     await render(<AddFood />);
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    // The + adds it; the control then offers to take it back off.
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Remove Porridge oats'));
 
     expect(screen.queryByText('Add 1 item')).toBeNull();
   });
@@ -139,14 +153,6 @@ describe('The filter chips on Add food', () => {
     expect(rows[0].props.children).toBe('Porridge oats');
   });
 
-  it('says why an empty chip is empty rather than showing a blank list', async () => {
-    await render(<AddFood />);
-
-    await fireEvent.press(screen.getByText('Meals'));
-    expect(screen.getByText('SAVED MEALS')).toBeTruthy();
-    expect(screen.getByText(/No saved meals yet/)).toBeTruthy();
-  });
-
   it('keeps the chips out of the way while searching', async () => {
     await render(<AddFood />);
     await fireEvent.changeText(
@@ -193,9 +199,43 @@ describe('your own foods', () => {
     const onAdd = jest.fn();
     await render(<AddFood created={[tuna]} onAdd={onAdd} />);
 
-    await fireEvent.press(screen.getByText('Skipjack tuna'));
+    await fireEvent.press(screen.getByLabelText('Add Skipjack tuna'));
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     expect(onAdd).toHaveBeenCalledWith([expect.objectContaining({name: 'Skipjack tuna'})]);
+  });
+});
+
+/**
+ * Saved meals is designed and not built, and the chip sits in a row of three
+ * that work. Tapping it mid-search is a commitment, so it says what the thing
+ * is rather than switching the list to an empty one — which is what it used to
+ * do, and read as a bug.
+ */
+describe('a filter that is not built', () => {
+  it('asks for the sheet rather than showing an empty list', async () => {
+    const onSoon = jest.fn();
+    await render(<AddFood onSoon={onSoon} />);
+
+    await fireEvent.press(screen.getByText('Meals'));
+
+    expect(onSoon).toHaveBeenCalledWith('Meals');
+  });
+
+  it('leaves the list on what it was showing', async () => {
+    await render(<AddFood onSoon={jest.fn()} />);
+
+    await fireEvent.press(screen.getByText('Meals'));
+
+    // Still the recent foods, not a blank screen behind the sheet.
+    expect(screen.getByText('Porridge oats')).toBeTruthy();
+  });
+
+  it('keeps the chips that do work switching the list', async () => {
+    await render(<AddFood onSoon={jest.fn()} />);
+
+    await fireEvent.press(screen.getByText('My foods'));
+
+    expect(screen.getByText(/YOUR OWN|MY FOODS/i)).toBeTruthy();
   });
 });

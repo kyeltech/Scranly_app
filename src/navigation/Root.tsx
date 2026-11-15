@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {Linking} from 'react-native';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -8,6 +9,10 @@ import type {Step} from '../screens/Onboarding';
 import Today from '../screens/Today';
 import AddFood from '../screens/AddFood';
 import CreateFood from '../screens/CreateFood';
+import FoodDetail from '../screens/FoodDetail';
+import ServingGuide from '../screens/ServingGuide';
+import ComingSoon from '../screens/ComingSoon';
+import MyFoods from '../screens/MyFoods';
 import Scan from '../screens/Scan';
 import ScalePhoto from '../screens/ScalePhoto';
 import DayPicker from '../screens/DayPicker';
@@ -22,15 +27,18 @@ import {dayMarksFrom, dayState} from '../domain/dayState';
 import type {DiaryEntry} from '../domain/diary';
 import {fromForm, fromReading} from '../domain/food';
 import {mealAt} from '../domain/meal';
+import {scaleTo, toForm} from '../domain/portion';
 import type {FoodItem, NewFood} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {memoryDiary, memoryFoods, memoryStore} from '../store/memory';
+import {memoryDiary, memoryFoods, memoryStore, memoryWeight} from '../store/memory';
 import type {DiaryStore} from '../store/diary';
 import type {FoodStore} from '../store/foods';
 import type {Setup, SetupStore} from '../store/setup';
 import {stepDay} from '../fixtures/days';
 import {isoDate} from '../domain/calendar';
-import {fourWeeks, todaysReading, yesterdaysReading} from '../fixtures/weight';
+import {readingsFrom, sevenDayAverage} from '../domain/weight';
+import type {WeightEntry} from '../domain/weight';
+import type {WeightStore} from '../store/weight';
 import {useThemeName} from '../theme';
 import type {Mode} from '../components/Viewfinder';
 import type {ScanStage} from '../screens/Scan';
@@ -43,13 +51,23 @@ export type RootParams = {
   Today: undefined;
   /** Opened from a meal's +, that meal comes with it. */
   AddFood: {meal?: MealName} | undefined;
+  /** A food in full, reached by tapping a row. The meal rides in to log it to. */
+  FoodDetail: {food: FoodItem; meal: MealName};
+  /** What a portion looks like, over the food it was opened from. */
+  ServingGuide: {food: FoodItem; meal: MealName};
+  /** Something designed and not built, said over the screen that asked for it. */
+  ComingSoon: {title: string; body: string; meanwhile?: string};
+  /** The foods this person typed in themselves. */
+  MyFoods: undefined;
   /**
    * Opened from the label reader, the panel it read comes with it; opened from
    * a meal, so does the meal.
    */
-  CreateFood: {reading?: LabelReading; meal?: MealName} | undefined;
+  CreateFood:
+    | {reading?: LabelReading; meal?: MealName; food?: FoodItem}
+    | undefined;
   /** One screen, three readers. `missing` walks the unhappy barcode path. */
-  Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean} | undefined;
+  Scan: {mode?: Mode; stage?: ScanStage; missing?: boolean; meal?: MealName} | undefined;
   Portion: undefined;
   DayPicker: undefined;
   WeighIn: undefined;
@@ -60,7 +78,38 @@ export type RootParams = {
 
 const Stack = createNativeStackNavigator<RootParams>();
 
+/**
+ * The one thing on Add food that is drawn and not built. Named rather than
+ * 'coming soon', and with what to do meanwhile, because the person tapping it
+ * is mid-task and wanted something.
+ */
+const SAVED_MEALS = {
+  title: 'Saved meals',
+  body:
+    'Not built yet. A meal will remember a set of foods you log together — ' +
+    'porridge, milk and a banana as one tap.',
+  meanwhile:
+    'Until then, log them one at a time. They stay at the top of Recent, ' +
+    'which is two taps each.',
+};
+
 type Props<K extends keyof RootParams> = NativeStackScreenProps<RootParams, K>;
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const SHORT_MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+/** '24 November'. */
+const longDate = (d: Date) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+/** 'Tue 25 Sep', for the weigh-in header. */
+const shortDate = (d: Date) => `${SHORT_DAYS[d.getDay()]} ${d.getDate()} ${SHORT_MONTHS[d.getMonth()]}`;
+const addDays = (d: Date, n: number) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 
 /**
  * One stack, no tab bar: logging happens many times a day and navigating
@@ -71,6 +120,7 @@ export default function Root({
   store: given,
   diary: givenDiary,
   foods: givenFoods,
+  weight: givenWeight,
   now,
   initialRoute,
 }: {
@@ -84,6 +134,8 @@ export default function Root({
   diary?: DiaryStore;
   /** The foods this person created. */
   foods?: FoodStore;
+  /** The weigh-ins, from which the trend and the current weight are read. */
+  weight?: WeightStore;
   /**
    * Where setup is kept. ADR-0007: the gate, not the store. The app passes one
    * that outlives this component; left out, setup lasts as long as the mount,
@@ -100,6 +152,8 @@ export default function Root({
   const diary = givenDiary ?? diaryFallback;
   const [foodsFallback] = useState(memoryFoods);
   const foods = givenFoods ?? foodsFallback;
+  const [weightFallback] = useState(memoryWeight);
+  const weight = givenWeight ?? weightFallback;
 
   /** The foods made here, so Add food can offer them back. */
   const [created, setCreated] = useState<FoodItem[]>(() => foods.peek?.() ?? []);
@@ -189,6 +243,26 @@ export default function Root({
     };
   }, [diary]);
 
+  /** The weigh-ins, read once and kept here. Written through `logWeight` below. */
+  const [weightLog, setWeightLog] = useState<WeightEntry[]>(
+    () => weight.peek?.() ?? [],
+  );
+
+  useEffect(() => {
+    let live = true;
+    weight
+      .read()
+      .catch(() => [])
+      .then(logged => {
+        if (live) {
+          setWeightLog(logged);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [weight]);
+
   /**
    * The meal a screen opened without one falls back to. Only the Log food
    * button at the bottom of Today has no meal behind it; every other way in
@@ -207,6 +281,43 @@ export default function Root({
         );
       });
     }
+  };
+
+  /**
+   * The weigh-ins the trend reads. Seeded with the setup weight when none have
+   * been logged, so the chart has a baseline rather than crashing on nothing,
+   * and so the current weight is always the latest the app knows.
+   */
+  const weighIns: WeightEntry[] = weightLog.length
+    ? weightLog
+    : [{date: todayIso, kg: profile.weightKg}];
+  const readings = readingsFrom(weighIns);
+  const currentKg = weighIns[weighIns.length - 1].kg;
+  const lastIndex = Math.max(...readings.map(r => r.dayIndex));
+  const averageKg = sevenDayAverage(readings, lastIndex);
+  const yesterdayKg =
+    readings.find(r => r.dayIndex === lastIndex - 1)?.kg ?? currentKg;
+  const goalDate = longDate(addDays(today, goal.weeks * 7));
+
+  /**
+   * Log a weigh-in, and let it move the budget. The bodyweight method derives
+   * every target from weight (PRD Method A), so a new morning's number becomes
+   * the current weight, the day re-derives from it, and the reading is kept for
+   * the trend.
+   */
+  const logWeight = (kg: number) => {
+    const entry = {date: todayIso, kg};
+    setWeightLog(current => [...current, entry]);
+    weight.add(entry).catch((error: unknown) => {
+      console.warn(`[scranly] weigh-in could not be saved: ${String(error)}`);
+    });
+    const nextSetup = {profile: {...profile, weightKg: kg}, goal};
+    setSetup(nextSetup);
+    store.write(nextSetup).catch((error: unknown) => {
+      console.warn(
+        `[scranly] weight could not be saved to setup: ${String(error)}`,
+      );
+    });
   };
 
   const {targets} = dailyPlan(profile, goal);
@@ -276,17 +387,113 @@ export default function Root({
                 created={created}
                 meal={meal}
                 onBack={navigation.goBack}
-                onScan={() => navigation.navigate('Scan')}
-                // The meal travels on: you came in through Snack, so the food
-                // you are about to type in is a snack.
+                // The meal travels on, to the scanner too: you came in through
+                // Snack, so what you scan is a snack.
+                onScan={() => navigation.navigate('Scan', {meal})}
                 onCreate={() => navigation.navigate('CreateFood', {meal})}
+                onSoon={() => navigation.navigate('ComingSoon', SAVED_MEALS)}
                 onAdd={items => {
                   log(items, meal);
                   navigation.goBack();
                 }}
+                onOpenDetail={item =>
+                  navigation.navigate('FoodDetail', {food: item, meal})
+                }
               />
             );
           }}
+        </Stack.Screen>
+
+        <Stack.Screen name="FoodDetail">
+          {({navigation, route}: Props<'FoodDetail'>) => (
+            <FoodDetail
+              food={route.params.food}
+              meal={route.params.meal}
+              // The day it will land on, named the way Today names it, so a
+              // food logged while looking at Saturday says Saturday.
+              day={dayIso === todayIso ? 'Today' : day.dateLabel}
+              onDay={() => navigation.navigate('DayPicker')}
+              onGuide={item =>
+                navigation.navigate('ServingGuide', {
+                  food: item,
+                  meal: route.params.meal,
+                })
+              }
+              // The numbers are the entry's, and the entry can be wrong. This
+              // opens the form on them so the person holding the packet can
+              // say otherwise.
+              onEdit={item =>
+                navigation.navigate('CreateFood', {
+                  food: item,
+                  meal: route.params.meal,
+                })
+              }
+              onSource={item =>
+                item.source?.barcode
+                  ? Linking.openURL(
+                      `https://world.openfoodfacts.org/product/${item.source.barcode}`,
+                    ).catch((error: unknown) => {
+                      console.warn(
+                        `[scranly] could not open the entry: ${String(error)}`,
+                      );
+                    })
+                  : undefined
+              }
+              onBack={navigation.goBack}
+              onLog={(item, chosen) => {
+                log([item], chosen);
+                // Logged: back to Today, the job the tap started is finished.
+                navigation.navigate('Today');
+              }}
+            />
+          )}
+        </Stack.Screen>
+
+        {/* A sheet over the food, not a place of its own: the screen behind
+            stays visible, which is how it reads as answering a question about
+            the food rather than leaving it. */}
+        <Stack.Screen
+          name="ServingGuide"
+          options={{presentation: 'transparentModal', animation: 'fade'}}>
+          {({navigation, route}: Props<'ServingGuide'>) => (
+            <ServingGuide
+              food={route.params.food}
+              onClose={navigation.goBack}
+              onUse={grams => {
+                // The card's weight, applied. `scaleTo` refuses a food whose
+                // portion weighs nothing it can name, and then the food goes
+                // back unchanged rather than wrongly.
+                const scaled = scaleTo(route.params.food, grams);
+                navigation.navigate('FoodDetail', {
+                  food: scaled ?? route.params.food,
+                  meal: route.params.meal,
+                });
+              }}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen name="MyFoods">
+          {({navigation}: Props<'MyFoods'>) => (
+            <MyFoods
+              foods={created}
+              onBack={navigation.goBack}
+              onCreate={() => navigation.navigate('CreateFood', {meal: guessedMeal})}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen
+          name="ComingSoon"
+          options={{presentation: 'transparentModal', animation: 'fade'}}>
+          {({navigation, route}: Props<'ComingSoon'>) => (
+            <ComingSoon
+              title={route.params.title}
+              body={route.params.body}
+              meanwhile={route.params.meanwhile}
+              onClose={navigation.goBack}
+            />
+          )}
         </Stack.Screen>
 
         <Stack.Screen name="CreateFood">
@@ -295,7 +502,11 @@ export default function Root({
               // Filled from the label when there was one, which is what the
               // 'Scan the label instead' shortcut has always promised.
               initial={
-                route.params?.reading
+                // Editing a food opens the form on its own numbers; a label
+                // read opens it on the panel. Neither, and the form is blank.
+                route.params?.food
+                  ? toForm(route.params.food)
+                  : route.params?.reading
                   ? fromReading(route.params.reading)
                   : undefined
               }
@@ -332,8 +543,16 @@ export default function Root({
               mode={route.params?.mode}
               stage={route.params?.stage}
               missing={route.params?.missing}
+              // The meal travels in, same as Add food: scan from the Snack
+              // section and it is a snack (PRD flow 3). The found sheet can still
+              // switch it. A bare scan from Today falls back to the clock.
+              meal={route.params?.meal ?? guessedMeal}
               onClose={navigation.goBack}
               onAdd={navigation.goBack}
+              onLog={(item, meal) => {
+                log([item], meal);
+                navigation.goBack();
+              }}
               onCreateFromLabel={reading =>
                 navigation.navigate('CreateFood', {reading})
               }
@@ -373,13 +592,16 @@ export default function Root({
         <Stack.Screen name="WeighIn">
           {({navigation}: Props<'WeighIn'>) => (
             <WeighIn
-              startKg={todaysReading}
-              yesterdayKg={yesterdaysReading}
-              averageKg={79.8}
-              date="Fri 25 Sep"
+              startKg={currentKg}
+              yesterdayKg={yesterdayKg}
+              averageKg={averageKg}
+              date={shortDate(today)}
               onBack={navigation.goBack}
               onPhoto={() => navigation.navigate('ScalePhoto')}
-              onSave={navigation.goBack}
+              onSave={kg => {
+                logWeight(kg);
+                navigation.goBack();
+              }}
             />
           )}
         </Stack.Screen>
@@ -387,10 +609,10 @@ export default function Root({
         <Stack.Screen name="Weight">
           {({navigation}: Props<'Weight'>) => (
             <WeightTrend
-              readings={fourWeeks}
+              readings={readings}
               goalKg={goal.targetWeightKg}
               weeksRemaining={goal.weeks}
-              goalDate="24 November"
+              goalDate={goalDate}
               onBack={navigation.goBack}
               onAdd={() => navigation.navigate('WeighIn')}
               onChangeGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
@@ -401,11 +623,14 @@ export default function Root({
         <Stack.Screen name="ScalePhoto" options={{presentation: 'fullScreenModal'}}>
           {({navigation}: Props<'ScalePhoto'>) => (
             <ScalePhoto
-              reading={todaysReading}
-              yesterdayKg={yesterdaysReading}
-              averageKg={79.8}
+              reading={currentKg}
+              yesterdayKg={yesterdayKg}
+              averageKg={averageKg}
               onClose={navigation.goBack}
-              onSave={navigation.goBack}
+              onSave={kg => {
+                logWeight(kg);
+                navigation.goBack();
+              }}
               onFix={navigation.goBack}
             />
           )}
@@ -413,7 +638,21 @@ export default function Root({
 
         <Stack.Screen name="Settings">
           {({navigation}: Props<'Settings'>) => (
-            <Settings onBack={navigation.goBack} />
+            <Settings
+              targetsKcal={targets.kcal}
+              goalKg={goal.targetWeightKg}
+              goalDate={goalDate}
+              foodsAdded={created.length}
+              onBack={navigation.goBack}
+              activity={profile.activity}
+              onGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
+              onProfile={() => navigation.navigate('Onboarding', {step: 'about'})}
+              // These rows show an answer from setup, so they open the step
+              // that answer came from — the same way Goal already did.
+              onTargets={() => navigation.navigate('Onboarding', {step: 'targets'})}
+              onMethod={() => navigation.navigate('Onboarding', {step: 'method'})}
+              onFoods={() => navigation.navigate('MyFoods')}
+            />
           )}
         </Stack.Screen>
       </Stack.Navigator>
@@ -439,6 +678,7 @@ function asEntry(item: FoodItem, meal: MealName, date: string): DiaryEntry {
     proteinG: item.proteinG,
     carbsG: item.carbsG,
     fatG: item.fatG,
+    fibreG: item.fibreG,
     meal,
   };
 }

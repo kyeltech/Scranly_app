@@ -6,6 +6,30 @@ export type Reading = {
   kg: number;
 };
 
+/** One morning's weight, as it was logged. Dated, because a trend needs when. */
+export type WeightEntry = {
+  /** The day it was weighed, as an ISO date. */
+  date: string;
+  kg: number;
+};
+
+/**
+ * Stored weigh-ins as the trend wants them: a day index that grows with time,
+ * zero on the earliest, so the newest sits highest — which is the end the
+ * average and the rate are read from. Empty in, empty out.
+ */
+export function readingsFrom(entries: WeightEntry[]): Reading[] {
+  if (entries.length === 0) {
+    return [];
+  }
+  const dayNumber = (iso: string): number => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Math.floor(Date.UTC(y, m - 1, d) / 86_400_000);
+  };
+  const base = Math.min(...entries.map(e => dayNumber(e.date)));
+  return entries.map(e => ({dayIndex: dayNumber(e.date) - base, kg: e.kg}));
+}
+
 export type Trend = {
   /** The 7-day average, which is the number the app judges you on. */
   averageKg: number;

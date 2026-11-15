@@ -37,6 +37,9 @@ export function dayState(
       macro('carbs', 'CARBS', sum(onThisDay, e => e.carbsG), targets.carbsG),
       macro('fat', 'FAT', sum(onThisDay, e => e.fatG), targets.fatG),
     ],
+    // A food without fibre counts as none, so the total never claims more than
+    // was actually logged. Apart from `macros` because fibre is inside carbs.
+    fibre: {eatenG: sum(onThisDay, e => e.fibreG ?? 0), targetG: targets.fibreG},
     meals: mealsFrom(onThisDay.map(asLoggedFood)),
     starters: onThisDay.length === 0 ? startersFrom(entries) : undefined,
     // Only when the day alone would mislead — which is when it is over.

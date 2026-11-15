@@ -1,12 +1,19 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {Button, Screen, useActionBarInset} from '../ui';
 import {Barcode, Check, ChevronLeft, Close, Plus, SearchGlass} from '../ui/icons';
 import {withThousands} from '../lib/format';
 import {brand, type as type_, useTheme} from '../theme';
 import {FILTER_COPY, foodsFor, recentFoods, searchFoods} from '../fixtures/foods';
+import {fromProduct, searchProducts, servingsFor} from '../readers/product';
+import type {SearchResult} from '../readers/product';
 import type {FoodItem} from '../domain/food';
 import type {MealName} from '../domain/day';
+
+/** Below this, a search is too broad to spend one of the minute's ten on. */
+const MIN_QUERY = 2;
+/** Wait for a pause in typing before searching — never one call per keystroke. */
+const DEBOUNCE_MS = 450;
 
 import {addFood as styles} from '../styles';
 
@@ -17,13 +24,24 @@ function matching(foods: FoodItem[], query: string): FoodItem[] {
 }
 const FILTERS = ['Recent', 'Frequent', 'My foods', 'Meals'];
 
+/**
+ * Chips that are drawn but not built. The chip keeps its place — a row of
+ * three where there were four would be a different design, not an honest one —
+ * and tapping it says what the thing is instead of switching the list to an
+ * empty one, which read as a bug.
+ */
+const UNBUILT = ['Meals'];
+
 export default function AddFood({
   meal = 'Lunch',
   created = [],
   onBack,
+  onSoon,
   onScan,
   onCreate,
   onAdd,
+  onOpenDetail,
+  search = searchProducts,
 }: {
   /** Which meal this is going to. The head says so — it is never a surprise. */
   meal?: MealName;
@@ -33,17 +51,63 @@ export default function AddFood({
    */
   created?: FoodItem[];
   onBack?: () => void;
+  /** A chip that is designed and not built, by name. */
+  onSoon?: (filter: string) => void;
   onScan?: () => void;
   onCreate?: () => void;
   onAdd?: (items: FoodItem[]) => void;
+  /** Tap a row to see the food in full before logging; the + still logs direct. */
+  onOpenDetail?: (food: FoodItem) => void;
+  /** How a typed query reaches Open Food Facts. Injected so a test need not touch the network. */
+  search?: (query: string) => Promise<SearchResult>;
 }) {
   const t = useTheme();
   const barInset = useActionBarInset();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState(FILTERS[0]);
   const [picked, setPicked] = useState<string[]>([]);
+  /** Open Food Facts results for the current query, and whether it could be reached. */
+  const [remote, setRemote] = useState<FoodItem[]>([]);
+  const [remoteError, setRemoteError] = useState(false);
 
   const searching = query.trim().length > 0;
+
+  /**
+   * Search Open Food Facts once typing pauses, never per keystroke — it is
+   * rate-limited and the docs warn against it (ADR-0010). A query too short to
+   * be worth a call clears the results instead.
+   */
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < MIN_QUERY) {
+      setRemote([]);
+      setRemoteError(false);
+      return;
+    }
+    // A fresh keystroke: drop the last query's failure until this one has
+    // actually been tried, so the note only ever reflects a search that ran and
+    // failed — never the gap between a keystroke and its debounce.
+    setRemoteError(false);
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      search(q).then(result => {
+        if (cancelled) {
+          return;
+        }
+        if (result.status === 'ok') {
+          setRemoteError(false);
+          setRemote(result.products.map(p => fromProduct(p, servingsFor(p)[0])));
+        } else {
+          setRemoteError(true);
+          setRemote([]);
+        }
+      });
+    }, DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, search]);
 
   /** Foods made here, newest first — you created one because nothing else was it. */
   const mine = useMemo(() => [...created].reverse(), [created]);
@@ -51,19 +115,19 @@ export default function AddFood({
   const rows = useMemo(
     () =>
       searching
-        ? [...matching(mine, query), ...searchFoods(query)]
+        ? [...matching(mine, query), ...searchFoods(query), ...remote]
         : filter === 'Meals'
         ? foodsFor(filter)
         : [...mine, ...foodsFor(filter)],
-    [query, searching, filter, mine],
+    [query, searching, filter, mine, remote],
   );
   const copy = FILTER_COPY[filter] ?? FILTER_COPY.Recent;
   const chosen = useMemo(
     () =>
-      [...mine, ...recentFoods, ...searchFoods(query)].filter(f =>
+      [...mine, ...recentFoods, ...searchFoods(query), ...remote].filter(f =>
         picked.includes(f.id),
       ),
-    [picked, query, mine],
+    [picked, query, mine, remote],
   );
   const total = chosen.reduce((sum, f) => sum + f.kcal, 0);
 
@@ -137,7 +201,9 @@ export default function AddFood({
             return (
               <Pressable
                 key={name}
-                onPress={() => setFilter(name)}
+                onPress={() =>
+                  UNBUILT.includes(name) ? onSoon?.(name) : setFilter(name)
+                }
                 accessibilityRole="button"
                 accessibilityState={{selected: on}}
                 style={[
@@ -175,6 +241,12 @@ export default function AddFood({
           )}
         </View>
 
+        {searching && remoteError ? (
+          <Text style={[styles.none, {color: t.textMuted}]}>
+            Couldn’t reach Open Food Facts — showing your foods only.
+          </Text>
+        ) : null}
+
         {rows.length === 0 ? (
           <Text style={[styles.none, {color: t.textMuted}]}>
             {searching
@@ -186,23 +258,32 @@ export default function AddFood({
         {rows.map(food => {
           const on = picked.includes(food.id);
           return (
-            <Pressable
+            <View
               key={food.id}
-              onPress={() => toggle(food.id)}
-              accessibilityRole="button"
-              accessibilityState={{selected: on}}
               style={[styles.row, {borderBottomColor: t.line}]}>
-              <View style={styles.rowText}>
-                <View style={styles.nameRow}>
-                  <Text style={[type_.bodyStrong, {color: t.text}]}>{food.name}</Text>
-                  {searching && food.yours ? (
-                    <Text style={[styles.yours, {color: t.status.under}]}>YOURS</Text>
-                  ) : null}
+              {/* The row opens the food; only the + logs it. Tapping the name to
+                  log by accident was the old behaviour this splits apart. */}
+              <Pressable
+                onPress={() => onOpenDetail?.(food)}
+                accessibilityRole="button"
+                accessibilityLabel={food.name}
+                style={styles.rowMain}>
+                <View style={styles.rowText}>
+                  <View style={styles.nameRow}>
+                    <Text style={[type_.bodyStrong, {color: t.text}]}>{food.name}</Text>
+                    {searching && food.yours ? (
+                      <Text style={[styles.yours, {color: t.status.under}]}>YOURS</Text>
+                    ) : null}
+                  </View>
+                  <Text style={[type_.caption, {color: t.textMuted}]}>{food.meta}</Text>
                 </View>
-                <Text style={[type_.caption, {color: t.textMuted}]}>{food.meta}</Text>
-              </View>
-              <Text style={[type_.figureMd, {color: t.text}]}>{food.kcal}</Text>
-              <View
+                <Text style={[type_.figureMd, {color: t.text}]}>{food.kcal}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => toggle(food.id)}
+                accessibilityRole="button"
+                accessibilityState={{selected: on}}
+                accessibilityLabel={on ? `Remove ${food.name}` : `Add ${food.name}`}
                 style={[
                   styles.control,
                   {backgroundColor: on ? brand.lime : t.fill},
@@ -212,8 +293,8 @@ export default function AddFood({
                 ) : (
                   <Plus colour={t.text} size={15} />
                 )}
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           );
         })}
       </ScrollView>

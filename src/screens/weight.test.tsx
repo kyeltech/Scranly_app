@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, screen} from '@testing-library/react-native';
+import {fireEvent, render, screen, within} from '@testing-library/react-native';
 import WeighIn from './WeighIn';
 import WeightTrend from './WeightTrend';
 import Settings from './Settings';
@@ -79,11 +79,16 @@ describe('Weight trend', () => {
 });
 
 describe('Settings', () => {
-  it('defaults exercise off, and says why in plain words', async () => {
+  /**
+   * The switch is not built, so there is nothing to read the state off. What
+   * the row still has to do is say why counting exercise is a bad default,
+   * because that reasoning is the point of the row existing at all.
+   */
+  it('still says why exercise will not count, with no switch to set', async () => {
     await render(<Settings />);
 
-    const toggle = screen.getByLabelText('Count exercise toward the budget');
-    expect(toggle.props.value).toBe(false);
+    const row = screen.getByLabelText('Count exercise toward the budget');
+    expect(within(row).getByText('SOON')).toBeTruthy();
     expect(screen.getByText(/eating it back usually wipes out the day/)).toBeTruthy();
   });
 

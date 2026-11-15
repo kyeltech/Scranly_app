@@ -122,6 +122,7 @@ export const addFood = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  rowMain: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12},
   rowText: {flex: 1},
   nameRow: {flexDirection: 'row', alignItems: 'center', gap: 7},
   yours: {...type_.label, fontSize: 10, letterSpacing: 0.8},
@@ -590,6 +591,14 @@ export const scanSheets = StyleSheet.create({
 
 /* ---- src/screens/Settings.tsx ---- */
 export const settings = StyleSheet.create({
+  /** What a row says instead of a value when the feature is not built. */
+  soon: {
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  soonLabel: {...type_.label, fontSize: 10, letterSpacing: 1},
   screen: {flex: 1},
   body: {paddingHorizontal: spacing.lg, paddingBottom: 40},
   legend: {marginTop: 22},
@@ -603,9 +612,109 @@ export const settings = StyleSheet.create({
   rowText: {flex: 1},
   note: {...type_.caption, lineHeight: 18, marginTop: 2},
   footer: {...type_.caption, lineHeight: 18, marginTop: 18},
+  credit: {...type_.caption, lineHeight: 18, marginTop: 14},
+  creditLink: {textDecorationLine: 'underline'},
 });
 
 /* ---- src/ui/Sheet.tsx ---- */
+/* ---- src/screens/MyFoods.tsx ---- */
+export const myFoods = StyleSheet.create({
+  body: {paddingHorizontal: spacing.lg, paddingTop: 10, paddingBottom: 120},
+  lede: {...type_.caption, lineHeight: 19},
+  count: {...type_.label, fontSize: 11, letterSpacing: 1.4, marginTop: 20},
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowText: {flex: 1, minWidth: 0},
+  meta: {...type_.caption, marginTop: 1},
+  logged: {...type_.caption, fontSize: 12, marginTop: 2},
+  kcal: {...type_.figureMd},
+  /** The empty state sits where the eye lands, not at the top of a blank page. */
+  empty: {paddingHorizontal: 26, paddingTop: 120},
+  emptyTitle: {...type_.productTitle},
+  emptyBody: {...type_.body, fontSize: 15, lineHeight: 23, marginTop: 10},
+  emptyNote: {...type_.caption, fontSize: 14, lineHeight: 21, marginTop: 10},
+  fade: {position: 'absolute', left: 0, right: 0, bottom: 104, height: 52},
+  actions: {position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: 30},
+});
+
+/* ---- src/screens/ComingSoon.tsx ---- */
+export const comingSoon = StyleSheet.create({
+  /** Dark in both themes: a shadow over the screen, not a surface of its own. */
+  scrim: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(8,10,7,0.55)'},
+  head: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
+  title: {...type_.sheetTitle, flex: 1},
+  close: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: {...type_.body, fontSize: 15, lineHeight: 22, marginTop: 12},
+  meanwhile: {...type_.caption, fontSize: 14, lineHeight: 21, marginTop: 10},
+  tail: {height: 14},
+});
+
+/* ---- src/screens/ServingGuide.tsx ---- */
+export const servingGuide = StyleSheet.create({
+  /**
+   * The screen behind stays visible: this is a sheet, not a destination. The
+   * scrim is dark in both themes, because it is a shadow over the screen
+   * rather than a surface of its own.
+   */
+  scrim: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(8,10,7,0.55)'},
+  head: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
+  title: {...type_.sheetTitle, flex: 1},
+  /** The same disc the camera header closes with, on a light surface. */
+  close: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sub: {...type_.caption, marginTop: 2},
+  /** One card a page, swiped sideways, the width of the sheet's inside. */
+  card: {
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 18,
+  },
+  cardText: {flex: 1, minWidth: 0},
+  measure: {...type_.cardTitle, fontSize: 17, lineHeight: 23, letterSpacing: -0.2},
+  amountRow: {flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 10},
+  /** The weight is what you read; the unit is only what it is in. */
+  amount: {...type_.figureLg, fontSize: 38, lineHeight: 38, letterSpacing: -1.2},
+  amountUnit: {...type_.bodyStrong, fontSize: 15},
+  cardKcal: {...type_.caption, marginTop: 4},
+  pager: {marginTop: 16},
+  dots: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 14},
+  dot: {width: 5, height: 5, borderRadius: radius.pill},
+  dotOn: {width: 16},
+  note: {borderRadius: 16, padding: 14, marginTop: 16},
+  noteText: {...type_.caption, lineHeight: 19},
+  /** The pointer to the other pasta card: a glyph and a line, on the surface. */
+  tip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  tipText: {...type_.caption, lineHeight: 19, flex: 1},
+  actions: {marginTop: 16},
+});
+
 export const sheet = StyleSheet.create({
   sheet: {
     marginTop: 'auto',
@@ -984,6 +1093,7 @@ export const viewfinder = StyleSheet.create({
     gap: 14,
     paddingHorizontal: spacing.lg,
   },
+  pager: {marginTop: 16},
   dots: {flexDirection: 'row', gap: 7},
   workingDot: {width: 9, height: 9, borderRadius: radius.pill, backgroundColor: brand.lime},
   workingTitle: {
@@ -1104,6 +1214,88 @@ export const weightTrend = StyleSheet.create({
   verdictLine: {...type_.body, marginTop: 10},
   verdictDetail: {...type_.caption, lineHeight: 19, marginTop: 6},
   actions: {paddingHorizontal: spacing.lg, paddingBottom: 12},
+});
+
+/* ---- src/screens/FoodDetail.tsx ---- */
+export const foodDetail = StyleSheet.create({
+  body: {paddingHorizontal: spacing.lg, paddingTop: 10},
+  /** The identity block: the pack's own photo, its name, its category. */
+  identity: {flexDirection: 'row', alignItems: 'center', gap: 14},
+  photo: {width: 58, height: 58, borderRadius: 16, borderWidth: 1},
+  identityText: {flex: 1, minWidth: 0},
+  sub: {...type_.caption, marginTop: 1},
+  badges: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, flexWrap: 'wrap'},
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeLabel: {...type_.label, fontSize: 10, letterSpacing: 0.4},
+  grade: {
+    width: 18,
+    height: 18,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gradeLetter: {...type_.label, fontSize: 11, letterSpacing: 0},
+  sectionLabel: {...type_.label, fontSize: 11, letterSpacing: 1.4, marginTop: 20},
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  /** The same label, where the head above has already done the spacing. */
+  headLabel: {...type_.label, fontSize: 11, letterSpacing: 1.4},
+  link: {...type_.caption, fontWeight: '600'},
+  card: {borderRadius: 18, marginTop: 8, overflow: 'hidden'},
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  rowValue: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  divider: {borderTopWidth: StyleSheet.hairlineWidth},
+  /** The guide, under the amount it answers for. */
+  guide: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 4},
+  guideLabel: {...type_.caption, fontWeight: '600'},
+  /** The panel: one figure, the label's own rows beside it. */
+  panel: {flexDirection: 'row', gap: 16, padding: 16},
+  figureBlock: {width: 96, alignItems: 'center', justifyContent: 'center'},
+  figure: {...type_.figureLg, fontSize: 42, lineHeight: 42},
+  unit: {...type_.caption, marginTop: 2},
+  kj: {...type_.caption, fontSize: 11, marginTop: 2},
+  rows: {flex: 1, gap: 6},
+  nutrient: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10},
+  nutrientName: {...type_.body, fontSize: 14, lineHeight: 19},
+  nutrientValue: {...type_.bodyStrong, fontSize: 14, lineHeight: 19},
+  under: {paddingLeft: 12},
+  underName: {...type_.caption, lineHeight: 18},
+  underValue: {...type_.caption, lineHeight: 18},
+  foot: {borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, paddingVertical: 12},
+  footLabel: {...type_.caption},
+  meals: {marginTop: 8},
+  ingredients: {...type_.body, fontSize: 14, lineHeight: 20, padding: 16},
+  /** The entry this food came from, last on the screen and quietly set. */
+  entry: {...type_.body, fontSize: 14, flex: 1},
+  /** The button never moves, and the list passes under it behind a fade. */
+  fade: {position: 'absolute', left: 0, right: 0, bottom: 104, height: 52},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 20, paddingTop: 12},
+});
+
+/* ---- src/components/ErrorBoundary.tsx ---- */
+export const errorBoundary = StyleSheet.create({
+  body: {flex: 1, justifyContent: 'center', paddingHorizontal: 26},
+  detail: {...type_.body, lineHeight: 24, marginTop: 12},
+  actions: {paddingHorizontal: spacing.lg, paddingBottom: 20},
 });
 
 /* ---- src/screens/Welcome.tsx ---- */

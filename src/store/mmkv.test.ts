@@ -1,5 +1,13 @@
 import {createMMKV} from 'react-native-mmkv';
-import {DIARY_KEY, mmkvDiary, mmkvStore, SETUP_KEY, storeFailure} from './mmkv';
+import {
+  DIARY_KEY,
+  mmkvDiary,
+  mmkvStore,
+  mmkvWeight,
+  SETUP_KEY,
+  storeFailure,
+  WEIGHT_KEY,
+} from './mmkv';
 import type {DiaryEntry} from '../domain/diary';
 import {kyel, kyelsGoal} from '../fixtures/profile';
 
@@ -272,5 +280,32 @@ describe('the MMKV diary', () => {
     it('rejects a removal too, rather than reporting a deletion that never happened', async () => {
       await expect(mmkvDiary().remove('a')).rejects.toThrow(/not registered/);
     });
+  });
+});
+
+describe('the MMKV weight log', () => {
+  const weighed = {date: '2026-09-25', kg: 79.6};
+
+  it('is empty on a fresh install', async () => {
+    await expect(mmkvWeight().read()).resolves.toEqual([]);
+  });
+
+  it('gives back what was weighed', async () => {
+    await mmkvWeight().add(weighed);
+
+    await expect(mmkvWeight().read()).resolves.toEqual([weighed]);
+  });
+
+  it('survives the process, which is the whole point of a trend', async () => {
+    await mmkvWeight().add(weighed);
+
+    // A second store over the same storage: a relaunch, as far as this models one.
+    await expect(mmkvWeight().read()).resolves.toEqual([weighed]);
+  });
+
+  it('drops a record with no number rather than reading it as zero', async () => {
+    mmkvMock.__setRaw(WEIGHT_KEY, JSON.stringify([weighed, {date: '2026-09-26'}]));
+
+    await expect(mmkvWeight().read()).resolves.toEqual([weighed]);
   });
 });

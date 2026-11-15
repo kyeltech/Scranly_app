@@ -12,6 +12,9 @@ import React from 'react';
 import {processColor, StyleSheet} from 'react-native';
 import {render, screen} from '@testing-library/react-native';
 import Today from './Today';
+import ServingGuide from './ServingGuide';
+import ComingSoon from './ComingSoon';
+import {food} from '../domain/food';
 import {aFreshDay, aNormalDay, anOverBudgetDay} from '../fixtures/days';
 import {palettes} from '../theme';
 
@@ -119,5 +122,47 @@ describe('the meal sections, in the dark', () => {
 
     const [nothing] = screen.getAllByText('Nothing yet');
     expect(StyleSheet.flatten(nothing.props.style).color).toBe(dark.textMuted);
+  });
+});
+
+/**
+ * The serving guide, in the dark. The drawings are strokes in the text colour
+ * rather than fixed black, and the lime that marks what is being measured is
+ * the bright one here — the deeper lime it uses in the light would sink.
+ */
+describe('the serving guide, in the dark', () => {
+  const almonds = food({
+    id: 'off-1',
+    name: 'Almonds',
+    portion: '100 g',
+    portionG: 100,
+    kcal: 597,
+    proteinG: 21.2,
+    carbsG: 9.1,
+    fatG: 49.9,
+    source: {from: 'Open Food Facts', category: 'Whole almonds'},
+  });
+
+  it('keeps the caveat on its own surface rather than on the sheet', async () => {
+    await render(<ServingGuide food={almonds} />);
+
+    const caveat = screen.getByText(/British Nutrition Foundation/);
+    expect(StyleSheet.flatten(caveat.props.style).color).toBe(dark.caveat.text);
+  });
+
+  it('draws the measure in the text colour, so it is not a black shape on a dark card', async () => {
+    const view = await render(<ServingGuide food={almonds} />);
+
+    expect(JSON.stringify(view.toJSON())).toContain(dark.text);
+  });
+});
+
+/** The coming soon sheet, in the dark — a lifted surface, not an inverted one. */
+describe('coming soon, in the dark', () => {
+  it('sets the sheet on the dark surface and keeps the text readable', async () => {
+    await render(<ComingSoon title="Saved meals" body="Not built yet." />);
+
+    const title = screen.getByText('Saved meals');
+    expect(StyleSheet.flatten(title.props.style).color).toBe(dark.text);
   });
 });

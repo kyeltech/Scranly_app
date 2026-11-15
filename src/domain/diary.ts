@@ -24,5 +24,7 @@ export type DiaryEntry = {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Fibre, when the food carried it. The day totals it against the fibre target. */
+  fibreG?: number;
   meal: MealName;
 };

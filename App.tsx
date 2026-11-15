@@ -3,9 +3,16 @@ import {StatusBar, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import BootSplash from 'react-native-bootsplash';
 import AnimatedSplash from './src/components/AnimatedSplash';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import LoadingScreen from './src/components/LoadingScreen';
 import Root from './src/navigation/Root';
-import {mmkvDiary, mmkvFoods, mmkvStore, storeFailure} from './src/store/mmkv';
+import {
+  mmkvDiary,
+  mmkvFoods,
+  mmkvStore,
+  mmkvWeight,
+  storeFailure,
+} from './src/store/mmkv';
 import {useTheme} from './src/theme';
 
 type Phase = 'splash' | 'loading' | 'ready';
@@ -30,6 +37,9 @@ const diaryStore = mmkvDiary();
 /** The foods made in Create a food, so they are there to log again tomorrow. */
 const foodStore = mmkvFoods();
 
+/** The weigh-ins, so the trend is a real one and the budget follows the scale. */
+const weightStore = mmkvWeight();
+
 export default function App() {
   const [phase, setPhase] = useState<Phase>('splash');
   const firstLoad = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -52,13 +62,18 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      {phase === 'splash' ? (
-        <AnimatedSplash onFinish={handleSplashFinish} />
-      ) : phase === 'loading' ? (
-        <LoadingScreen />
-      ) : (
-        <Shell />
-      )}
+      {/* The last catch for a render crash: a throw anywhere below becomes a
+          screen with a way back, not a blank one (ADR-0006). Inside the
+          provider, because the fallback is a Screen and needs the insets. */}
+      <ErrorBoundary>
+        {phase === 'splash' ? (
+          <AnimatedSplash onFinish={handleSplashFinish} />
+        ) : phase === 'loading' ? (
+          <LoadingScreen />
+        ) : (
+          <Shell />
+        )}
+      </ErrorBoundary>
       {/* Outside the phase switch: a build that cannot remember setup should
           say so from the first frame, not once the splash has finished. */}
       <StoreTrouble />
@@ -71,9 +86,15 @@ function Shell() {
   return (
     <View style={[styles.fill, {backgroundColor: t.bg}]}>
       <StatusBar barStyle={t.statusBar} />
-      {/* The diary still runs on the fixtures in src/fixtures. Setup does not:
-          the store decides whether the questions get asked (ADR-0007). */}
-      <Root store={setupStore} diary={diaryStore} foods={foodStore} />
+      {/* Setup, diary and created foods all run on MMKV, on disk: what you log
+          survives a relaunch, and the store decides whether setup is asked
+          (ADR-0007). */}
+      <Root
+        store={setupStore}
+        diary={diaryStore}
+        foods={foodStore}
+        weight={weightStore}
+      />
     </View>
   );
 }

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Nothing in this repository says who helped write it.
+#
+# Assistant attribution trailers have twice been added by sessions whose own
+# config puts them there, and the second time it cost a history rewrite and a
+# force-push over master to take one line out of one September commit. A hook
+# is cheaper than remembering.
+#
+# Enabled by `git config core.hooksPath .githooks`, which is set per clone —
+# see AGENTS.md. A new clone needs that one command.
+
+if grep -qiE '^Co-Authored-By:[[:space:]]*Claude|^Claude-Session:|Generated with \[Claude' "$1"; then
+  echo "commit-msg: this message carries an assistant attribution trailer." >&2
+  echo "" >&2
+  grep -inE '^Co-Authored-By:[[:space:]]*Claude|^Claude-Session:|Generated with \[Claude' "$1" >&2
+  echo "" >&2
+  echo "Take the line out and commit again. See AGENTS.md." >&2
+  exit 1
+fi

@@ -33,7 +33,10 @@ describe('Scan — the three readers', () => {
     await render(<Scan />);
     await fireEvent.press(screen.getByText('Plate'));
 
-    expect(screen.getByText(/Fit the whole plate in frame/)).toBeTruthy();
+    // The plate reader is not built, and the hint says so rather than reading
+    // like an instruction that works.
+    expect(screen.getByText(/Plates are not read yet/)).toBeTruthy();
+    expect(screen.getByText(/nothing here is measured/)).toBeTruthy();
     expect(screen.queryByText('Mature Cheddar')).toBeNull();
   });
 });

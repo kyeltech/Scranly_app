@@ -8,6 +8,9 @@ import type {DiaryEntry} from '../domain/diary';
 import {isFood} from './foods';
 import type {FoodStore} from './foods';
 import type {FoodItem} from '../domain/food';
+import {isWeightEntry} from './weight';
+import type {WeightStore} from './weight';
+import type {WeightEntry} from '../domain/weight';
 
 /**
  * One key, holding the whole setup as JSON.
@@ -31,6 +34,9 @@ export const DIARY_KEY = 'diary';
 
 /** The foods this person created, as a JSON array. Same reasoning as the diary. */
 export const FOODS_KEY = 'foods';
+
+/** The weigh-ins, as a JSON array. A single number a few times a week — tiny. */
+export const WEIGHT_KEY = 'weight';
 
 /**
  * Why the last `mmkvStore()` could not open its storage, or `undefined` if it
@@ -215,6 +221,41 @@ export function mmkvFoods(): FoodStore {
         throw new Error(failure ?? 'MMKV is not available');
       }
       storage.set(FOODS_KEY, JSON.stringify([...current(storage), item]));
+    },
+  };
+}
+
+/**
+ * The weigh-ins, on disk.
+ *
+ * Fourth store over the same MMKV, same tolerance for a missing pod. A weigh-in
+ * that cannot be saved is rejected rather than swallowed: the trend is only as
+ * honest as the readings reaching it.
+ */
+export function mmkvWeight(): WeightStore {
+  const storage = open();
+
+  const current = (store: MMKV): WeightEntry[] => {
+    const raw = store.getString(WEIGHT_KEY);
+    if (raw === undefined) {
+      return [];
+    }
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter(isWeightEntry) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  return {
+    read: async () => (storage === undefined ? [] : current(storage)),
+    peek: () => (storage === undefined ? undefined : current(storage)),
+    add: async entry => {
+      if (storage === undefined) {
+        throw new Error(failure ?? 'MMKV is not available');
+      }
+      storage.set(WEIGHT_KEY, JSON.stringify([...current(storage), entry]));
     },
   };
 }

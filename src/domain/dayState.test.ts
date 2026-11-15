@@ -66,6 +66,18 @@ describe('a day with food on it', () => {
     expect(day.macros.map(m => m.eatenG)).toEqual([58, 54, 17]);
   });
 
+  it('totals fibre against its target, counting a food without it as none', () => {
+    const withFibre = [
+      entry({id: 'a', fibreG: 4}),
+      entry({id: 'b', fibreG: 12.5, meal: 'Lunch'}),
+      entry({id: 'c', meal: 'Dinner'}), // no fibre on this one
+    ];
+
+    const day = dayState(withFibre, targets, '2026-09-16', TODAY);
+
+    expect(day.fibre).toEqual({eatenG: 16.5, targetG: targets.fibreG});
+  });
+
   it('lists the food as it was logged', () => {
     const day = dayState(entries, targets, '2026-09-16', TODAY);
 

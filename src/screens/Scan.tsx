@@ -14,8 +14,13 @@ import {CAMERA_NOTICE} from '../readers';
 import type {LabelRead, ScannedBarcode} from '../readers';
 import type {LabelReading} from '../readers/label';
 import {isUsable, toLabelRows} from '../readers/label';
+import {fromProduct, lookupBarcode, servingsFor} from '../readers/product';
+import type {LookupResult, Product} from '../readers/product';
+import type {FoodItem} from '../domain/food';
+import type {MealName} from '../domain/day';
 import {BarcodeCard, NutritionLabel, Plate} from '../components/subjects';
 import {
+  CantReachSheet,
   FoundSheet,
   LabelResultSheet,
   LookingUpSheet,
@@ -55,6 +60,8 @@ export type ScanStage =
   | 'found'
   | 'serving'
   | 'nomatch'
+  /** Could not reach Open Food Facts — a failure to ask, not a miss (ADR-0006). */
+  | 'error'
   | 'working'
   | 'result';
 
@@ -75,8 +82,11 @@ export default function Scan({
   /** True when the barcode will not be found — the unhappy path, on demand. */
   missing = false,
   meal = 'Lunch',
+  /** How a barcode becomes a product. Injected so a test need not touch the network. */
+  lookup = lookupBarcode,
   onClose,
   onAdd,
+  onLog,
   onCreateFromLabel,
   onWeighPortion,
   onTypeItIn,
@@ -85,8 +95,11 @@ export default function Scan({
   stage?: ScanStage;
   missing?: boolean;
   meal?: string;
+  lookup?: (barcode: string) => Promise<LookupResult>;
   onClose?: () => void;
   onAdd?: () => void;
+  /** Log a scanned product at the chosen serving, to the chosen meal. */
+  onLog?: (item: FoodItem, meal: MealName) => void;
   /** The reading comes with it: the label was read, so the form can be filled. */
   onCreateFromLabel?: (reading?: LabelReading) => void;
   onWeighPortion?: () => void;
@@ -98,6 +111,8 @@ export default function Scan({
   const [serving, setServing] = useState(packServings[0]);
   const [column, setColumn] = useState<LabelColumn>('per100');
   const [torch, setTorch] = useState(false);
+  /** The product a live lookup found. Undefined on the drawn stand-in, which shows the fixture. */
+  const [product, setProduct] = useState<Product | undefined>();
 
   /**
    * What the camera can do here. 'unavailable' is the simulator, and it is not
@@ -160,8 +175,30 @@ export default function Scan({
       const t = setTimeout(() => setStage('looking'), LOOKUP_MS);
       return () => clearTimeout(t);
     }
-    // Looking up is a timer in both builds, because the lookup is still a mock.
+    // Looking up. A real scan has set `scanned`, so the barcode goes to Open
+    // Food Facts (ADR-0010); found shows the product, a miss is 'nomatch', and
+    // a failure to reach it is 'error', which is not the same thing (ADR-0006).
+    // The drawn stand-in has no code to send, so it still walks the designed
+    // outcome on a timer.
     if (mode === 'barcode' && stage === 'looking') {
+      if (live && scanned) {
+        let cancelled = false;
+        lookup(scanned.value).then(result => {
+          if (cancelled) {
+            return;
+          }
+          if (result.status === 'found') {
+            setProduct(result.product);
+            setServing(servingsFor(result.product)[0]);
+            setStage('found');
+          } else {
+            setStage(result.status === 'not-found' ? 'nomatch' : 'error');
+          }
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
       const t = setTimeout(() => setStage(missing ? 'nomatch' : 'found'), LOOKUP_MS);
       return () => clearTimeout(t);
     }
@@ -178,7 +215,7 @@ export default function Scan({
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [mode, stage, missing, live]);
+  }, [mode, stage, missing, live, scanned, lookup]);
 
   const changeMode = (next: Mode) => {
     setMode(next);
@@ -188,6 +225,13 @@ export default function Scan({
 
   const title = mode === 'plate' ? 'Scan a plate' : mode === 'label' ? 'Scan a label' : 'Scan';
   const aiming = stage === 'aiming';
+
+  /**
+   * A live lookup's product and its servings, or the fixture on the drawn
+   * stand-in — which has no camera to scan with, so it walks the board.
+   */
+  const shownProduct = product ?? matchedProduct;
+  const servings = product ? servingsFor(product) : packServings;
 
   /**
    * Refused, and there is nothing to aim. Shown over the dark ground so it
@@ -228,7 +272,9 @@ export default function Scan({
             ? FRAMES.barcodeRead
             : FRAMES.barcodeAiming
         }
-        frameState={stage === 'nomatch' ? 'failed' : read ? 'read' : 'aiming'}
+        frameState={
+          stage === 'nomatch' || stage === 'error' ? 'failed' : read ? 'read' : 'aiming'
+        }
         scrim={aiming ? 0 : stage === 'found' ? 0 : 0.55}
         hint={
           aiming
@@ -252,10 +298,16 @@ export default function Scan({
               onFromLabel={() => changeMode('label')}
               onRetry={() => setStage('aiming')}
             />
+          ) : stage === 'error' ? (
+            <CantReachSheet
+              barcode={scanned?.value ?? BARCODE}
+              onRetry={() => setStage('aiming')}
+              onTypeItIn={onTypeItIn}
+            />
           ) : stage === 'serving' ? (
             <ServingSheet
-              product={matchedProduct}
-              servings={packServings}
+              product={shownProduct}
+              servings={servings}
               chosen={serving}
               onChoose={setServing}
               onWeigh={onWeighPortion}
@@ -263,12 +315,14 @@ export default function Scan({
             />
           ) : stage === 'found' ? (
             <FoundSheet
-              product={matchedProduct}
+              product={shownProduct}
               serving={serving}
               meal={chosenMeal}
               onMeal={setChosenMeal}
               onServing={() => setStage('serving')}
-              onAdd={onAdd}
+              onAdd={() =>
+                onLog?.(fromProduct(shownProduct, serving), chosenMeal as MealName)
+              }
             />
           ) : undefined
         }>
@@ -287,7 +341,13 @@ export default function Scan({
         onTorch={() => setTorch(on => !on)}
         frame={aiming ? FRAMES.plate : undefined}
         scrim={aiming ? 0 : stage === 'working' ? 0.62 : 0.5}
-        hint={aiming ? 'Fit the whole plate in frame, from above' : undefined}
+        /* Plain, and plainly not working. The hint used to read like an
+           instruction with an emoji after it; what someone standing over a
+           plate needs to know is that nothing here is measured. */
+        hint={
+          'Plates are not read yet. The shutter walks the flow through with ' +
+          'invented numbers — nothing here is measured, and nothing is logged.'
+        }
         mode={aiming ? mode : undefined}
         onMode={aiming ? changeMode : undefined}
         footnote={aiming ? plateNotice : undefined}

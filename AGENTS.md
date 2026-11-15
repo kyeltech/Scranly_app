@@ -30,6 +30,11 @@ original reasoning stays readable, because why it was right then is part of why 
 - Every slice ships with unit tests. End-to-end flows are covered once there is a flow worth walking.
 - **No network calls yet.** The food database runs on mocks until ADR-0010 is decided.
 - **Do not commit.** Leave it to Kyel, and list what is uncommitted at the end of each chunk.
+- **Nothing in this repository says who helped write it.** No `Co-Authored-By: Claude`, no
+  `Claude-Session`, no "Generated with" line — in a commit message, a PR body or a file. The
+  `.githooks/commit-msg` hook refuses them; a fresh clone turns it on with
+  `git config core.hooksPath .githooks`. This cost a history rewrite and a force-push over master
+  once already, to take one line out of one September commit.
 - **Light and dark, happy and unhappy.** Both themes, and the path where the read fails or the form
   is empty, not only the one where it works.
 - Follow the design unless Kyel has said otherwise. The approved boards are the fixtures in
