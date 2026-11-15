@@ -57,3 +57,48 @@ describe('what is not built, in Settings', () => {
     expect(screen.queryByRole('switch')).toBeNull();
   });
 });
+
+/**
+ * The YOU section had three rows and all of them were results: a budget, the
+ * method that computes it, and the goal it aims at. The facts those come from
+ * — height, age, sex, how active you are — had no way in at all once setup was
+ * done, so a birthday or a new job meant a budget that was quietly wrong.
+ */
+describe('About you, from Settings', () => {
+  it('offers the row the other three are computed from', async () => {
+    await render(<Settings activity="moderate" />);
+
+    expect(screen.getByLabelText('About you')).toBeTruthy();
+  });
+
+  it('shows how active you said you were, which is the answer that moves', async () => {
+    await render(<Settings activity="moderate" />);
+
+    // Height, age and sex barely change; this is the one people revisit.
+    expect(screen.getByText('Active')).toBeTruthy();
+  });
+
+  it('names each level the way the step that sets it does', async () => {
+    await render(<Settings activity="very" />);
+    expect(screen.getByText('Very')).toBeTruthy();
+  });
+
+  it('opens the step those answers came from', async () => {
+    const onProfile = jest.fn();
+    await render(<Settings onProfile={onProfile} />);
+
+    await fireEvent.press(screen.getByLabelText('About you'));
+
+    expect(onProfile).toHaveBeenCalled();
+  });
+
+  it('reads cause before effect: the facts, then what is made of them', async () => {
+    await render(<Settings />);
+
+    const order = screen.getAllByRole('button').map(n => n.props.accessibilityLabel);
+    const you = order.filter(label =>
+      ['About you', 'Method', 'Goal', 'Targets'].includes(label),
+    );
+    expect(you).toEqual(['About you', 'Method', 'Goal', 'Targets']);
+  });
+});

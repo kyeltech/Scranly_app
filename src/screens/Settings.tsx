@@ -3,7 +3,9 @@ import {Linking, Pressable, ScrollView, Switch, Text, View} from 'react-native';
 import {Header, Screen} from '../ui';
 import {ChevronRight} from '../ui/icons';
 import {withThousands} from '../lib/format';
+import type {Activity} from '../domain/targets';
 import {brand, type as type_, useTheme} from '../theme';
+import {activityName} from './AboutYou';
 
 import {settings as styles} from '../styles';
 /**
@@ -23,9 +25,11 @@ export default function Settings({
   targetsKcal = 0,
   goalKg = 0,
   goalDate = '',
+  activity = 'moderate',
   foodsAdded = 0,
   onBack,
   onGoal,
+  onProfile,
   onTargets,
   onMethod,
   onFoods,
@@ -34,10 +38,14 @@ export default function Settings({
   targetsKcal?: number;
   goalKg?: number;
   goalDate?: string;
+  /** How active they said they were, for the About you row's value. */
+  activity?: Activity;
   foodsAdded?: number;
   onBack?: () => void;
   /** Edit the goal, through the same screen Change goal uses. */
   onGoal?: () => void;
+  /** Height, age, sex and activity — the facts the rest is computed from. */
+  onProfile?: () => void;
   /** The setup steps these rows show the answers from. */
   onTargets?: () => void;
   onMethod?: () => void;
@@ -51,11 +59,13 @@ export default function Settings({
     {
       title: 'YOU',
       rows: [
+        // Cause before effect: the facts you gave, then the method, then where
+        // you are heading, then what comes out of all three.
         {
           kind: 'link',
-          label: 'Targets',
-          value: `${withThousands(targetsKcal)} kcal`,
-          onPress: onTargets,
+          label: 'About you',
+          value: activityName(activity),
+          onPress: onProfile,
         },
         {kind: 'link', label: 'Method', value: 'Mifflin–St Jeor', onPress: onMethod},
         {
@@ -63,6 +73,12 @@ export default function Settings({
           label: 'Goal',
           value: `${goalKg.toFixed(1)} kg by ${goalDate}`,
           onPress: onGoal,
+        },
+        {
+          kind: 'link',
+          label: 'Targets',
+          value: `${withThousands(targetsKcal)} kcal`,
+          onPress: onTargets,
         },
       ],
     },

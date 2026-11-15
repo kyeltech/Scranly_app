@@ -503,3 +503,48 @@ describe('the foods you added, from Settings', () => {
     expect(screen.getByText('Nothing yet')).toBeTruthy();
   });
 });
+
+/**
+ * The facts the budget is computed from had no way in once setup was done: a
+ * birthday or a new job meant a target that was quietly wrong, with nothing in
+ * the app that could change it.
+ */
+describe('editing the profile from Settings', () => {
+  it('opens the step those answers came from, on the answers you gave', async () => {
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} initialRoute="Settings" />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('About you'));
+
+    // The step itself, with what it holds already filled in.
+    expect(screen.getByLabelText('HEIGHT')).toBeTruthy();
+    expect(screen.getByLabelText('AGE')).toBeTruthy();
+  });
+
+  it('shows how active you are on the row, from the saved profile', async () => {
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} initialRoute="Settings" />,
+    );
+
+    // kyel's saved answer is 'light', which About you calls Light.
+    expect(screen.getByText('Light')).toBeTruthy();
+  });
+
+  it('saves a changed answer, so the budget is worked out from it', async () => {
+    const store = setUp();
+    await launch(
+      <Root store={store} diary={memoryDiary()} initialRoute="Settings" />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('About you'));
+    await fireEvent.press(screen.getByText('Very'));
+    await fireEvent.press(screen.getByText('Save details'));
+
+    // Wait on the screen, then read the store once.
+    await waitFor(() => expect(screen.queryByText('Save details')).toBeNull());
+    const saved = await store.read();
+    expect(saved?.profile).toEqual({...kyel, activity: 'very'});
+    expect(saved?.goal).toEqual(kyelsGoal);
+  });
+});

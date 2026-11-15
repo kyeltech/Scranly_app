@@ -644,7 +644,9 @@ export default function Root({
               goalDate={goalDate}
               foodsAdded={created.length}
               onBack={navigation.goBack}
+              activity={profile.activity}
               onGoal={() => navigation.navigate('Onboarding', {step: 'goal'})}
+              onProfile={() => navigation.navigate('Onboarding', {step: 'about'})}
               // These rows show an answer from setup, so they open the step
               // that answer came from — the same way Goal already did.
               onTargets={() => navigation.navigate('Onboarding', {step: 'targets'})}

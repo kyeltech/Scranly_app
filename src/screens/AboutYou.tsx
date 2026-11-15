@@ -21,6 +21,13 @@ const LEVELS: {key: Activity; name: string; detail: string}[] = [
   {key: 'very', name: 'Very', detail: 'Daily training or physical work'},
 ];
 
+/**
+ * What a level is called here, for anywhere else that shows the answer — so a
+ * row that reports it cannot name it differently from the step that sets it.
+ */
+export const activityName = (activity: Activity): string =>
+  LEVELS.find(level => level.key === activity)?.name ?? '';
+
 export default function AboutYou({
   profile,
   submitLabel = 'Continue',
