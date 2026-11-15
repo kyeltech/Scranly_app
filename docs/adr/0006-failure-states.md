@@ -1,7 +1,9 @@
 # ADR-0006: What the app says when something fails
 
-- **Status:** OPEN — options only. To be decided when API work starts; see
-  [ADR-0010](0010-where-the-data-lives.md), which is where that work is being scoped.
+- **Status:** MOSTLY DECIDED — the lookup, search, camera and crash states are
+  built (see the amendment of 3 November 2026 below). Two questions stay open:
+  Q4 (a cached answer offline) and Q5 (the About you copy), both waiting on work
+  not yet done. The options survey that follows is kept as the record of why.
 - **Raised by:** Kyel, 5 October 2026
 
 ## Why this exists now
