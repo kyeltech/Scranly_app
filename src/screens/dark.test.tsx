@@ -15,6 +15,7 @@ import Today from './Today';
 import ServingGuide from './ServingGuide';
 import ComingSoon from './ComingSoon';
 import FailureSheet from './scan/FailureSheet';
+import UpdateNotice from '../components/UpdateNotice';
 import {food} from '../domain/food';
 import {aFreshDay, aNormalDay, anOverBudgetDay} from '../fixtures/days';
 import {palettes} from '../theme';
@@ -189,5 +190,37 @@ describe('A failure in the dark', () => {
 
     expect(backgroundOf('Try again')).toBe('#C2F24D');
     expect(backgroundOf('Type the food in instead')).toBe(dark.fill);
+  });
+});
+
+describe('the update notice in the dark', () => {
+  it('keeps the deadline on the dark warm ground, not the light one', async () => {
+    await render(
+      <UpdateNotice
+        notice={{
+          kind: 'deadline',
+          line: 'This build stops working on 13 February',
+          sub: 'Open TestFlight for the newest one',
+        }}
+      />,
+    );
+
+    const row = screen.getByLabelText(
+      'This build stops working on 13 February. Open TestFlight for the newest one',
+    );
+    expect(StyleSheet.flatten(row.props.style).backgroundColor).toBe(dark.caveat.bg);
+  });
+
+  it('keeps the signpost a surface, so it does not read as a warning', async () => {
+    // The whole point of the three tones is that only one of them is alarming.
+    await render(
+      <UpdateNotice
+        notice={{kind: 'signpost', line: 'Get the newest build', sub: 'New ones land in TestFlight'}}
+      />,
+    );
+
+    const row = screen.getByLabelText('Get the newest build. New ones land in TestFlight');
+    expect(StyleSheet.flatten(row.props.style).backgroundColor).toBe(dark.fill);
+    expect(StyleSheet.flatten(row.props.style).backgroundColor).not.toBe(dark.verdict.fast);
   });
 });

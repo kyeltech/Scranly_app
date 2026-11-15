@@ -18,21 +18,21 @@ type Row =
   | {kind: 'toggle'; label: string; note?: string; on: boolean; soon?: boolean}
   | {kind: 'plain'; label: string; value: string};
 
-/** Matches package.json. A placeholder number here was read as a real version. */
-const APP_VERSION = '0.0.1';
-
 export default function Settings({
   targetsKcal = 0,
   goalKg = 0,
   goalDate = '',
   activity = 'moderate',
   foodsAdded = 0,
+  release,
   onBack,
   onGoal,
   onProfile,
   onTargets,
   onMethod,
   onFoods,
+  onFeedback,
+  onWhatsNew,
 }: {
   /** The real daily budget, goal, and count — not the figures the board was drawn with. */
   targetsKcal?: number;
@@ -41,6 +41,12 @@ export default function Settings({
   /** How active they said they were, for the About you row's value. */
   activity?: Activity;
   foodsAdded?: number;
+  /**
+   * The build this is, as '1.0 (4)'. Undefined in a build that cannot read its
+   * own version, and the row says so rather than showing a number from
+   * package.json that was never the binary's (`src/version.ts`).
+   */
+  release?: string;
   onBack?: () => void;
   /** Edit the goal, through the same screen Change goal uses. */
   onGoal?: () => void;
@@ -51,6 +57,10 @@ export default function Settings({
   onMethod?: () => void;
   /** The foods you typed in yourself. */
   onFoods?: () => void;
+  /** The one ask in the app, and the only screen that collects words. */
+  onFeedback?: () => void;
+  /** What changed in this build, on demand — the only way back to the sheet. */
+  onWhatsNew?: () => void;
 }) {
   const t = useTheme();
   const [countExercise, setCountExercise] = useState(false);
@@ -112,8 +122,16 @@ export default function Settings({
     {
       title: 'SCRANLY',
       rows: [
+        // First, because it is the only thing on this screen that is a request
+        // of them rather than a setting of theirs — and absent altogether when
+        // there is nowhere for it to go, rather than a row that swallows words.
+        ...(onFeedback
+          ? [{kind: 'link', label: 'Tell me what you think', onPress: onFeedback} as Row]
+          : []),
+        // The version row used to be a dead end showing a number from
+        // package.json. It is now the way back to what changed in this build.
+        {kind: 'link', label: 'What’s new', value: release ?? '—', onPress: onWhatsNew},
         {kind: 'link', label: 'Invite a friend', soon: true},
-        {kind: 'plain', label: 'Version', value: APP_VERSION},
       ],
     },
   ];

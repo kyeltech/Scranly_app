@@ -1,6 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {Linking} from 'react-native';
-import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
+import {Linking, StyleSheet, View} from 'react-native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+  useNavigationContainerRef,
+} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
@@ -20,6 +25,8 @@ import PortionEdit from '../screens/PortionEdit';
 import WeighIn from '../screens/WeighIn';
 import WeightTrend from '../screens/WeightTrend';
 import Settings from '../screens/Settings';
+import WhatsNew from '../screens/WhatsNew';
+import Feedback from '../screens/Feedback';
 
 import LoadingScreen from '../components/LoadingScreen';
 import {dailyPlan} from '../domain/targets';
@@ -27,11 +34,22 @@ import {dayMarksFrom, dayState} from '../domain/dayState';
 import type {DiaryEntry} from '../domain/diary';
 import {fromForm, fromReading} from '../domain/food';
 import {mealAt} from '../domain/meal';
+import {RELEASES, launch, noticeFor, releaseFor} from '../domain/releases';
+import type {Release} from '../domain/releases';
 import {scaleTo, toForm} from '../domain/portion';
 import type {FoodItem, NewFood} from '../domain/food';
 import {kyel, kyelsGoal} from '../fixtures/profile';
-import {memoryDiary, memoryFoods, memoryStore, memoryWeight} from '../store/memory';
+import {
+  memoryDiary,
+  memoryFoods,
+  memorySeen,
+  memoryStore,
+  memoryWeight,
+} from '../store/memory';
+import * as app from '../version';
+import {canSend as configured} from '../readers/feedback';
 import type {DiaryStore} from '../store/diary';
+import type {SeenStore} from '../store/seen';
 import type {FoodStore} from '../store/foods';
 import type {Setup, SetupStore} from '../store/setup';
 import {stepDay} from '../fixtures/days';
@@ -78,6 +96,8 @@ export type RootParams = {
   ScalePhoto: undefined;
   Weight: undefined;
   Settings: undefined;
+  /** The one ask in the app. Two ways in: Settings, and the what's-new sheet. */
+  Feedback: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootParams>();
@@ -140,6 +160,11 @@ const addDays = (d: Date, n: number) =>
 export default function Root({
   store: given,
   diary: givenDiary,
+  seen: givenSeen,
+  version = app.version,
+  build = app.build,
+  beta = app.beta,
+  canSend = configured,
   foods: givenFoods,
   weight: givenWeight,
   now,
@@ -153,6 +178,23 @@ export default function Root({
   now?: Date;
   /** Where the diary is kept. Separate from setup — see store/diary.ts. */
   diary?: DiaryStore;
+  /** The last release whose what's-new sheet was read. */
+  seen?: SeenStore;
+  /**
+   * Which build this is. Read from the bundle by default (`src/version.ts`);
+   * injected so a test can stand in any build, including one that cannot read
+   * its own version at all.
+   */
+  version?: string;
+  build?: string;
+  /** True for a TestFlight build — the only one that expires, and says so. */
+  beta?: boolean;
+  /**
+   * Whether there is anywhere for feedback to go. False hides both ways into
+   * the screen: one that collects words it cannot deliver is worse than none.
+   * Comes from the endpoint constant; injected so a test need not have one.
+   */
+  canSend?: boolean;
   /** The foods this person created. */
   foods?: FoodStore;
   /** The weigh-ins, from which the trend and the current weight are read. */
@@ -175,6 +217,8 @@ export default function Root({
   const foods = givenFoods ?? foodsFallback;
   const [weightFallback] = useState(memoryWeight);
   const weight = givenWeight ?? weightFallback;
+  const [seenFallback] = useState(memorySeen);
+  const seen = givenSeen ?? seenFallback;
 
   /** The foods made here, so Add food can offer them back. */
   const [created, setCreated] = useState<FoodItem[]>(() => foods.peek?.() ?? []);
@@ -285,12 +329,89 @@ export default function Root({
   }, [weight]);
 
   /**
+   * The navigator itself, for the sheet's one ghost button. The sheet lives
+   * outside the navigator — it is not a screen — so this is the only way it can
+   * send somebody to one.
+   */
+  const nav = useNavigationContainerRef<RootParams>();
+
+  /** Which release this build is, and so what the sheet and the row may say. */
+  const release = releaseFor(RELEASES, version, build);
+
+  /**
+   * What's new, when there is anything to say.
+   *
+   * Decided once on the way in and held here rather than as a route, because
+   * nothing navigates to it: it either rises over Today on launch or it is
+   * opened from Settings, and both want the same sheet over whatever is there.
+   */
+  const [sheet, setSheet] = useState<Release[]>([]);
+
+  useEffect(() => {
+    let live = true;
+    const decide = (lastSeen: string | undefined) => {
+      const {sheet: show, remember} = launch(RELEASES, version, build, lastSeen);
+      // A first install has nothing to dismiss, so it is noted here and the
+      // sheet skipped — onboarding is the welcome. Everything else is written
+      // on dismissal, because a sheet killed by a crash is one nobody read.
+      if (remember !== undefined) {
+        seen.write(remember).catch(() => {});
+      }
+      if (live && show.length > 0) {
+        setSheet(show);
+      }
+    };
+    const peeked = seen.peek?.();
+    if (peeked !== undefined) {
+      decide(peeked);
+      return undefined;
+    }
+    // A store that cannot answer and a store with nothing in it both mean no
+    // sheet, which is the safe way to be wrong about this.
+    seen
+      .read()
+      .catch(() => undefined)
+      .then(decide);
+    return () => {
+      live = false;
+    };
+  }, [seen, version, build]);
+
+  /** Dismissed, and so read: the newest of them is written down. */
+  const readSheet = () => {
+    if (sheet.length > 0) {
+      seen.write(sheet[0].id).catch(() => {});
+    }
+    setSheet([]);
+  };
+
+  /**
+   * Out of the app, to where the Update button actually is. The app cannot
+   * install its own replacement, so this is the end of what it can do.
+   *
+   * The scheme is TestFlight's own and is not something this code can verify
+   * from here; the web page is the fallback, so the row can never be a tap that
+   * goes nowhere.
+   */
+  const openTestFlight = () => {
+    Linking.openURL('itms-beta://').catch(() => {
+      Linking.openURL('https://testflight.apple.com/').catch(() => {});
+    });
+  };
+
+  /**
    * The meal a screen opened without one falls back to. Only the Log food
    * button at the bottom of Today has no meal behind it; every other way in
    * comes from a section, so this is a guess of last resort and the screen it
    * opens says out loud which meal it picked.
    */
   const guessedMeal = mealAt(today);
+
+  /**
+   * The one row on Today that is about the app and not the day: a newer build
+   * to fetch, or a TestFlight build near the end of its ninety days.
+   */
+  const notice = noticeFor(release, today, beta);
 
   const log = (items: FoodItem[], meal: MealName) => {
     const logged = items.map(item => asEntry(item, meal, dayIso));
@@ -352,7 +473,8 @@ export default function Root({
   }
 
   return (
-    <NavigationContainer theme={dark ? DarkTheme : DefaultTheme}>
+    <>
+    <NavigationContainer ref={nav} theme={dark ? DarkTheme : DefaultTheme}>
       <Stack.Navigator
         initialRouteName={initialRoute ?? (setup ? 'Today' : 'Onboarding')}
         screenOptions={{headerShown: false}}>
@@ -390,6 +512,8 @@ export default function Root({
               onDay={() => navigation.navigate('DayPicker')}
               onEdit={() => navigation.navigate('AddFood')}
               onSettings={() => navigation.navigate('Settings')}
+              notice={notice}
+              onNotice={openTestFlight}
               /* The starters are this person's most-logged breakfast, so that
                  is the meal the list belongs to. */
               onStarter={() => navigation.navigate('AddFood', {meal: 'Breakfast'})}
@@ -655,6 +779,12 @@ export default function Root({
           )}
         </Stack.Screen>
 
+        <Stack.Screen name="Feedback" options={{presentation: 'modal'}}>
+          {({navigation}: Props<'Feedback'>) => (
+            <Feedback release={release?.id} onBack={navigation.goBack} />
+          )}
+        </Stack.Screen>
+
         <Stack.Screen name="Settings">
           {({navigation}: Props<'Settings'>) => (
             <Settings
@@ -671,11 +801,40 @@ export default function Root({
               onTargets={() => navigation.navigate('Onboarding', {step: 'targets'})}
               onMethod={() => navigation.navigate('Onboarding', {step: 'method'})}
               onFoods={() => navigation.navigate('MyFoods')}
+              release={release?.id}
+              onFeedback={canSend ? () => navigation.navigate('Feedback') : undefined}
+              // The only way back to the sheet. With no release to name it
+              // shows the newest in the list, which says which one it describes.
+              onWhatsNew={() => setSheet(release ? [release] : RELEASES.slice(0, 1))}
             />
           )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
+    {/* Over everything, including Settings, because it is a sheet rather than a
+        destination — and `box-none` so only the sheet itself takes taps. */}
+    {sheet.length > 0 ? (
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <WhatsNew
+          releases={sheet}
+          onClose={readSheet}
+          onFeedback={
+            canSend
+              ? () => {
+                  readSheet();
+                  // The ref is only unready before the container has mounted,
+                  // which is before this sheet can be tapped — but a crash here
+                  // would cost somebody the app for the sake of a ghost button.
+                  if (nav.isReady()) {
+                    nav.navigate('Feedback');
+                  }
+                }
+              : undefined
+          }
+        />
+      </View>
+    ) : null}
+    </>
   );
 }
 

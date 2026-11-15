@@ -680,6 +680,54 @@ export const comingSoon = StyleSheet.create({
   tail: {height: 14},
 });
 
+/* ---- src/screens/Feedback.tsx ---- */
+export const feedback = StyleSheet.create({
+  body: {paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 140},
+  intro: {...type_.body, fontSize: 14, lineHeight: 21, marginTop: 4},
+  label: {...type_.label, marginTop: 20},
+  chips: {flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 9},
+  chip: {paddingVertical: 9, paddingHorizontal: 14, borderRadius: radius.pill},
+  chipLabel: {...type_.caption, fontSize: 13, fontWeight: '600'},
+  field: {marginTop: 8, borderRadius: 18, paddingHorizontal: 15, paddingVertical: 13},
+  input: {...type_.body, fontSize: 14, lineHeight: 20, minHeight: 76, padding: 0},
+  note: {marginTop: 18, borderRadius: 16, paddingHorizontal: 15, paddingVertical: 13},
+  noteText: {...type_.caption, fontSize: 13, lineHeight: 19},
+  bar: {paddingHorizontal: spacing.lg, paddingTop: spacing.sm},
+});
+
+/* ---- src/screens/WhatsNew.tsx ---- */
+export const whatsNew = StyleSheet.create({
+  scrim: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(8,10,7,0.55)'},
+  label: {...type_.label},
+  title: {...type_.sheetTitle, marginTop: 5},
+  since: {...type_.caption, marginTop: 3},
+  /** A release's own id, when more than one is in the sheet. */
+  group: {...type_.label, marginTop: 22},
+  line: {flexDirection: 'row', gap: 11, marginTop: 14},
+  tick: {marginTop: 2},
+  lineText: {...type_.body, fontSize: 15, lineHeight: 21, flex: 1},
+  stamp: {...type_.caption, fontSize: 12, marginTop: 20},
+  gap: {height: 14},
+  gapSm: {height: 8},
+});
+
+/* ---- src/components/UpdateNotice.tsx ---- */
+export const updateNotice = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    marginHorizontal: spacing.lg,
+    marginTop: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 15,
+    borderRadius: 16,
+  },
+  text: {flex: 1},
+  line: {...type_.bodyStrong, fontSize: 14, lineHeight: 19},
+  sub: {...type_.caption, fontSize: 13, lineHeight: 18, marginTop: 1},
+});
+
 /* ---- src/screens/ServingGuide.tsx ---- */
 export const servingGuide = StyleSheet.create({
   /**

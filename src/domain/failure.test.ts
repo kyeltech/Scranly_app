@@ -126,6 +126,60 @@ describe("Every code's words", () => {
   });
 });
 
+describe('The same code, said where it happened', () => {
+  it('does not talk about barcodes to somebody who just wrote a message', () => {
+    const lookup = wordsFor({code: 'offline'});
+    const sending = wordsFor({code: 'offline'}, 'send');
+
+    // The same thing happened, so the title is the same.
+    expect(sending.title).toBe(lookup.title);
+    expect(lookup.body).toMatch(/barcode/);
+    expect(sending.body).not.toMatch(/barcode|diary|targets/);
+  });
+
+  it('still says what is unaffected, which is the words they just typed', () => {
+    for (const code of ['offline', 'timeout', 'server', 'rateLimited', 'unknown'] as const) {
+      expect(wordsFor({code}, 'send').body).toMatch(/still (here|on the screen)/);
+    }
+  });
+
+  it('holds to every rule the lookup words hold to', () => {
+    for (const code of CODES) {
+      const words = wordsFor({code}, 'send');
+      expect(words.title.split(' ').length).toBeLessThanOrEqual(4);
+      const sentences = words.body.split(/[.!?](\s|$)/).filter(x => x.trim());
+      expect(sentences.length).toBeLessThanOrEqual(2);
+      expect(`${words.title} ${words.body}`.toLowerCase()).not.toMatch(
+        /something went wrong|sorry|oops|please|error|failed/,
+      );
+      expect(words.ghosts.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('offers the clipboard rather than a retry that will be turned away too', () => {
+    const acts = actsFor({code: 'rateLimited'}, ['retry', 'copy', 'close'], 'send');
+
+    expect(acts.primary?.label).toBe('Copy it instead');
+    expect(acts.ghosts.map(g => g.way)).toEqual(['retry', 'close']);
+  });
+
+  it('gives every code sending can raise a primary and a ghost', () => {
+    // The sending screen's three ways out. Without its own entries a code would
+    // fall through to the barcode's ghosts — "add it from the label" — and the
+    // screen, having no handler for those, would draw a sheet with one button.
+    const raised = ['offline', 'timeout', 'server', 'rateLimited', 'unknown'] as const;
+    for (const code of raised) {
+      const acts = actsFor({code}, ['retry', 'copy', 'close'], 'send');
+      expect(acts.primary).toBeTruthy();
+      expect(acts.ghosts.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('leaves a code sending cannot raise exactly as it was', () => {
+    expect(wordsFor({code: 'notFound'}, 'send')).toEqual(wordsFor({code: 'notFound'}));
+  });
+});
+
 describe('The actions a caller can actually offer', () => {
   it('drops a way the caller has no handler for', () => {
     const acts = actsFor({code: 'offline'}, ['retry']);
@@ -147,8 +201,11 @@ describe('The actions a caller can actually offer', () => {
   });
 
   it('gives every code a primary and a ghost on the barcode path', () => {
+    // The two that are not the barcode's own have their own ways out, tested
+    // where they are raised.
+    const elsewhere: FailureCode[] = ['cameraRefused'];
     for (const code of CODES) {
-      if (code === 'cameraRefused') {
+      if (elsewhere.includes(code)) {
         continue;
       }
       const acts = actsFor({code}, BARCODE_WAYS);

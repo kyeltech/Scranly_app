@@ -4,6 +4,7 @@ import type {DiaryStore} from './diary';
 import type {DiaryEntry} from '../domain/diary';
 import type {FoodStore} from './foods';
 import type {FoodItem} from '../domain/food';
+import type {SeenStore} from './seen';
 import type {WeightStore} from './weight';
 import type {WeightEntry} from '../domain/weight';
 
@@ -95,6 +96,25 @@ export function memoryWeight(initial: WeightEntry[] = []): WeightStore {
     peek: () => held.map(e => ({...e})),
     add: async entry => {
       held = [...held, {...entry}];
+    },
+  };
+}
+
+/**
+ * The last release seen, held in memory for the lifetime of the process.
+ *
+ * Which makes every launch a first install, so no sheet ever shows — the right
+ * behaviour for a screen walked on its own, and the reason the app passes a
+ * real one.
+ */
+export function memorySeen(initial?: string): SeenStore {
+  let held = initial;
+
+  return {
+    read: async () => held,
+    peek: () => held,
+    write: async id => {
+      held = id;
     },
   };
 }

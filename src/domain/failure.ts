@@ -43,7 +43,15 @@ export type Failure = {
  * component drops the rest, which is how the same code reads correctly on the
  * scanner and in a list.
  */
-export type Way = 'retry' | 'fromLabel' | 'typeItIn' | 'allow' | 'settings' | 'close';
+export type Way =
+  | 'retry'
+  | 'fromLabel'
+  | 'typeItIn'
+  | 'allow'
+  | 'settings'
+  | 'close'
+  /** Hand it to the clipboard, for a failure the network has nothing to do with. */
+  | 'copy';
 
 /** A button: what it says, and which of the caller's handlers it runs. */
 export type Act = {label: string; way: Way};
@@ -231,14 +239,86 @@ const WORDS: Record<FailureCode, Words> = {
 };
 
 /**
+ * Where a failure happened.
+ *
+ * The same code means the same thing in both places — no connection is no
+ * connection — but the sentence that says what is unaffected cannot be the
+ * same, because one of them is about a barcode and the other is about a message
+ * somebody just wrote. The component still owns every word; this is which set.
+ */
+export type Where = 'lookup' | 'send';
+
+/**
+ * The bodies that name a barcode, said again for the feedback screen. Only the
+ * codes sending can actually raise are here; anything missing falls through to
+ * the words above, which is what keeps this a handful of lines rather than a
+ * second copy of the map.
+ */
+const SENDING: Partial<Record<FailureCode, Partial<Words>>> = {
+  offline: {
+    body:
+      'Sending needs the internet, and there is none right now. What you wrote ' +
+      'is still here — nothing has been lost.',
+    primary: {label: RETRY, way: 'retry'},
+    ghosts: [
+      {label: 'Copy it instead', way: 'copy'},
+      {label: 'Leave it for now', way: 'close'},
+    ],
+  },
+  timeout: {
+    body:
+      'That did not go through within ten seconds. What you wrote is still ' +
+      'here, so trying again costs you nothing.',
+    primary: {label: RETRY, way: 'retry'},
+    ghosts: [
+      {label: 'Copy it instead', way: 'copy'},
+      {label: 'Leave it for now', way: 'close'},
+    ],
+  },
+  server: {
+    body:
+      'Whatever receives these is not answering right now, which is nothing to ' +
+      'do with what you wrote. It is still on the screen behind this.',
+    primary: {label: RETRY, way: 'retry'},
+    ghosts: [
+      {label: 'Copy it instead', way: 'copy'},
+      {label: 'Leave it for now', way: 'close'},
+    ],
+  },
+  rateLimited: {
+    title: 'Too many messages',
+    body:
+      'Too many have gone through from here in a short time, so this one was ' +
+      'turned away. What you wrote is still here.',
+    primary: {label: 'Copy it instead', way: 'copy'},
+    ghosts: [
+      {label: 'Try again', way: 'retry'},
+      {label: 'Leave it for now', way: 'close'},
+    ],
+  },
+  unknown: {
+    body:
+      'Scranly tried to send it and got back something it cannot read. What you ' +
+      'wrote is still here, and nothing else is affected.',
+    primary: {label: RETRY, way: 'retry'},
+    ghosts: [
+      {label: 'Copy it instead', way: 'copy'},
+      {label: 'Leave it for now', way: 'close'},
+    ],
+  },
+};
+
+/**
  * A wait worth saying out loud. Open Food Facts has answered with a Retry-After
  * of an hour; "try again in 3600 seconds" is a number, not an instruction.
  */
 const SAYABLE_WAIT = 300;
 
 /** The words for a failure, with whatever its context adds. */
-export function wordsFor(failure: Failure): Words {
-  const words = WORDS[failure.code];
+export function wordsFor(failure: Failure, where: Where = 'lookup'): Words {
+  const words = where === 'send'
+    ? {...WORDS[failure.code], ...SENDING[failure.code]}
+    : WORDS[failure.code];
   const wait = failure.retryAfter;
   if (wait === undefined || wait > SAYABLE_WAIT) {
     return words;
@@ -260,8 +340,9 @@ export function wordsFor(failure: Failure): Words {
 export function actsFor(
   failure: Failure,
   ways: Way[],
+  where: Where = 'lookup',
 ): {primary: Act | undefined; ghosts: Act[]} {
-  const words = wordsFor(failure);
+  const words = wordsFor(failure, where);
   const offered = [words.primary, ...words.ghosts].filter(act => ways.includes(act.way));
   return {primary: offered[0], ghosts: offered.slice(1)};
 }

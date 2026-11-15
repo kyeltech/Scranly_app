@@ -1,0 +1,57 @@
+# What changed, and the one place the app asks anything.
+#
+# What this can cover: both ways into the what's-new sheet and the feedback
+# screen from Settings, on a runner with no camera and no mail account.
+#
+# What this CANNOT cover: the sheet rising on launch, which needs an install of
+# an older build followed by an upgrade — a device walk, not a Maestro one; the
+# send itself, which would post real feedback from a CI run; and the expiry row,
+# which needs a build 76 days old and no way to move the clock. Those are driven
+# in src/navigation/releases.test.tsx and src/screens/feedback.test.tsx, with
+# the build, the day and the send all injected.
+#
+# The feedback row only exists once readers/feedback.ts has an endpoint, so the
+# second half of this flow is skipped while that constant is empty.
+appId: org.reactjs.native.example.Scranly
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Set up my targets"
+    commands:
+      - tapOn: "Set up my targets"
+      - tapOn: "Continue"
+      - tapOn: "Continue"
+      - tapOn: "See my targets"
+      - tapOn: "Start logging"
+
+- assertVisible: "EATEN THIS WEEK"
+- tapOn:
+    id: "Settings"
+
+# The version row used to be a dead end. It is now the way back to the sheet —
+# and its value is the only automatable proof that the native version module
+# reached JS: a dash there means AppVersion.swift is not in the target.
+- assertVisible: "What’s new"
+- assertVisible: "[0-9]+\\.[0-9]+ \\([0-9]+\\)"
+- tapOn: "What’s new"
+- assertVisible: "WHAT’S NEW"
+- tapOn: "Got it"
+- assertNotVisible: "WHAT’S NEW"
+
+# The one ask in the app, and the only screen that collects words. Absent until
+# there is an endpoint, so the whole walk is conditional on the row being there.
+- runFlow:
+    when:
+      visible: "Tell me what you think"
+    commands:
+      - tapOn: "Tell me what you think"
+      - assertVisible: "WHAT WOULD YOU LOVE TO SEE"
+      # Nothing picked and nothing written: the button says what is missing.
+      - assertVisible: "Pick one, or write a line"
+      - tapOn: "Saved meals"
+      - assertVisible: "Send"
+      # Stop there: pressing it would post real feedback from a test run.
+      - tapOn:
+          id: "Back"
+      - assertVisible: "SCRANLY"

@@ -15,6 +15,8 @@
 		461D869E86EB4D328DFD501E /* Archivo-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 74F92E8D906B47B1AD2A5330 /* Archivo-Regular.ttf */; };
 		67E7D3267A79A6EA233A77B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		7A11C0DE2CA45674006654EE /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11C0DF2CA45674006654EE /* AppVersion.swift */; };
+		7A11C0E02CA45674006654EE /* AppVersion.m in Sources */ = {isa = PBXBuildFile; fileRef = 7A11C0E12CA45674006654EE /* AppVersion.m */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		BF5D507D8DBE42E3BEF1065B /* Archivo-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 100AAEA027C045A191D223E7 /* Archivo-Bold.ttf */; };
 /* End PBXBuildFile section */
@@ -31,6 +33,8 @@
 		6F26B085112A4CBEAA96470A /* BootSplash.storyboard */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = BootSplash.storyboard; path = Scranly/BootSplash.storyboard; sourceTree = "<group>"; };
 		74F92E8D906B47B1AD2A5330 /* Archivo-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Regular.ttf"; path = "../src/assets/fonts/Archivo-Regular.ttf"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Scranly/AppDelegate.swift; sourceTree = "<group>"; };
+		7A11C0DF2CA45674006654EE /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppVersion.swift; path = Scranly/AppVersion.swift; sourceTree = "<group>"; };
+		7A11C0E12CA45674006654EE /* AppVersion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = AppVersion.m; path = Scranly/AppVersion.m; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Scranly/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		D4ADAC05D3D74CA9B57C524D /* Colors.xcassets */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = folder.assetcatalog; name = Colors.xcassets; path = Scranly/Colors.xcassets; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -54,6 +58,8 @@
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				7A11C0DF2CA45674006654EE /* AppVersion.swift */,
+				7A11C0E12CA45674006654EE /* AppVersion.m */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -275,6 +281,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				7A11C0DE2CA45674006654EE /* AppVersion.swift in Sources */,
+				7A11C0E02CA45674006654EE /* AppVersion.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

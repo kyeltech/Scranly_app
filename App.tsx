@@ -9,10 +9,12 @@ import Root from './src/navigation/Root';
 import {
   mmkvDiary,
   mmkvFoods,
+  mmkvSeen,
   mmkvStore,
   mmkvWeight,
   storeFailure,
 } from './src/store/mmkv';
+import {warnIfUnknown} from './src/version';
 import {useTheme} from './src/theme';
 
 type Phase = 'splash' | 'loading' | 'ready';
@@ -40,11 +42,20 @@ const foodStore = mmkvFoods();
 /** The weigh-ins, so the trend is a real one and the budget follows the scale. */
 const weightStore = mmkvWeight();
 
+/**
+ * The last release whose what's-new sheet was read. On disk, or the sheet rises
+ * on every launch — which is the fastest way to make a changelog hated.
+ */
+const seenStore = mmkvSeen();
+
 export default function App() {
   const [phase, setPhase] = useState<Phase>('splash');
   const firstLoad = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
+    // A dev build with no AppVersion module cannot say what changed or when it
+    // expires, and would do it silently. This is the only shout about it.
+    warnIfUnknown();
     // Hide the static boot splash as soon as React has something on screen.
     BootSplash.hide({fade: true}).catch(() => {});
     return () => {
@@ -94,6 +105,7 @@ function Shell() {
         diary={diaryStore}
         foods={foodStore}
         weight={weightStore}
+        seen={seenStore}
       />
     </View>
   );

@@ -4,7 +4,7 @@ import Sheet from '../../ui/Sheet';
 import {Button} from '../../ui';
 import {Warning} from '../../ui/icons';
 import {actsFor, wordsFor} from '../../domain/failure';
-import type {Failure, Way} from '../../domain/failure';
+import type {Failure, Way, Where} from '../../domain/failure';
 import {type as type_, useTheme} from '../../theme';
 
 import {failureSheet as styles} from '../../styles';
@@ -24,15 +24,22 @@ import {failureSheet as styles} from '../../styles';
 export default function FailureSheet({
   failure,
   on,
+  where = 'lookup',
 }: {
   failure: Failure;
   /** The handlers this caller has. A way with no handler is not drawn. */
   on: Partial<Record<Way, () => void>>;
+  /**
+   * Which of the two the caller is: the same code means the same thing in both,
+   * but the sentence about what still works cannot name a barcode to somebody
+   * who has just written a message.
+   */
+  where?: Where;
 }) {
   const t = useTheme();
-  const words = wordsFor(failure);
+  const words = wordsFor(failure, where);
   const ways = (Object.keys(on) as Way[]).filter(way => on[way]);
-  const {primary, ghosts} = actsFor(failure, ways);
+  const {primary, ghosts} = actsFor(failure, ways, where);
 
   return (
     <Sheet>
