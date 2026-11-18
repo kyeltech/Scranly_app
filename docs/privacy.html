@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scranly — Privacy Policy</title>
+<meta name="description" content="What Scranly stores on your phone, and the two things that leave it.">
+<style>
+  :root {
+    --bg:#FBFBF7; --surface:#FFFFFF; --fg:#16281F; --muted:#5C6B62;
+    --line:#DFE4DC; --accent:#7FA81B; --chip:#EDF6D2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0F1611; --surface:#16201A; --fg:#E8EFE7; --muted:#9AAA9E;
+      --line:#27342B; --accent:#C2F24D; --chip:#22301C;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:44rem; margin:0 auto; padding:56px 20px 80px; }
+  h1 { font-size:clamp(2rem,6vw,2.6rem); line-height:1.1; margin:0 0 14px; }
+  .rule { height:3px; width:72px; background:var(--accent); border-radius:2px; margin:0 0 14px; }
+  .stamp { color:var(--muted); font-size:0.875rem; margin:0 0 36px; }
+  .lede { font-size:1.1rem; background:var(--chip); border:1px solid var(--line);
+          border-radius:12px; padding:20px 22px; margin:0 0 40px; }
+  h2 { font-size:1.3rem; line-height:1.25; margin:40px 0 12px; }
+  h3 { font-size:1rem; margin:24px 0 8px; }
+  p { margin:0 0 12px; }
+  ul { margin:0 0 12px; padding-left:1.15rem; }
+  li { margin-bottom:8px; }
+  li::marker { color:var(--accent); }
+  a { color:var(--fg); text-decoration-color:var(--accent); text-underline-offset:3px; }
+  .box { border:1px solid var(--line); background:var(--surface); border-radius:12px;
+         padding:18px 20px; margin:0 0 16px; }
+  .muted { color:var(--muted); }
+  footer { margin-top:48px; padding-top:24px; border-top:1px solid var(--line);
+           color:var(--muted); font-size:0.9rem; }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.875em;
+         background:var(--chip); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Scranly Privacy Policy</h1>
+  <div class="rule"></div>
+  <p class="stamp">Last updated 18 November 2026 · applies to Scranly 1.0 for iPhone</p>
+
+  <p class="lede"><strong>Scranly has no account and no login.</strong> What you eat, what you weigh and what you told it about yourself are written to your phone and stay there. Two things leave the phone, both described below, and neither carries your name.</p>
+
+  <h2>What stays on your phone</h2>
+  <p>Everything you enter is stored in Scranly's own storage on the device:</p>
+  <ul>
+    <li>The details you gave on the About you screen, and the daily budget worked out from them.</li>
+    <li>Every food you log, and the day you logged it against.</li>
+    <li>Every weight you record.</li>
+  </ul>
+  <p class="muted">This is not encrypted beyond the protection iOS already gives an app's own files, it is not backed up to any server of mine, and I cannot read it. Deleting the app deletes it.</p>
+
+  <h2>What leaves your phone</h2>
+  <p>Two requests, both of which you cause by doing something.</p>
+
+  <div class="box">
+    <h3>Looking up a food — Open Food Facts</h3>
+    <p>When you scan a barcode or search, Scranly sends the barcode you scanned or the words you typed, plus a line naming the app and my email address, which is how their API asks developers to identify themselves.</p>
+    <p>It does not send your diary, your profile, your weight, or anything identifying you.</p>
+    <p class="muted">Open Food Facts is an open food database run by a French non-profit. Like any website, it can see the IP address a request comes from. Their own privacy terms are at <a href="https://world.openfoodfacts.org/privacy">openfoodfacts.org/privacy</a>.</p>
+  </div>
+
+  <div class="box">
+    <h3>Sending feedback — only when you tap send</h3>
+    <p>The feedback screen sends which of the suggestions you tapped, the two things you wrote, and which version of the app you were using.</p>
+    <p>It does not send your name, your email, your diary, or any device identifier. I cannot tell who sent a piece of feedback unless you write your name in the box.</p>
+    <p class="muted">It goes through Web3Forms, a service that receives the message and emails it to me. It reaches <code>ezekielayikoe9@gmail.com</code> and nowhere else.</p>
+  </div>
+
+  <h2>The camera</h2>
+  <p>Scranly asks for the camera so it can read a barcode. The reading happens on the phone. No photo or video frame is saved, and none is sent anywhere — only the digits of the barcode are, and only to look up the food.</p>
+  <p>If you refuse camera access the app still works: search for a food instead, or type one in.</p>
+
+  <h2>What Scranly does not do</h2>
+  <ul>
+    <li>No accounts, no sign-in, no profile on any server.</li>
+    <li>No analytics, no usage tracking, no advertising, no advertising identifier.</li>
+    <li>No location, no contacts, no photo library, no Apple Health data.</li>
+    <li>No third-party tracking libraries of any kind. There are none in the app.</li>
+    <li>Nothing is sold or shared with anyone, because there is nothing held to sell or share.</li>
+  </ul>
+
+  <h2>While Scranly is in TestFlight</h2>
+  <p>Scranly is currently distributed as a test build through Apple's TestFlight. Apple collects crash reports and basic usage information from TestFlight builds under its own terms, and shows me crash logs and the number of sessions. That collection is Apple's, not mine, and is covered by <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a> and the terms you accepted in TestFlight.</p>
+
+  <h2>Children</h2>
+  <p>Scranly is not designed for or directed at children under 13, and nothing in it asks for an age.</p>
+
+  <h2>Your control over the data</h2>
+  <p>Because the data is on your device and nowhere else, you hold all of it. Deleting the app removes it. There is no account to close and no request to send me, because I am not holding a copy.</p>
+  <p>Feedback you have already sent arrives as an email and sits in my inbox. If you want a message withdrawn, write to me and say roughly when you sent it and I will delete it.</p>
+
+  <h2>Changes</h2>
+  <p>If Scranly starts doing something with data that this page does not describe, this page changes first and the date at the top changes with it.</p>
+
+  <footer>
+    <p>Scranly is made by Ezekiel Ayikoe.</p>
+    <p>Questions about any of this: <code>ezekielayikoe9@gmail.com</code></p>
+  </footer>
+</div>
+</body>
+</html>
