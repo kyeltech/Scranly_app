@@ -87,30 +87,41 @@ export function Button({
   onPress,
   variant = 'primary',
   icon,
+  disabled = false,
 }: {
   label: string;
   sub?: string;
   onPress?: () => void;
   variant?: 'primary' | 'ghost' | 'ink';
   icon?: React.ReactNode;
+  /**
+   * Nothing for it to do yet. Drawn as a surface rather than lime, because a
+   * lime button that does nothing is the same lie as a "Try again" that cannot
+   * work — and said out loud to a screen reader, not only in the colour.
+   */
+  disabled?: boolean;
 }) {
   const t = useTheme();
-  const bg =
-    variant === 'primary'
-      ? brand.lime
-      : variant === 'ink'
-      ? t.secondaryButton.bg
-      : t.fill;
-  const fg =
-    variant === 'primary'
-      ? brand.onLime
-      : variant === 'ink'
-      ? t.secondaryButton.fg
-      : t.text;
+  const bg = disabled
+    ? t.fill
+    : variant === 'primary'
+    ? brand.lime
+    : variant === 'ink'
+    ? t.secondaryButton.bg
+    : t.fill;
+  const fg = disabled
+    ? t.textFaint
+    : variant === 'primary'
+    ? brand.onLime
+    : variant === 'ink'
+    ? t.secondaryButton.fg
+    : t.text;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
       accessibilityRole="button"
+      accessibilityState={{disabled}}
       style={[styles.button, {backgroundColor: bg}]}>
       {icon}
       <Text style={[type_.bodyStrong, {color: fg}]}>{label}</Text>

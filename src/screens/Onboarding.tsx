@@ -70,11 +70,21 @@ export default function Onboarding({
       return <Welcome onStart={() => setStep('about')} />;
 
     case 'about':
+      /**
+       * Opened straight at About you is an edit of the details already given —
+       * save it on its own, the same as the goal, rather than walking on to the
+       * goal and the rest of setup (which would lose it on a back-out).
+       */
       return (
         <AboutYou
           profile={profile}
+          submitLabel={entry === 'about' ? 'Save details' : 'Continue'}
           onBack={back}
           onContinue={next => {
+            if (entry === 'about') {
+              onDone?.({profile: next, goal});
+              return;
+            }
             setProfile(next);
             setStep('goal');
           }}
@@ -82,11 +92,23 @@ export default function Onboarding({
       );
 
     case 'goal':
+      /**
+       * Opened straight at the goal — "Change goal" on the weight trend — is an
+       * edit, not the setup flow: pre-fill what is already set, and save it on
+       * its own rather than marching on through method and targets, which is
+       * what lost the change before.
+       */
       return (
         <GoalStep
           profile={profile}
+          goal={entry === 'goal' ? goal : undefined}
+          submitLabel={entry === 'goal' ? 'Save goal' : 'Continue'}
           onBack={back}
           onContinue={next => {
+            if (entry === 'goal') {
+              onDone?.({profile, goal: next});
+              return;
+            }
             setGoal(next);
             setStep('method');
           }}

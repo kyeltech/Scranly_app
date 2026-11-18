@@ -1,12 +1,14 @@
 import React from 'react';
 import {Pressable, ScrollView, Text, View} from 'react-native';
 import Ring from '../components/Ring';
+import UpdateNotice from '../components/UpdateNotice';
 import {Cog, Plus, Scanner, TrendUp} from '../ui/icons';
 import {MINUS, withThousands} from '../lib/format';
 import {Screen, useActionBarInset} from '../ui';
 import {brand, type as type_, useTheme} from '../theme';
 import type {Palette} from '../theme';
 import type {DayView, MacroKey, MealName} from '../domain/day';
+import type {Notice} from '../domain/releases';
 
 import {today as styles} from '../styles';
 type Props = {
@@ -31,6 +33,13 @@ type Props = {
   onPrevDay?: () => void;
   onNextDay?: () => void;
   onToday?: () => void;
+  /**
+   * Something about the build rather than the day: a newer one to fetch, or a
+   * TestFlight build near the end of its ninety days. Worked out in
+   * `domain/releases.ts`; left out, there is no row at all.
+   */
+  notice?: Notice;
+  onNotice?: () => void;
 };
 
 const MACRO_COLOUR: Record<MacroKey, keyof Palette['macroBar']> = {
@@ -55,6 +64,8 @@ export default function Today({
   onPrevDay,
   onNextDay,
   onToday,
+  notice,
+  onNotice,
 }: Props) {
   const t = useTheme();
   const barInset = useActionBarInset();
@@ -129,6 +140,10 @@ export default function Today({
             </Pressable>
           </View>
         </View>
+
+        {/* Above the ring and below the date: the one place on Today nobody
+            misses, and the only thing that goes there. */}
+        {notice ? <UpdateNotice notice={notice} onPress={onNotice} /> : null}
 
         {day.neighbours ? (
           <View style={styles.stepper}>

@@ -2,8 +2,9 @@ import React from 'react';
 import {Pressable, ScrollView, Text, View} from 'react-native';
 import Sheet from '../../ui/Sheet';
 import {Button, Note, Segmented} from '../../ui';
-import {Check, ChevronDown, ChevronRight, Info, Plus, Warning} from '../../ui/icons';
+import {Check, ChevronDown, ChevronRight, Info, Plus} from '../../ui/icons';
 import {withThousands} from '../../lib/format';
+import {servingMacros} from '../../readers/product';
 import {brand, type as type_, useTheme} from '../../theme';
 import type {LabelRow, PlateItem, Product, Serving} from '../../fixtures/scan';
 
@@ -63,41 +64,11 @@ export function LookingUpSheet({
   );
 }
 
-/** A barcode the database has never heard of. */
-export function NoMatchSheet({
-  barcode,
-  onFromLabel,
-  onRetry,
-}: {
-  barcode: string;
-  onFromLabel?: () => void;
-  onRetry?: () => void;
-}) {
-  const t = useTheme();
-  return (
-    <Sheet>
-      <View style={styles.failHead}>
-        <View style={[styles.failIcon, {backgroundColor: t.verdict.fast}]}>
-          <Warning colour={t.status.over} size={18} />
-        </View>
-        <View style={styles.failText}>
-          <Text style={[type_.cardTitle, {color: t.text}]}>
-            Not in the database
-          </Text>
-          <Text style={[type_.caption, {color: t.textMuted}]}>{barcode}</Text>
-        </View>
-      </View>
-      <Text style={[styles.body, {color: t.textMuted}]}>
-        Open Food Facts has most UK branded food, but not all of it. Add this
-        one from the label and it is yours from now on — and everyone else’s.
-      </Text>
-      <View style={styles.gapLg} />
-      <Button label="Add it from the label" onPress={onFromLabel} />
-      <View style={styles.gapSm} />
-      <Button label="Scan something else" variant="ghost" onPress={onRetry} />
-    </Sheet>
-  );
-}
+/*
+ * A miss and a failure to reach once had a sheet each here. Both now come from
+ * the one failure sheet, which owns the words for every code — see
+ * `FailureSheet.tsx` and `domain/failure.ts`.
+ */
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
@@ -118,11 +89,11 @@ export function FoundSheet({
   onAdd?: () => void;
 }) {
   const t = useTheme();
-  const scale = serving.kcal / product.kcal;
+  const m = servingMacros(product, serving);
   const macros: [string, number][] = [
-    ['PROT', product.proteinG * scale],
-    ['CARB', product.carbsG * scale],
-    ['FAT', product.fatG * scale],
+    ['PROT', m.proteinG],
+    ['CARB', m.carbsG],
+    ['FAT', m.fatG],
   ];
 
   return (

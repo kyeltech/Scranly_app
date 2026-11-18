@@ -28,18 +28,26 @@ function toNearestTen(n: number) {
 
 export default function Goal({
   profile,
+  goal: current,
+  submitLabel = 'Continue',
   onBack,
   onContinue,
 }: {
   profile: Profile;
+  /** The goal already set, when there is one — editing starts from it, not a default. */
+  goal?: {targetWeightKg: number; weeks: number};
+  /** 'Continue' in the setup flow; 'Save goal' when editing an existing one. */
+  submitLabel?: string;
   onBack?: () => void;
   onContinue?: (goal: {targetWeightKg: number; weeks: number}) => void;
 }) {
   const t = useTheme();
-  const [goalText, setGoalText] = useState('75.0');
+  const [goalText, setGoalText] = useState(
+    current ? current.targetWeightKg.toFixed(1) : '75.0',
+  );
   // Three months by default: the horizon ADR-0001 works its numbers from, and
   // the only one of the three kyel's own weight can hold.
-  const [weeks, setWeeks] = useState(13);
+  const [weeks, setWeeks] = useState(current?.weeks ?? 13);
 
   const parsed = Number.parseFloat(goalText);
   const goalKg = Number.isFinite(parsed) ? parsed : profile.weightKg;
@@ -163,7 +171,7 @@ export default function Goal({
         </View>
       </ScrollView>
       <View style={styles.actions}>
-        <Button label="Continue" onPress={() => onContinue?.(goal)} />
+        <Button label={submitLabel} onPress={() => onContinue?.(goal)} />
       </View>
     </Screen>
   );

@@ -123,6 +123,30 @@ The fix may be smaller than it sounds — the sentence is specifically about the
 on that screen, so it could become honest again by being precise rather than by being deleted.
 But it has to change, deliberately, and not be discovered afterwards.
 
+### What gets switched on with it — noted 15 November 2026
+
+Two GitHub security settings are off, deliberately left until this is decided so that they are
+turned on as part of the same piece of work rather than remembered afterwards. Both are repository
+settings, not workflow changes, and both are free while the repository is public.
+
+| Setting | What it does | State on 15 November 2026 |
+| --- | --- | --- |
+| Code scanning (CodeQL default setup) | Reads Scranly's own code on each pull request for injection, unsafe data handling and the like. GitHub detects TypeScript, Kotlin/Java, Swift and Ruby here | Not configured |
+| Dependabot alerts and security updates | Raises an alert, and a pull request with the fix, when a dependency already installed gets a new advisory | Both off |
+
+Already in place and not waiting on this: secret scanning with push protection (on), and — added
+the same day — a weekly `yarn audit` job in `.github/workflows/ci.yml` and version updates through
+`.github/dependabot.yml`. Those cover known advisories in what is installed; they do not read
+Scranly's own code, which is what the first row is for.
+
+**Why it waits for the backend:** accounts, a hosted profile and a shared library are where code
+of Scranly's own starts handling other people's data and credentials, which is what code scanning
+is good at finding mistakes in. Until then the only call out of the app is the keyless Open Food
+Facts read in `src/readers/product.ts`.
+
+**If the repository goes private first**, code scanning and secret scanning become paid features,
+and that cost belongs in this decision.
+
 ## Recommendation, not a decision
 
 Start at number 2. An Open Food Facts client called from the phone needs no backend, no account,
@@ -133,24 +157,57 @@ something real to catch for the first time.
 Number 3 is the one blocking daily use, and number 4 can wait for invites, which ADR-0007 already
 argued is where reinstalls get properly solved.
 
+## Decided — 3 November 2026: branded lookups
+
+The kitchen test passed (9 of 10, recorded below), so number 2 is taken as above:
+**branded lookups call Open Food Facts directly from the phone, with no proxy.**
+There is no API key to hide, and the rate limits are per-IP — so direct calls
+give each phone its own 15/min budget, where a single proxy would funnel every
+user through one and throttle sooner the more users there are. No backend, no
+account, no cost, and the privacy copy is untouched.
+
+Built behind this: `src/readers/product.ts` — `productFromOff` (the pure mapper,
+which owes nothing to `fetch`) and `lookupBarcode` (the call, resolving to
+`found` / `not-found` / `error`). The `Scan.tsx` barcode flow calls it on a live
+camera; `error` is caught by ADR-0006's new can't-reach sheet.
+
+**The serving model, decided with it:** the pack's own servings (a slice, a
+whole pack) are not in Open Food Facts, so they are not invented. A scanned
+product offers **per 100 g** — which every product carries — and **weigh it in
+grams**. A **per-serving** row is shown only when Open Food Facts states a
+serving size; reading that is the next slice.
+
+Still open here: generic foods (number 1, CoFID licensing), and the backend
+(number 4), which stays gated behind invites. The diary (number 3) is on disk in
+MMKV already.
+
 ## Research still to do
 
-- [ ] **The kitchen test** — PRD line 160 makes it a gate: scan ten items from the cupboard on the
-      Open Food Facts site, 7 or more found and correct and the plan holds. Still unticked at line
-      247, and it is half an hour's work. It decides whether Open Food Facts carries the packaged
-      half at all.
+- [x] **The kitchen test** — PRD line 160 makes it a gate: scan ten items from the cupboard on the
+      Open Food Facts site, 7 or more found and correct and the plan holds. **Done 3 November 2026:
+      9 of 10 real cupboard items found and correct — the gate is cleared.** Mechanism confirmed as
+      the public API Scranly would call (`/api/v2/product/{barcode}.json`, no key, custom
+      `User-Agent` only), reading the same shared database the Open Food Facts website and app use.
+      Open Food Facts carries the packaged half; the plan holds.
 - [ ] **CoFID licensing** — whether the dataset may be bundled in a shipped app. Needs a direct
       enquiry; the Open Government Licence v3.0 text at the National Archives is the first place
       to look, and the post-PHE publisher has to be identified before anyone can be asked.
 - [ ] **How many foods CoFID contains**, by counting rows in the `.xlsx`.
 - [ ] **Whether USDA FoodData Central requires an API key**, and whether it earns a place at all
       once CoFID is on the table.
-- [ ] **The exact Open Food Facts attribution wording** required by ODbL, and where it goes on
-      screen.
+- [x] **The exact Open Food Facts attribution wording** required by ODbL, and where it goes on
+      screen. **Answered 4 November 2026** from the Open Food Facts terms of use: the database is
+      ODbL, its contents DbCL, images CC BY-SA, and reuse must *"mention the licence and attribute
+      the authorship to Open Food Facts with a link to https://openfoodfacts.org"* (or the specific
+      product page). Done as a credit in Settings — *"Food data from Open Food Facts, licensed under
+      the ODbL,"* linking to openfoodfacts.org. The `User-Agent` now carries a reachable contact
+      (`ezekielayikoe9@gmail.com`), which Open Food Facts requires on every request.
 - [ ] **The `User-Agent` question on Android** — React Native's `fetch` honours a custom
       User-Agent on iOS; some Android stacks override it. Needs checking at runtime, because
       Open Food Facts asks for one on every request.
 - [ ] **What the About you sentence should say** under each option.
+- [ ] **Switch on code scanning and Dependabot alerts** when the backend (number 4) is decided —
+      see "What gets switched on with it" above.
 
 ## Not decided here
 

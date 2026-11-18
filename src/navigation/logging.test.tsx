@@ -31,7 +31,7 @@ describe('logging a food', () => {
     expect(screen.getByText('1,815')).toBeTruthy();
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     // 1,815 - 152 = 1,663, worked out from the fixture rather than by the code.
@@ -44,7 +44,7 @@ describe('logging a food', () => {
     await launch(<Root store={setUp()} diary={diary} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
 
     // Wait on the screen, not on the store: an async waitFor callback leaves a
@@ -70,8 +70,8 @@ describe('logging a food', () => {
     await launch(<Root store={setUp()} diary={diary} initialRoute="Today" />);
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
-    await fireEvent.press(screen.getByText('Semi-skimmed milk'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Semi-skimmed milk'));
     await fireEvent.press(screen.getByText('Add 2 items'));
 
     // 1,815 - 152 - 98 = 1,565.
@@ -87,7 +87,7 @@ describe('logging a food', () => {
     );
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -99,6 +99,108 @@ describe('logging a food', () => {
     await launch(<Root store={setUp()} diary={diary} initialRoute="Today" />);
 
     expect(screen.getByText('1,663')).toBeTruthy();
+  });
+});
+
+/**
+ * Logging a scanned product.
+ *
+ * Every save in Scan was `navigation.goBack`: you could scan a barcode, see the
+ * product and its numbers, tap "Add", and nothing was written. This is the last
+ * mile that makes a scan actually land in the diary.
+ */
+describe('logging a scanned product', () => {
+  /** Today, at a fixed hour, so the clock-guessed meal is not the wall clock's. */
+  const at = (hour: number) => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 30);
+  };
+
+  /** Walk the drawn stand-in (no camera in a test) from aiming to a match. */
+  const walkToMatch = async () => {
+    // Two steps, aiming -> looking -> found, with the effect in between.
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    await screen.findByText('Mature Cheddar');
+  };
+
+  it('writes the scanned food to the diary at its serving and meal', async () => {
+    const diary = memoryDiary();
+    // A bare scan with no meal falls back to the clock; pin it to lunchtime.
+    await launch(
+      <Root store={setUp()} diary={diary} now={at(12)} initialRoute="Scan" />,
+    );
+
+    await walkToMatch();
+    await fireEvent.press(screen.getByText('Add to lunch'));
+
+    const [entry] = await diary.read();
+    expect(entry).toEqual(
+      expect.objectContaining({
+        name: 'Mature Cheddar',
+        brand: 'Cathedral City',
+        portion: '30 g',
+        kcal: 125,
+        meal: 'Lunch',
+      }),
+    );
+  });
+
+  it('scans into the meal you opened the scanner from, not always lunch', async () => {
+    const diary = memoryDiary();
+    // Noon, so the clock would say lunch — but opening through Snack must win.
+    await launch(
+      <Root
+        store={setUp()}
+        diary={diary}
+        foods={memoryFoods()}
+        now={at(12)}
+        initialRoute="Today"
+      />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Add to Snack'));
+    await fireEvent.press(screen.getByLabelText('Scan a barcode'));
+
+    await walkToMatch();
+    await fireEvent.press(screen.getByText('Add to snack'));
+
+    expect((await diary.read())[0].meal).toBe('Snack');
+  });
+});
+
+/**
+ * Opening a food before logging it.
+ *
+ * Tapping a row used to log it straight off. Now the row opens the food in full
+ * — its numbers, including fibre — and the detail's button is what logs it; the
+ * + on the row stays the quick path.
+ */
+describe('opening a food from the list', () => {
+  it('shows the food and logs it from the detail, to the right meal', async () => {
+    const diary = memoryDiary();
+    const noon = new Date();
+    noon.setHours(12, 30, 0, 0); // the clock would guess lunch
+    await launch(
+      <Root store={setUp()} diary={diary} now={noon} initialRoute="Today" />,
+    );
+
+    await fireEvent.press(screen.getByText('Log food'));
+    // Tap the row, not the +, so the detail opens rather than logging.
+    await fireEvent.press(screen.getByText('Porridge oats'));
+
+    // On the detail: its energy, and the meal it will log to.
+    expect(screen.getByText('152')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Add to lunch'));
+
+    const [entry] = await diary.read();
+    expect(entry).toEqual(
+      expect.objectContaining({name: 'Porridge oats', meal: 'Lunch'}),
+    );
   });
 });
 
@@ -230,7 +332,7 @@ describe('which meal it lands in', () => {
     // The screen it opens says where the food is going.
     expect(screen.getByText('Add to Dinner')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -246,7 +348,7 @@ describe('which meal it lands in', () => {
     await fireEvent.press(screen.getByText('Log food'));
     expect(screen.getByText('Add to Dinner')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -260,7 +362,7 @@ describe('which meal it lands in', () => {
     );
 
     await fireEvent.press(screen.getByText('Log food'));
-    await fireEvent.press(screen.getByText('Porridge oats'));
+    await fireEvent.press(screen.getByLabelText('Add Porridge oats'));
     await fireEvent.press(screen.getByText('Add 1 item'));
     await waitFor(() => expect(screen.getByText('1,663')).toBeTruthy());
 
@@ -287,5 +389,162 @@ describe('which meal it lands in', () => {
     await waitFor(() => expect(screen.getByText('1,725')).toBeTruthy());
 
     expect((await diary.read())[0].meal).toBe('Snack');
+  });
+});
+
+/**
+ * The serving guide, the whole way through.
+ *
+ * A pack states per 100 g and leaves you holding it. The guide answers in
+ * hands — and because every card knows its weight, the answer goes into the
+ * amount rather than being left as a gesture to convert yourself.
+ */
+describe('what a portion looks like', () => {
+  /** One o'clock, so the meal the bottom button guesses is lunch. */
+  const lunchtime = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0);
+  };
+
+  it('sets the amount from the card, and logs what that comes to', async () => {
+    const diary = memoryDiary();
+    await launch(
+      <Root store={setUp()} diary={diary} now={lunchtime()} initialRoute="Today" />,
+    );
+
+    await fireEvent.press(screen.getByText('Log food'));
+    // A banana: one medium, 118 g, 105 kcal.
+    await fireEvent.press(screen.getByText('Banana'));
+    expect(screen.getByText('1 medium, 118 g')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('See what a portion looks like'));
+    // No category on a fixture food, so the guide opens on its first card.
+    await fireEvent.press(screen.getByText('Use 40 g'));
+
+    // Back on the food, at the weight the card set: 105 × 40 / 118 = 36.
+    await waitFor(() => expect(screen.getByText('40 g')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText('Add to lunch'));
+    await waitFor(() => expect(screen.getByText('1,779')).toBeTruthy());
+
+    const [entry] = await diary.read();
+    expect(entry).toEqual(
+      expect.objectContaining({name: 'Banana', portion: '40 g', kcal: 36}),
+    );
+  });
+});
+
+/**
+ * The middle of the three ways the app says a thing is not built: a chip
+ * tapped mid-task, answered over the screen it was tapped from.
+ */
+describe('a feature that is designed and not built', () => {
+  it('names it, and says what to do instead', async () => {
+    await launch(<Root store={setUp()} diary={memoryDiary()} initialRoute="Today" />);
+
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Meals'));
+
+    expect(screen.getByText('Saved meals')).toBeTruthy();
+    expect(screen.getByText(/log them one at a time/i)).toBeTruthy();
+  });
+
+  /**
+   * Whether the list is visible *behind* the sheet is a native presentation
+   * detail the test renderer does not model, so what is checked here is the
+   * part that matters to the person: closing puts them back exactly where they
+   * were, mid-task, rather than somewhere up the stack.
+   */
+  it('puts you back on the list you were working in', async () => {
+    await launch(<Root store={setUp()} diary={memoryDiary()} initialRoute="Today" />);
+
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Meals'));
+    await fireEvent.press(screen.getByLabelText('Close'));
+
+    expect(screen.getByText('Porridge oats')).toBeTruthy();
+    expect(screen.queryByText('Saved meals')).toBeNull();
+  });
+});
+
+/**
+ * Settings counted the foods you had added and the row went nowhere, which is
+ * the same lie as a row that says SOON without saying it.
+ */
+describe('the foods you added, from Settings', () => {
+  it('opens the list, with the food you just made in it', async () => {
+    const foods = memoryFoods();
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} foods={foods} initialRoute="Today" />,
+    );
+
+    // Make one, the way the screen does.
+    await fireEvent.press(screen.getByText('Log food'));
+    await fireEvent.press(screen.getByText('Create a food'));
+    await fireEvent.changeText(screen.getByLabelText('NAME'), 'Mum’s jollof rice');
+    await fireEvent.changeText(screen.getByLabelText('CALORIES'), '412');
+    await fireEvent.press(screen.getByText('Save food'));
+    await waitFor(() => expect(screen.getByText('1,403')).toBeTruthy());
+
+    await fireEvent.press(screen.getByLabelText('Settings'));
+    await fireEvent.press(screen.getByLabelText('Foods you added'));
+
+    expect(screen.getByText('1 FOOD')).toBeTruthy();
+    expect(screen.getByText('Mum’s jollof rice')).toBeTruthy();
+  });
+
+  it('offers the empty state before anything has been typed in', async () => {
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} foods={memoryFoods()} initialRoute="Settings" />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('Foods you added'));
+
+    expect(screen.getByText('Nothing yet')).toBeTruthy();
+  });
+});
+
+/**
+ * The facts the budget is computed from had no way in once setup was done: a
+ * birthday or a new job meant a target that was quietly wrong, with nothing in
+ * the app that could change it.
+ */
+describe('editing the profile from Settings', () => {
+  it('opens the step those answers came from, on the answers you gave', async () => {
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} initialRoute="Settings" />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('About you'));
+
+    // The step itself, with what it holds already filled in.
+    expect(screen.getByLabelText('HEIGHT')).toBeTruthy();
+    expect(screen.getByLabelText('AGE')).toBeTruthy();
+  });
+
+  it('shows how active you are on the row, from the saved profile', async () => {
+    await launch(
+      <Root store={setUp()} diary={memoryDiary()} initialRoute="Settings" />,
+    );
+
+    // kyel's saved answer is 'light', which About you calls Light.
+    expect(screen.getByText('Light')).toBeTruthy();
+  });
+
+  it('saves a changed answer, so the budget is worked out from it', async () => {
+    const store = setUp();
+    await launch(
+      <Root store={store} diary={memoryDiary()} initialRoute="Settings" />,
+    );
+
+    await fireEvent.press(screen.getByLabelText('About you'));
+    await fireEvent.press(screen.getByText('Very'));
+    await fireEvent.press(screen.getByText('Save details'));
+
+    // Wait on the screen, then read the store once.
+    await waitFor(() => expect(screen.queryByText('Save details')).toBeNull());
+    const saved = await store.read();
+    expect(saved?.profile).toEqual({...kyel, activity: 'very'});
+    expect(saved?.goal).toEqual(kyelsGoal);
   });
 });

@@ -1,5 +1,5 @@
 # The path that matters: open the app, log two foods, get back to the ring.
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 - launchApp
 - runFlow:

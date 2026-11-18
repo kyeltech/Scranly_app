@@ -1,0 +1,42 @@
+# Opening the scanner from Add food, and getting back.
+#
+# What this can cover: the entry into the scanner (the barcode button on Add
+# food) and the way out. On a runner without a camera the drawn stand-in walks
+# itself to a found product (the Mature Cheddar fixture), which is what is
+# asserted here.
+#
+# What this CANNOT cover: the real lookup. Found-from-Open-Food-Facts, and every
+# failure code behind it — not-in-the-database, no connection, a timeout, the
+# database down, a rate limit, an entry with no nutrition — all require a
+# physical barcode in front of a live camera, which Maestro cannot inject. Those
+# outcomes are driven, with the lookup stubbed, in
+# src/screens/scan/lookup.test.tsx; the words themselves are checked in
+# src/domain/failure.test.ts. The live path has no other automatable home.
+appId: com.scranly
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Set up my targets"
+    commands:
+      - tapOn: "Set up my targets"
+      - tapOn: "Continue"
+      - tapOn: "Continue"
+      - tapOn: "See my targets"
+      - tapOn: "Start logging"
+
+# In through Today's Log food, onto Add food, which carries the barcode button.
+- assertVisible: "Log food"
+- tapOn: "Log food"
+- assertVisible: "EATEN THIS WEEK"
+
+# The scanner opens; the stand-in walks itself to a match on a camera-less run.
+# (The stand-in shows the fixture product and its pack servings, not the live
+# lookup's per-100 g model — see the file header.)
+- tapOn: "Scan a barcode"
+- assertVisible: "Mature Cheddar"
+
+# And back out.
+- tapOn:
+    id: "Close"
+- assertVisible: "EATEN THIS WEEK"

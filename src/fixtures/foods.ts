@@ -59,8 +59,6 @@ export const myFoods: FoodItem[] = [
  * Saved combinations — a breakfast logged as one thing. Empty until saving a
  * meal is built, and the screen says so rather than showing a blank list.
  */
-export const savedMeals: FoodItem[] = [];
-
 /** What each chip on Add food lists. */
 export function foodsFor(filter: string): FoodItem[] {
   switch (filter) {
@@ -69,8 +67,6 @@ export function foodsFor(filter: string): FoodItem[] {
       return [...recentFoods].sort((a, b) => (b.logged ?? 0) - (a.logged ?? 0));
     case 'My foods':
       return myFoods;
-    case 'Meals':
-      return savedMeals;
     default:
       return recentFoods;
   }
@@ -81,8 +77,4 @@ export const FILTER_COPY: Record<string, {head: string; empty?: string}> = {
   Recent: {head: 'EATEN THIS WEEK'},
   Frequent: {head: 'MOST LOGGED'},
   'My foods': {head: 'FOODS YOU MADE', empty: 'Nothing yet. Create a food and it lands here.'},
-  Meals: {
-    head: 'SAVED MEALS',
-    empty: 'No saved meals yet. Log a few things together and save them as one.',
-  },
 };

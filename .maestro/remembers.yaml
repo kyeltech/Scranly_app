@@ -1,0 +1,68 @@
+# Does it still know, after the process dies?
+#
+# The one thing no other test in this repo can answer. The 83 navigator tests
+# run against in-memory stores, and store/mmkv.test.ts tests the store's
+# contract against a mock of MMKV — neither of them proves that a logged food
+# survives the app being killed, because neither of them kills anything. Only a
+# real relaunch on a real device does that, and that is this file.
+#
+# It also proves the native module is there: the version row shows a build
+# rather than a dash, which is the only automatable check that
+# ios/Scranly/AppVersion.swift reached JS at all.
+#
+# Run on the Mac:  maestro test .maestro/remembers.yaml
+appId: com.scranly
+---
+# A clean slate, so the first launch is a first install and onboarding runs.
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: "Set up my targets"
+    commands:
+      - tapOn: "Set up my targets"
+      - tapOn: "Continue"
+      - tapOn: "Continue"
+      - tapOn: "See my targets"
+      - tapOn: "Start logging"
+
+- assertVisible: "EATEN THIS WEEK"
+
+# Log something with a number worth checking afterwards.
+- tapOn: "Log food"
+- tapOn: "Add Porridge oats"
+- tapOn: "Add 1 item"
+- assertVisible: "Porridge oats"
+
+# And make a food, which is a different store.
+- tapOn: "Log food"
+- tapOn: "Create a food"
+- tapOn: "NAME"
+- inputText: "UAT test food"
+- tapOn: "KCAL"
+- inputText: "100"
+- tapOn: "Save this food"
+
+# Kill it and come back. No clearState: that is the whole point.
+- stopApp
+- launchApp
+
+# Onboarding does not ask twice.
+- assertNotVisible: "Set up my targets"
+- assertVisible: "EATEN THIS WEEK"
+# The diary survived the process.
+- assertVisible: "Porridge oats"
+
+# So did the food, and the count beside the row.
+- tapOn:
+    id: "Settings"
+- assertVisible: "Foods you added"
+- tapOn: "Foods you added"
+- assertVisible: "UAT test food"
+- tapOn:
+    id: "Back"
+
+# And the native version module answered: a build, not the dash it shows when
+# AppVersion.swift is not in the target. If the regex is ever awkward on a
+# runner, the literal version string is the fallback.
+- assertVisible: "[0-9]+\\.[0-9]+ \\([0-9]+\\)"

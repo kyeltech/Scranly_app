@@ -1,5 +1,5 @@
 # There is no tab bar — the header is the navigation. This walks it.
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 - launchApp
 - runFlow:

@@ -8,6 +8,10 @@ import type {DiaryEntry} from '../domain/diary';
 import {isFood} from './foods';
 import type {FoodStore} from './foods';
 import type {FoodItem} from '../domain/food';
+import {isWeightEntry} from './weight';
+import type {SeenStore} from './seen';
+import type {WeightStore} from './weight';
+import type {WeightEntry} from '../domain/weight';
 
 /**
  * One key, holding the whole setup as JSON.
@@ -31,6 +35,12 @@ export const DIARY_KEY = 'diary';
 
 /** The foods this person created, as a JSON array. Same reasoning as the diary. */
 export const FOODS_KEY = 'foods';
+
+/** The weigh-ins, as a JSON array. A single number a few times a week — tiny. */
+export const WEIGHT_KEY = 'weight';
+
+/** The last release whose what's-new sheet was dismissed. One short string. */
+export const SEEN_KEY = 'seenRelease';
 
 /**
  * Why the last `mmkvStore()` could not open its storage, or `undefined` if it
@@ -215,6 +225,63 @@ export function mmkvFoods(): FoodStore {
         throw new Error(failure ?? 'MMKV is not available');
       }
       storage.set(FOODS_KEY, JSON.stringify([...current(storage), item]));
+    },
+  };
+}
+
+/**
+ * The weigh-ins, on disk.
+ *
+ * Fourth store over the same MMKV, same tolerance for a missing pod. A weigh-in
+ * that cannot be saved is rejected rather than swallowed: the trend is only as
+ * honest as the readings reaching it.
+ */
+export function mmkvWeight(): WeightStore {
+  const storage = open();
+
+  const current = (store: MMKV): WeightEntry[] => {
+    const raw = store.getString(WEIGHT_KEY);
+    if (raw === undefined) {
+      return [];
+    }
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter(isWeightEntry) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  return {
+    read: async () => (storage === undefined ? [] : current(storage)),
+    peek: () => (storage === undefined ? undefined : current(storage)),
+    add: async entry => {
+      if (storage === undefined) {
+        throw new Error(failure ?? 'MMKV is not available');
+      }
+      storage.set(WEIGHT_KEY, JSON.stringify([...current(storage), entry]));
+    },
+  };
+}
+
+/**
+ * The last release seen, on disk.
+ *
+ * A plain string, so there is nothing to parse and nothing to vet: anything in
+ * there that is not an id simply matches no release, and the sheet behaves as
+ * it does for an id it has never heard of.
+ */
+export function mmkvSeen(): SeenStore {
+  const storage = open();
+
+  return {
+    read: async () => storage?.getString(SEEN_KEY),
+    peek: () => storage?.getString(SEEN_KEY),
+    // Quietly, unlike setup and the diary: failing to remember that a sheet was
+    // read costs someone the same sheet once more, which is not worth a throw
+    // on a launch.
+    write: async id => {
+      storage?.set(SEEN_KEY, id);
     },
   };
 }
