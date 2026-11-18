@@ -12,7 +12,7 @@
 # outcomes are driven, with the lookup stubbed, in
 # src/screens/scan/lookup.test.tsx; the words themselves are checked in
 # src/domain/failure.test.ts. The live path has no other automatable home.
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 - launchApp
 - runFlow:

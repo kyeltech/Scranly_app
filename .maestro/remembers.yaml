@@ -11,7 +11,7 @@
 # ios/Scranly/AppVersion.swift reached JS at all.
 #
 # Run on the Mac:  maestro test .maestro/remembers.yaml
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 # A clean slate, so the first launch is a first install and onboarding runs.
 - launchApp:

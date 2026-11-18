@@ -1,6 +1,6 @@
 # Walk a new user from the welcome to Today.
 # Run on the Mac:  maestro test .maestro/onboarding.yaml
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 - launchApp:
     clearState: true

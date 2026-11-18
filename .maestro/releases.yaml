@@ -12,7 +12,7 @@
 #
 # The feedback row only exists once readers/feedback.ts has an endpoint, so the
 # second half of this flow is skipped while that constant is empty.
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 - launchApp
 - runFlow:

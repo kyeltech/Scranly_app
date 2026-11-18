@@ -1,6 +1,6 @@
 # Logging into a meal: the section you tap is what decides breakfast from
 # dinner. Everything used to land at lunch whatever you tapped.
-appId: org.reactjs.native.example.Scranly
+appId: com.scranly
 ---
 - launchApp
 - runFlow:
